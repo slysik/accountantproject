@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accountant's Best Friend - Expense Categorization Tool</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">📊</span>
+                <span>Accountant's Best Friend</span>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html" class="active">Expense Tool</a>
+                <a href="#">More Tools</a>
+                <a href="#">Help</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>Expense Categorization & Report Generator</h1>
+            <p>Upload your bank or credit card statements to automatically categorize expenses by IRS categories and generate detailed Excel reports.</p>
+        </div>
+
+        <!-- Upload Section -->
+        <section class="upload-section" id="upload-section">
+            <div class="drop-zone" id="drop-zone">
+                <div class="drop-zone-icon">📁</div>
+                <h3>Drop your CSV files here</h3>
+                <p>or click to browse files</p>
+                <input type="file" id="file-input" accept=".csv" multiple hidden>
+            </div>
+
+            <div class="upload-instructions">
+                <h4>Supported Formats</h4>
+                <div class="format-grid">
+                    <div class="format-item">
+                        <span class="format-icon">🏦</span>
+                        <div class="format-info">
+                            <span>Bank Statements</span>
+                            <small>Chase, Bank of America, Wells Fargo, etc.</small>
+                        </div>
+                    </div>
+                    <div class="format-item">
+                        <span class="format-icon">💳</span>
+                        <div class="format-info">
+                            <span>Credit Card Statements</span>
+                            <small>Amex, Visa, Mastercard exports</small>
+                        </div>
+                    </div>
+                    <div class="format-item">
+                        <span class="format-icon">📋</span>
+                        <div class="format-info">
+                            <span>Custom CSV</span>
+                            <small>Date, Description, Amount columns</small>
+                        </div>
+                    </div>
+                    <div class="format-item">
+                        <span class="format-icon">🔄</span>
+                        <div class="format-info">
+                            <span>Multiple Files</span>
+                            <small>Combine multiple accounts</small>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="sample-btn" id="try-sample-btn">
+                    🎯 Try with Sample Data
+                </button>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="results-section">
+            <!-- Summary Cards -->
+            <div class="summary-cards" id="summary-cards">
+                <!-- Filled by JavaScript -->
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="two-column">
+                <!-- Category Breakdown -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>📊 Expenses by IRS Category</h2>
+                        <select id="breakdown-month-filter" class="header-select">
+                            <option value="">All Months</option>
+                        </select>
+                    </div>
+                    <div class="section-body">
+                        <div class="category-breakdown" id="category-breakdown">
+                            <!-- Filled by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Chart -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>📅 Monthly Spending</h2>
+                    </div>
+                    <div class="section-body">
+                        <div class="monthly-chart" id="monthly-chart">
+                            <!-- Filled by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Suspected Personal Charges -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>🤨 Suspected Personal Charges</h2>
+                </div>
+                <div class="section-body">
+                    <div class="category-breakdown" id="personal-charges-breakdown">
+                        <!-- Filled by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Month Detail Breakdown -->
+            <div class="section-card" id="month-detail-section" style="display: none;">
+                <div class="section-header">
+                    <h2>🔍 <span id="month-detail-title">Month Detail</span></h2>
+                    <button class="btn-close" onclick="App.closeMonthDetail()">✕ Close</button>
+                </div>
+                <div class="section-body">
+                    <div class="month-detail-grid" id="month-detail-content">
+                        <!-- Filled by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Table -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>📝 All Transactions</h2>
+                    <div class="export-options">
+                        <button class="export-btn" id="export-excel-btn">
+                            📥 Export to Excel
+                        </button>
+                        <div class="export-dropdown">
+                            <button class="export-dropdown-btn">▼</button>
+                            <div class="export-dropdown-content">
+                                <a href="#" id="export-csv-btn">Export as CSV</a>
+                                <a href="#" id="export-qbo-btn">Export as QBO</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-body">
+                    <div class="table-controls">
+                        <select id="category-filter">
+                            <option value="">All Categories</option>
+                        </select>
+                        <select id="month-filter">
+                            <option value="">All Months</option>
+                        </select>
+                        <select id="file-filter">
+                            <option value="">All Files</option>
+                        </select>
+                        <span id="expense-count" style="margin-left: auto; color: var(--text-muted);">0 transactions</span>
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                        <table class="expense-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>IRS Category</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expense-table-body">
+                                <!-- Filled by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Accountant's Best Friend &copy; 2024 — Expense categories based on IRS Schedule C and Publication 535</p>
+    </footer>
+
+    <!-- AI Agent Overlay -->
+    <div id="ai-overlay">
+        <div class="ai-agent-container">
+            <div class="ai-agent"></div>
+            <p>Categorizing your expenses...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/categories.js"></script>
+    <script src="js/expense-processor.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/qbo-export.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
