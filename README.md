@@ -1,207 +1,113 @@
 # Accountant's Best Friend
 
-> A browser-based expense categorization and report generator for small business owners and accountants.
-> Upload your bank or credit card CSV statements — get IRS-ready expense reports in seconds.
+Personal expense categorization tool for self-employed professionals. Built with Next.js + React + Supabase.
 
----
+## Tech Stack
 
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        ACCOUNTANT'S BEST FRIEND                         │
-│                        (Pure Frontend Web App)                          │
-└──────────────────────────────────┬──────────────────────────────────────┘
-                                   │
-          ┌────────────────────────▼────────────────────────┐
-          │                   index.html                     │
-          │              (App Shell / Entry Point)           │
-          └──────┬──────────────────────────────────┬────────┘
-                 │                                  │
-    ┌────────────▼───────────┐         ┌────────────▼───────────┐
-    │      css/styles.css    │         │   External Libraries   │
-    │   (UI / Layout / Theme)│         │  • SheetJS (Excel)     │
-    └────────────────────────┘         │  • Google Fonts        │
-                                       └────────────────────────┘
-                                   │
-          ┌────────────────────────▼────────────────────────┐
-          │                  JavaScript Modules              │
-          └─────────────────────────────────────────────────┘
-                 │                 │                │
-   ┌─────────────▼──┐   ┌──────────▼──────┐   ┌────▼────────────────┐
-   │ categories.js  │   │expense-processor│   │     app.js          │
-   │                │   │     .js         │   │  (Main Controller)  │
-   │ • 25+ IRS      │   │                 │   │                     │
-   │   Schedule C   │◄──│ • CSV Parser    │   │ • File Upload / DnD │
-   │   categories   │   │ • Column detect │   │ • Render Dashboard  │
-   │ • Keyword      │   │ • Date parser   │   │ • Filters           │
-   │   matching     │   │ • Amount parser │   │ • Category editor   │
-   │ • Personal     │   │ • Categorizer   │   │ • Monthly chart     │
-   │   charge flags │   │ • Aggregator    │   │ • Sample data       │
-   └────────────────┘   └─────────────────┘   └──────────┬──────────┘
-                                                          │
-                                         ┌────────────────▼────────────────┐
-                                         │         Export Modules           │
-                                         │                                  │
-                                         │  ┌──────────┐  ┌─────────────┐  │
-                                         │  │export.js │  │qbo-export.js│  │
-                                         │  │          │  │             │  │
-                                         │  │ • Excel  │  │ • QBO/OFX   │  │
-                                         │  │   .xlsx  │  │   format    │  │
-                                         │  │ • CSV    │  │ (QuickBooks │  │
-                                         │  │          │  │  compatible)│  │
-                                         │  └──────────┘  └─────────────┘  │
-                                         └─────────────────────────────────┘
-
-
-  DATA FLOW
-  ─────────
-  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-  │  CSV Upload  │────►│  Parse CSV   │────►│  Categorize  │────►│  Render UI   │
-  │              │     │              │     │  (IRS Rules) │     │  Dashboard   │
-  │ Drag & Drop  │     │ Auto-detect  │     │              │     │              │
-  │ or Browse    │     │ bank format  │     │ 25 categories│     │ Summary Cards│
-  │              │     │              │     │ + Personal   │     │ Charts       │
-  │ Multi-file   │     │ Date/Amount/ │     │   Flags      │     │ Tables       │
-  │ support      │     │ Desc columns │     │              │     │              │
-  └──────────────┘     └──────────────┘     └──────────────┘     └──────┬───────┘
-                                                                         │
-                                                                         ▼
-                                                                ┌──────────────┐
-                                                                │    Export    │
-                                                                │              │
-                                                                │ • Excel xlsx │
-                                                                │ • CSV        │
-                                                                │ • QBO/OFX    │
-                                                                └──────────────┘
-```
-
----
+- **Next.js 14+** (App Router)
+- **React 18** with TypeScript
+- **Tailwind CSS** (Rivian-inspired dark theme)
+- **Supabase Auth** (email/password + Google Sign-in)
+- **Supabase PostgreSQL** for persistent data
+- **SheetJS** for Excel export
 
 ## Features
 
-### CSV Import
-- **Drag & drop** or click-to-browse file upload
-- **Multi-file support** — combine transactions from multiple accounts
-- **Smart column detection** — automatically identifies Date, Description, and Amount columns from any bank format
-- Supports **Chase, Bank of America, Wells Fargo, Amex, Visa, Mastercard** and custom CSV exports
-- Handles both **single amount** and **debit/credit** column formats
-- Multiple date format support: `MM/DD/YYYY`, `YYYY-MM-DD`, `MM-DD-YYYY`, `MM/DD/YY`
-
-### IRS Expense Categorization
-Automatically maps transactions to **25+ IRS Schedule C / Publication 535** categories using keyword matching:
-
-| Category | Examples |
-|---|---|
-| Advertising | Google Ads, Facebook Ads, Mailchimp |
-| Car and Truck | Gas, Uber, Parking, Oil Change |
-| Contract Labor | Upwork, Fiverr, Freelancers |
-| Meals (50% deductible) | Restaurants, DoorDash, Starbucks |
-| Software & Subscriptions | Zoom, Adobe, AWS, Slack |
-| Travel | Airlines, Hotels, Airbnb, Expedia |
-| Office Expense | Office Depot, Staples, Supplies |
-| Legal & Professional | CPA, Attorney, QuickBooks |
-| Utilities | Verizon, Comcast, AT&T, PG&E |
-| Wages | Gusto, ADP, Paychex payroll |
-| Rent or Lease | WeWork, Regus, Office Rent |
-| *...and 15 more* | |
-
-### Suspected Personal Charges Detection
-Automatically flags transactions that are likely personal expenses mixed into business accounts:
-- Entertainment (gaming, movies, concerts, sporting events)
-- Personal care (salon, spa, gym, fitness)
-- Groceries and personal shopping
-- Pet stores, hobby shops, vacation/resort charges
-
-### Interactive Dashboard
-- **Summary cards** — Total expenses, transaction count, months covered, top spending category
-- **IRS Category Breakdown** — Visual bar chart of spending by category with percentage breakdown
-- **Monthly Spending Chart** — SVG line chart showing spending trends over time
-- **Month Detail Drill-Down** — Click any month to see a full category breakdown for that period
-- **Suspected Personal Charges** — Grouped by month with individual transaction details
-- **Full Transactions Table** — Sortable, filterable list of all transactions
-
-### Inline Category Editing
-- Change any transaction's IRS category directly in the table
-- Dashboard updates in real time to reflect manual overrides
-
-### Filtering
-Filter the transaction table by:
-- **IRS Category**
-- **Month**
-- **Source file** (when multiple CSVs are uploaded)
-
-### Export
-| Format | Contents |
-|---|---|
-| **Excel (.xlsx)** | 4 sheets: Summary, Monthly Breakdown, All Transactions, By Category |
-| **CSV** | Flat export with Date, Description, Amount, Category |
-| **QBO / OFX** | QuickBooks-compatible bank feed format |
-
-### Sample Data
-Built-in sample dataset with 30 realistic business transactions across 3 months — try the tool instantly without uploading a file.
-
----
+- Two-pane layout with collapsible folder tree (Year > Month)
+- Drag-and-drop CSV upload with smart column detection
+- IRS Schedule C expense categorization (25+ categories)
+- Inline category editing
+- Export to Excel, CSV, and QBO/OFX (QuickBooks)
+- Trash bin with soft delete and restore
+- 4-step workflow wizard
+- Responsive design with mobile sidebar overlay
 
 ## Getting Started
 
-No installation required. This is a fully static web app.
-
-**Run locally:**
 ```bash
-cd accountants-best-friend
-python3 -m http.server 8080
-```
-Then open [http://localhost:8080](http://localhost:8080) in your browser.
-
-**Or just open directly:**
-```bash
-open index.html
+cd accountantproject
+bun install
+# Create .env.local with Supabase config (see below)
+bun run dev
+# Open http://localhost:3000
 ```
 
----
+## Supabase Setup
+
+1. Create a Supabase project at https://supabase.com
+2. Run the SQL migration below in the SQL Editor
+3. Enable Authentication providers (Email/Password is on by default, add Google if desired)
+4. Copy your project config to `.env.local`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### Database Migration
+
+Run this in the Supabase SQL Editor:
+
+```sql
+-- Expenses table
+CREATE TABLE expenses (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  date DATE NOT NULL,
+  month TEXT NOT NULL,
+  year TEXT NOT NULL,
+  description TEXT NOT NULL,
+  amount NUMERIC(12,2) NOT NULL,
+  original_category TEXT,
+  category TEXT NOT NULL,
+  filename TEXT,
+  raw_data JSONB,
+  deleted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Year folders metadata
+CREATE TABLE folders (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  year TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, year)
+);
+
+-- Row Level Security
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE folders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can CRUD own expenses"
+  ON expenses FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can CRUD own folders"
+  ON folders FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Indexes
+CREATE INDEX idx_expenses_user_month ON expenses(user_id, year, month);
+CREATE INDEX idx_expenses_deleted ON expenses(user_id, deleted_at) WHERE deleted_at IS NOT NULL;
+```
 
 ## Project Structure
 
 ```
-accountants-best-friend/
-├── index.html                  # App shell and UI layout
-├── css/
-│   └── styles.css              # All styles and theming
-├── js/
-│   ├── categories.js           # IRS category definitions + keyword matching
-│   ├── expense-processor.js    # CSV parsing, categorization, aggregation
-│   ├── export.js               # Excel and CSV export
-│   ├── qbo-export.js           # QuickBooks OFX/QBO export
-│   └── app.js                  # Main app controller and UI rendering
-└── sample-data/
-    └── sample_transactions.csv # Sample business transactions for demo
+accountantproject/
+  src/
+    app/          # Next.js App Router pages and layouts
+    components/   # React UI components
+    lib/          # Supabase config, auth, database, utilities
+    styles/       # Global styles and Tailwind config
+    types/        # TypeScript type definitions
+  _legacy/        # Original vanilla JS files (archived for reference)
+  public/         # Static assets
 ```
 
----
+## Legacy Code
 
-## Supported Bank CSV Formats
-
-| Bank | Format |
-|---|---|
-| Chase | Date, Description, Amount |
-| Bank of America | Date, Description, Amount, Running Bal. |
-| Wells Fargo | Date, Amount, *, *, Description |
-| American Express | Date, Description, Amount |
-| Capital One | Transaction Date, Posted Date, Card No., Description, Category, Debit, Credit |
-| Custom | Any CSV with Date + Description + Amount (or Debit/Credit) columns |
-
----
-
-## Tech Stack
-
-- **Vanilla HTML / CSS / JavaScript** — zero framework dependencies
-- **[SheetJS](https://sheetjs.com/)** — Excel file generation
-- **Google Fonts** — Inter typeface
-- Runs entirely **in the browser** — no backend, no data leaves your device
-
----
-
-## License
-
-MIT © 2024 Accountant's Best Friend
+The original vanilla HTML/CSS/JS implementation is archived in the `_legacy/` directory for reference. The modern Next.js app in `src/` is the active codebase.
