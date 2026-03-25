@@ -1,5 +1,6 @@
 import type { Expense, CategorizedExpense, AggregationResult, ExpenseSummary } from '@/types';
 import { categorizeExpense } from './categories';
+import { getYearMonth } from './date-utils';
 
 interface ColumnMap {
   date: number | null;
@@ -11,15 +12,56 @@ interface ColumnMap {
   useDebitCredit?: boolean;
 }
 
+/**
+ * Split CSV text into logical rows, respecting quoted fields that may
+ * contain newlines. Returns an array of raw line strings.
+ */
+function splitCSVRows(text: string): string[] {
+  const rows: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (char === '"') {
+      // Handle escaped quotes ("") inside a quoted field
+      if (inQuotes && i + 1 < text.length && text[i + 1] === '"') {
+        current += '"';
+        i++; // skip the second quote
+      } else {
+        inQuotes = !inQuotes;
+      }
+      current += char;
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      // End of row (skip \r in \r\n)
+      if (char === '\r' && i + 1 < text.length && text[i + 1] === '\n') {
+        i++;
+      }
+      if (current.trim()) {
+        rows.push(current);
+      }
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) {
+    rows.push(current);
+  }
+
+  return rows;
+}
+
 /** Parse a CSV string into an array of Expense objects. */
 export function parseCSV(csvText: string, filename: string): Expense[] {
-  const lines = csvText.trim().split('\n');
-  if (lines.length < 2) {
+  const rows = splitCSVRows(csvText.trim());
+  if (rows.length < 2) {
     throw new Error('CSV file must have headers and at least one data row');
   }
 
   // Parse headers
-  const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+  const headers = parseCSVLine(rows[0]).map(h => h.toLowerCase().trim());
 
   // Find relevant columns (flexible mapping)
   const columnMap = detectColumns(headers);
@@ -31,8 +73,8 @@ export function parseCSV(csvText: string, filename: string): Expense[] {
 
   // Parse data rows
   const expenses: Expense[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
+  for (let i = 1; i < rows.length; i++) {
+    const line = rows[i].trim();
     if (!line) continue;
 
     const values = parseCSVLine(line);
@@ -46,7 +88,10 @@ export function parseCSV(csvText: string, filename: string): Expense[] {
   return expenses;
 }
 
-/** Parse a single CSV line, handling quoted fields. */
+/**
+ * Parse a single CSV line, handling quoted fields and escaped quotes ("").
+ * Conforms to RFC 4180.
+ */
 export function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = '';
@@ -55,13 +100,28 @@ export function parseCSVLine(line: string): string[] {
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
 
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
+    if (inQuotes) {
+      if (char === '"') {
+        // Peek ahead: "" is an escaped quote inside a quoted field
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i++; // skip the second quote
+        } else {
+          // End of quoted field
+          inQuotes = false;
+        }
+      } else {
+        current += char;
+      }
     } else {
-      current += char;
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ',') {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
     }
   }
   result.push(current.trim());
@@ -159,7 +219,7 @@ export function extractExpense(
     return {
       id: String(Date.now() + Math.random()),
       date: date,
-      month: date.toISOString().substring(0, 7), // YYYY-MM
+      month: getYearMonth(date), // YYYY-MM from local time
       description: description.replace(/"/g, '').trim(),
       amount: Math.abs(amount),
       originalCategory: originalCategory,
@@ -173,7 +233,11 @@ export function extractExpense(
   }
 }
 
-/** Parse various date formats into a Date object. */
+/**
+ * Parse various date formats into a local Date object (at noon to avoid
+ * timezone/DST edge cases). NEVER uses `new Date(string)` for date-only
+ * strings, which would parse as UTC and shift the calendar day.
+ */
 export function parseDate(dateStr: string): Date | null {
   if (!dateStr) return null;
 
@@ -206,14 +270,25 @@ export function parseDate(dateStr: string): Date | null {
         if (year < 100) year += 2000;
       }
 
-      const date = new Date(year, month, day);
+      // Use noon local time to avoid DST and UTC-offset issues
+      const date = new Date(year, month, day, 12, 0, 0);
       if (!isNaN(date.getTime())) return date;
     }
   }
 
-  // Try native parsing as fallback
-  const date = new Date(cleaned);
-  return isNaN(date.getTime()) ? null : date;
+  // Fallback: try to extract YYYY-MM-DD from an ISO string, then build local
+  const isoMatch = cleaned.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+  if (isoMatch) {
+    const date = new Date(
+      parseInt(isoMatch[1]),
+      parseInt(isoMatch[2]) - 1,
+      parseInt(isoMatch[3]),
+      12, 0, 0
+    );
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  return null;
 }
 
 /** Parse an amount string to a number, handling currency symbols, commas, and parentheses. */
@@ -303,12 +378,17 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-/** Format a Date object as a human-readable string. */
+/**
+ * Format a Date object as a human-readable string.
+ * Uses local timezone — safe as long as dates are created via
+ * parseDateString() or parseDate() (which use local noon).
+ */
 export function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
+    timeZone: undefined, // explicit: use local timezone
   }).format(date);
 }
 

@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { LuUpload, LuFileText, LuCheck, LuX, LuFlaskConical } from 'react-icons/lu';
 import { parseCSV, categorizeAll, formatCurrency, formatDate } from '@/lib/expense-processor';
-import { createExpense } from '@/lib/database';
+import { bulkCreateExpenses } from '@/lib/database';
 import { useAuth } from '@/lib/auth';
 import type { CategorizedExpense } from '@/types';
 
@@ -13,7 +13,7 @@ interface CSVUploaderProps {
   onUploadComplete: () => void;
 }
 
-export default function CSVUploader({ year, month, onUploadComplete }: CSVUploaderProps) {
+export default function CSVUploader({ year: _year, month: _month, onUploadComplete }: CSVUploaderProps) {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -120,9 +120,13 @@ export default function CSVUploader({ year, month, onUploadComplete }: CSVUpload
     setError(null);
 
     try {
-      for (let i = 0; i < preview.length; i++) {
-        await createExpense(user.id, year, month, preview[i]);
-        setSaveProgress(Math.round(((i + 1) / preview.length) * 100));
+      setSaveProgress(10);
+      const inserted = await bulkCreateExpenses(user.id, preview);
+      setSaveProgress(100);
+
+      if (inserted === 0) {
+        setError('No new expenses were inserted (possible duplicates).');
+        return;
       }
 
       setPreview(null);
@@ -134,7 +138,7 @@ export default function CSVUploader({ year, month, onUploadComplete }: CSVUpload
       setSaving(false);
       setSaveProgress(0);
     }
-  }, [preview, user, year, month, onUploadComplete]);
+  }, [preview, user, onUploadComplete]);
 
   const handleCancel = useCallback(() => {
     setPreview(null);

@@ -19,9 +19,6 @@ export default function WizardContainer() {
   const [currentStep, setCurrentStep] = useState(0);
   const [parsedExpenses, setParsedExpenses] = useState<CategorizedExpense[]>([]);
   const [selectedYear, setSelectedYear] = useState('');
-  const [assignedExpenses, setAssignedExpenses] = useState<
-    Map<string, CategorizedExpense[]>
-  >(new Map());
   const [categorizedExpenses, setCategorizedExpenses] = useState<
     CategorizedExpense[]
   >([]);
@@ -36,9 +33,8 @@ export default function WizardContainer() {
   );
 
   const handleFoldersComplete = useCallback(
-    (year: string, assigned: Map<string, CategorizedExpense[]>) => {
+    (year: string, _assigned: Map<string, CategorizedExpense[]>) => {
       setSelectedYear(year);
-      setAssignedExpenses(assigned);
       setCurrentStep(2);
     },
     []
@@ -53,7 +49,6 @@ export default function WizardContainer() {
   );
 
   const canGoBack = currentStep > 0;
-  const canGoNext = false; // Next is handled by each step's onComplete
 
   return (
     <div className="mx-auto max-w-4xl">

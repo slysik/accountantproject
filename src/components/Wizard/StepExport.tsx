@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { generateExcelReport, generateCSV } from '@/lib/export';
 import { generateQBOFile } from '@/lib/qbo-export';
 import { aggregateByMonthAndCategory, getSummary } from '@/lib/expense-processor';
-import { createExpense } from '@/lib/database';
+import { bulkCreateExpenses } from '@/lib/database';
 import type { CategorizedExpense } from '@/types';
 
 interface StepExportProps {
@@ -62,18 +62,16 @@ export default function StepExport({ expenses, year }: StepExportProps) {
     setSaving(true);
     setSaveProgress(0);
     try {
-      for (let i = 0; i < expenses.length; i++) {
-        const expense = expenses[i];
-        const d = expense.date instanceof Date ? expense.date : new Date(expense.date);
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        await createExpense(user.id, year, month, expense);
-        setSaveProgress(Math.round(((i + 1) / expenses.length) * 100));
-      }
+      setSaveProgress(10);
+      await bulkCreateExpenses(user.id, expenses);
+      setSaveProgress(100);
       setSaved(true);
+    } catch (err) {
+      console.error('Failed to save expenses:', err);
     } finally {
       setSaving(false);
     }
-  }, [user, expenses, year]);
+  }, [user, expenses]);
 
   return (
     <div>

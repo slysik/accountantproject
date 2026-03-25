@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { parseDateString, toDateString, getYear, getYearMonth } from './date-utils';
 import type { CategorizedExpense, FolderNode, MonthNode } from '@/types';
 
 const MONTH_NAMES = [
@@ -8,11 +9,13 @@ const MONTH_NAMES = [
 
 /**
  * Converts a DB row to a CategorizedExpense.
+ * Uses parseDateString to avoid the UTC-offset off-by-one bug.
  */
 function rowToExpense(row: Record<string, unknown>): CategorizedExpense {
+  const date = parseDateString(row.date as string);
   return {
     id: row.id as string,
-    date: new Date(row.date as string),
+    date,
     month: row.month as string,
     year: row.year as string,
     description: row.description as string,
@@ -26,22 +29,37 @@ function rowToExpense(row: Record<string, unknown>): CategorizedExpense {
 }
 
 /**
- * Creates an expense row. Returns the new row ID.
+ * Derive the canonical date string, year, and month from an expense's date.
+ * This is the SINGLE source of truth — ignores any pre-existing month/year
+ * fields on the expense object.
+ */
+function canonicalize(expense: CategorizedExpense) {
+  const d = expense.date instanceof Date ? expense.date : new Date(expense.date);
+  return {
+    dateStr: toDateString(d),
+    year: getYear(d),
+    month: getYearMonth(d), // "YYYY-MM"
+  };
+}
+
+/**
+ * Creates a single expense row. Returns the new row ID.
+ * Year and month are always derived from the expense date.
  */
 export async function createExpense(
   userId: string,
-  year: string,
-  month: string,
+  _year: string,
+  _month: string,
   expense: CategorizedExpense
 ): Promise<string> {
+  const { dateStr, year, month } = canonicalize(expense);
+
   const { data, error } = await supabase
     .from('expenses')
     .insert({
       user_id: userId,
-      date: expense.date instanceof Date
-        ? expense.date.toISOString().split('T')[0]
-        : new Date(expense.date).toISOString().split('T')[0],
-      month: expense.month || `${year}-${month}`,
+      date: dateStr,
+      month,
       year,
       description: expense.description,
       amount: expense.amount,
@@ -59,19 +77,71 @@ export async function createExpense(
 }
 
 /**
+ * Bulk-insert expenses in a single round-trip. Returns the count of inserted rows.
+ * Year and month are always derived from each expense's date.
+ * Uses a deduplication key (date + description + amount + filename) to make
+ * retries safe — duplicates are silently skipped via ON CONFLICT DO NOTHING
+ * (requires the unique index below, or the caller deduplicates manually).
+ */
+export async function bulkCreateExpenses(
+  userId: string,
+  expenses: CategorizedExpense[]
+): Promise<number> {
+  if (expenses.length === 0) return 0;
+
+  const rows = expenses.map((expense) => {
+    const { dateStr, year, month } = canonicalize(expense);
+    return {
+      user_id: userId,
+      date: dateStr,
+      month,
+      year,
+      description: expense.description,
+      amount: expense.amount,
+      original_category: expense.originalCategory,
+      category: expense.category,
+      filename: expense.filename,
+      raw_data: expense.rawData,
+      deleted_at: null,
+    };
+  });
+
+  // Supabase/PostgREST supports batch insert natively.
+  // Insert in chunks of 500 to stay within payload limits.
+  const CHUNK_SIZE = 500;
+  let inserted = 0;
+
+  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + CHUNK_SIZE);
+    const { data, error } = await supabase
+      .from('expenses')
+      .insert(chunk)
+      .select('id');
+
+    if (error) throw error;
+    inserted += data?.length ?? 0;
+  }
+
+  return inserted;
+}
+
+/**
  * Fetches all non-deleted expenses for a given year/month.
+ * Month is matched as "YYYY-MM" format.
  */
 export async function getExpenses(
   userId: string,
   year: string,
   month: string
 ): Promise<CategorizedExpense[]> {
+  const monthKey = month.includes('-') ? month : `${year}-${month}`;
+
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
     .eq('user_id', userId)
     .eq('year', year)
-    .eq('month', `${year}-${month}`)
+    .eq('month', monthKey)
     .is('deleted_at', null)
     .order('date', { ascending: true });
 

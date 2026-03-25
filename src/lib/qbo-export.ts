@@ -14,12 +14,23 @@ export function sanitize(str: string): string {
   return (str || '').replace(/[&<>]/g, ' ').substring(0, 32);
 }
 
-/** Build a single OFX STMTTRN block for an expense. */
+/**
+ * Build a single OFX STMTTRN block for an expense.
+ *
+ * Expenses are stored as positive amounts in the app. In OFX/QBO format:
+ * - Expenses (money out) → TRNTYPE=DEBIT, TRNAMT negative
+ * - Income/refunds (money in) → TRNTYPE=CREDIT, TRNAMT positive
+ *
+ * Since this app only tracks expenses (all amounts are positive after
+ * parsing), we always emit DEBIT with a negative TRNAMT so QuickBooks
+ * correctly imports them as outflows.
+ */
 export function buildTransaction(expense: CategorizedExpense, index: number): string {
-  const trnType = expense.amount < 0 ? 'DEBIT' : 'CREDIT';
+  const trnType = 'DEBIT';
   const dtPosted = toOFXDate(expense.date);
   const fitId = `${dtPosted}${String(index + 1).padStart(4, '0')}`;
-  const amount = expense.amount.toFixed(2);
+  // Negate so QBO sees an outflow
+  const amount = (-Math.abs(expense.amount)).toFixed(2);
   const name = sanitize(expense.description);
   const memo = sanitize(getCategoryName(expense.category));
 
