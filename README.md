@@ -22,6 +22,9 @@ Personal expense categorization tool for self-employed professionals. Built with
 - Bulk import — expenses are batch-inserted in a single round-trip (chunked at 500 rows)
 - Timezone-safe date handling — all dates use local noon to prevent off-by-one drift
 - Canonical year/month derivation from expense dates (no mismatches between route and data)
+- **Receipt uploads per expense** — attach images (JPG, PNG, WebP), PDFs, and documents directly to any expense row; drag-and-drop or browse from the inline gallery modal
+- **Delete Year** — trash icon on each year node in the sidebar (with confirmation) soft-deletes the year and all its expenses
+- **Delete Month** — trash icon on month nodes in the sidebar + a Delete Month button in the month page header; moves all expenses to the trash bin
 - Trash bin with soft delete and restore
 - 4-step workflow wizard (Upload → Organize → Categorize → Export)
 - Responsive design with mobile sidebar overlay
@@ -58,6 +61,37 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 The **anon key** is found at: Supabase Dashboard → Settings → API Keys → `anon` / `public` (a long `eyJ...` JWT string).
+
+### Receipts Storage Setup
+
+Receipt files are stored in Supabase Storage. Create a bucket called `expense-receipts` and apply RLS:
+
+```sql
+-- Receipts table
+CREATE TABLE receipts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  expense_id UUID REFERENCES expenses(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  filename TEXT NOT NULL,
+  storage_path TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  uploaded_by TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  deleted_at TIMESTAMPTZ
+);
+
+ALTER TABLE receipts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can CRUD own receipts"
+  ON receipts FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE INDEX idx_receipts_expense ON receipts(expense_id) WHERE deleted_at IS NULL;
+```
+
+In the Supabase Storage dashboard, create a bucket named `expense-receipts` and add a policy allowing authenticated users to read/write their own files (`receipts/{userId}/**`).
 
 ### Database Migration
 
@@ -119,10 +153,14 @@ accountantproject/
       login/                #   Auth page (sign in / sign up / Google)
     components/             # React UI components
       Wizard/               #   4-step import wizard (Upload, Folders, Categorize, Export)
+      ReceiptGallery.tsx    #   Modal gallery for viewing, uploading, and deleting receipts
+      ReceiptUpload.tsx     #   Standalone drag-and-drop receipt upload component
+      ReceiptThumbnail.tsx  #   Thumbnail preview for receipt files
     lib/
       supabase.ts           #   Supabase client (lazy-initialized, SSR-safe)
       auth.tsx              #   Auth context provider (Supabase Auth)
-      database.ts           #   All CRUD operations (bulk insert, soft delete, folders)
+      database.ts           #   All CRUD operations (bulk insert, soft delete, folders, receipts)
+      receipt-handler.ts    #   Receipt file upload, signed URL generation, storage deletion
       date-utils.ts         #   Timezone-safe date parsing and formatting
       expense-processor.ts  #   CSV parsing (RFC 4180), categorization, aggregation
       categories.ts         #   IRS Schedule C category definitions and keyword matching
