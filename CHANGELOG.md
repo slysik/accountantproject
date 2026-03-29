@@ -53,7 +53,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.3.0] — prior
+## [0.3.0] — 2026-03-24
 
 ### Fixed (audit findings)
 
@@ -65,7 +65,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.2.0] — prior
+## [0.2.0] — 2026-03-24
 
 ### Added
 
@@ -78,7 +78,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.0] — initial
+## [0.1.0] — 2026-03-02
 
 - Vanilla HTML/CSS/JS proof of concept (archived in `_legacy/`)
 - CSV drag-and-drop, IRS category matching, basic expense table
