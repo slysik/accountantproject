@@ -1,15 +1,19 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { LuArrowUpDown, LuTrash2, LuFilter } from 'react-icons/lu';
+import { LuArrowUpDown, LuTrash2, LuFilter, LuFile, LuImagePlus } from 'react-icons/lu';
 import { getAllCategories, getCategoryName } from '@/lib/categories';
 import { formatCurrency, formatDate } from '@/lib/expense-processor';
-import type { CategorizedExpense } from '@/types';
+import ReceiptGallery from './ReceiptGallery';
+import type { CategorizedExpense, Receipt } from '@/types';
 
 interface ExpenseTableProps {
   expenses: CategorizedExpense[];
+  receiptsByExpenseId?: Record<string, Receipt[]>;
+  userId?: string;
   onCategoryChange: (id: string, category: string) => void;
   onDelete: (id: string) => void;
+  onReceiptsUpdated?: (expenseId: string, receipts: Receipt[]) => void;
 }
 
 type SortField = 'date' | 'description' | 'amount' | 'category';
@@ -17,11 +21,19 @@ type SortDirection = 'asc' | 'desc';
 
 const allCategories = getAllCategories();
 
-export default function ExpenseTable({ expenses, onCategoryChange, onDelete }: ExpenseTableProps) {
+export default function ExpenseTable({
+  expenses,
+  receiptsByExpenseId = {},
+  userId = '',
+  onCategoryChange,
+  onDelete,
+  onReceiptsUpdated,
+}: ExpenseTableProps) {
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [filterCategory, setFilterCategory] = useState<string>('');
   const [filterSource, setFilterSource] = useState<string>('');
+  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
 
   // Unique source files for filter dropdown
   const sourceFiles = useMemo(() => {
@@ -147,6 +159,7 @@ export default function ExpenseTable({ expenses, onCategoryChange, onDelete }: E
               <SortHeader field="description" label="Description" />
               <SortHeader field="amount" label="Amount" />
               <SortHeader field="category" label="IRS Category" />
+              <th className="pb-3 pr-4 text-center text-xs font-medium text-text-muted">Receipts</th>
               <th className="pb-3 pr-4 text-right text-xs font-medium text-text-muted">Actions</th>
             </tr>
           </thead>
@@ -178,6 +191,25 @@ export default function ExpenseTable({ expenses, onCategoryChange, onDelete }: E
                     ))}
                   </select>
                 </td>
+                <td className="py-2.5 pr-4 text-center">
+                  {receiptsByExpenseId[expense.id]?.length ? (
+                    <button
+                      onClick={() => setSelectedExpenseId(expense.id)}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-accent-primary/10 px-2.5 py-1 text-xs font-medium text-accent-primary transition-colors hover:bg-accent-primary/20"
+                    >
+                      <LuFile className="h-3 w-3" />
+                      {receiptsByExpenseId[expense.id].length}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setSelectedExpenseId(expense.id)}
+                      className="inline-flex items-center justify-center rounded p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-accent-primary"
+                      title="Upload receipt"
+                    >
+                      <LuImagePlus className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </td>
                 <td className="py-2.5 text-right">
                   <button
                     onClick={() => onDelete(expense.id)}
@@ -197,6 +229,28 @@ export default function ExpenseTable({ expenses, onCategoryChange, onDelete }: E
       <div className="mt-3 text-xs text-text-muted">
         Showing {filteredAndSorted.length} of {expenses.length} expenses
       </div>
+
+      {/* Receipt Gallery Modal */}
+      {selectedExpenseId && (
+        <ReceiptGallery
+          receipts={receiptsByExpenseId[selectedExpenseId] ?? []}
+          expenseId={selectedExpenseId}
+          userId={userId}
+          onReceiptDeleted={(receiptId) => {
+            onReceiptsUpdated?.(
+              selectedExpenseId,
+              (receiptsByExpenseId[selectedExpenseId] ?? []).filter(r => r.id !== receiptId)
+            );
+          }}
+          onReceiptsUploaded={(newReceipts) => {
+            onReceiptsUpdated?.(
+              selectedExpenseId,
+              [...(receiptsByExpenseId[selectedExpenseId] ?? []), ...newReceipts]
+            );
+          }}
+          onClose={() => setSelectedExpenseId(null)}
+        />
+      )}
     </div>
   );
 }

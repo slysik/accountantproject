@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { parseDateString, toDateString, getYear, getYearMonth } from './date-utils';
-import type { CategorizedExpense, FolderNode, MonthNode } from '@/types';
+import type { CategorizedExpense, FolderNode, MonthNode, Receipt } from '@/types';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -205,7 +205,7 @@ export async function restoreExpense(
 }
 
 /**
- * Permanently deletes an expense.
+ * Permanently deletes an expense and all associated receipts.
  */
 export async function permanentDeleteExpense(
   userId: string,
@@ -213,6 +213,13 @@ export async function permanentDeleteExpense(
   _month: string,
   expenseId: string
 ): Promise<void> {
+  // First permanently delete all receipts for this expense
+  const allReceipts = await getAllReceiptsForExpense(userId, expenseId);
+  if (allReceipts.length > 0) {
+    await permanentDeleteReceipts(userId, allReceipts.map((r) => r.id));
+  }
+
+  // Then delete the expense
   const { error } = await supabase
     .from('expenses')
     .delete()
@@ -307,4 +314,283 @@ export async function getUserFolders(userId: string): Promise<FolderNode[]> {
   });
 
   return folders;
+}
+
+/**
+ * Creates a receipt record in the database.
+ */
+export async function createReceipt(
+  userId: string,
+  expenseId: string,
+  filename: string,
+  storagePath: string,
+  fileType: string,
+  sizeBytes: number
+): Promise<Receipt> {
+  const { data, error } = await supabase
+    .from('receipts')
+    .insert({
+      expense_id: expenseId,
+      user_id: userId,
+      filename,
+      storage_path: storagePath,
+      file_type: fileType,
+      size_bytes: sizeBytes,
+      uploaded_by: userId,
+      deleted_at: null,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return {
+    ...data,
+    created_at: new Date(data.created_at),
+    deleted_at: data.deleted_at ? new Date(data.deleted_at) : null,
+  };
+}
+
+/**
+ * Gets all non-deleted receipts for an expense.
+ */
+export async function getReceiptsForExpense(
+  userId: string,
+  expenseId: string
+): Promise<Receipt[]> {
+  const { data, error } = await supabase
+    .from('receipts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('expense_id', expenseId)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    ...r,
+    created_at: new Date(r.created_at),
+    deleted_at: r.deleted_at ? new Date(r.deleted_at) : null,
+  }));
+}
+
+/**
+ * Soft-deletes a receipt by setting deleted_at timestamp.
+ */
+export async function softDeleteReceipt(
+  userId: string,
+  receiptId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('receipts')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', receiptId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
+}
+
+/**
+ * Permanently deletes receipts by IDs.
+ */
+export async function permanentDeleteReceipts(
+  userId: string,
+  receiptIds: string[]
+): Promise<void> {
+  if (receiptIds.length === 0) return;
+
+  const { error } = await supabase
+    .from('receipts')
+    .delete()
+    .eq('user_id', userId)
+    .in('id', receiptIds);
+
+  if (error) throw error;
+}
+
+/**
+ * Gets all receipts (including soft-deleted) for an expense.
+ */
+export async function getAllReceiptsForExpense(
+  userId: string,
+  expenseId: string
+): Promise<Receipt[]> {
+  const { data, error } = await supabase
+    .from('receipts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('expense_id', expenseId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    ...r,
+    created_at: new Date(r.created_at),
+    deleted_at: r.deleted_at ? new Date(r.deleted_at) : null,
+  }));
+}
+
+/**
+ * Soft-deletes multiple expenses in bulk by setting deleted_at timestamp.
+ * Processes in chunks of 500 to respect payload limits.
+ */
+export async function softDeleteExpensesByIds(
+  userId: string,
+  expenseIds: string[]
+): Promise<number> {
+  if (expenseIds.length === 0) return 0;
+
+  let deleted = 0;
+  const CHUNK_SIZE = 500;
+
+  for (let i = 0; i < expenseIds.length; i += CHUNK_SIZE) {
+    const chunk = expenseIds.slice(i, i + CHUNK_SIZE);
+    const { error } = await supabase
+      .from('expenses')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .in('id', chunk);
+
+    if (error) throw error;
+    deleted += chunk.length;
+  }
+
+  return deleted;
+}
+
+/**
+ * Soft-deletes an entire year folder and all its expenses.
+ * Sets deleted_at on the year folder and all expenses in that year.
+ */
+export async function softDeleteYear(
+  userId: string,
+  year: string
+): Promise<void> {
+  // First, get all non-deleted expenses for this year
+  const { data: expenses, error: fetchError } = await supabase
+    .from('expenses')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('year', year)
+    .is('deleted_at', null);
+
+  if (fetchError) throw fetchError;
+
+  // Soft delete all expenses in this year
+  if (expenses && expenses.length > 0) {
+    const expenseIds = expenses.map((e) => e.id);
+    await softDeleteExpensesByIds(userId, expenseIds);
+  }
+
+  // Soft delete the year folder itself
+  const { error: folderError } = await supabase
+    .from('folders')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('year', year);
+
+  if (folderError) throw folderError;
+}
+
+/**
+ * Gets soft-deleted expenses that belonged to a specific year.
+ * Useful for organizing trash by year/month.
+ */
+export async function getDeletedExpensesByYear(
+  userId: string,
+  year: string
+): Promise<CategorizedExpense[]> {
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('year', year)
+    .not('deleted_at', 'is', null)
+    .order('deleted_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map(rowToExpense);
+}
+
+/**
+ * Soft-deletes all expenses in a specific month.
+ */
+export async function softDeleteMonth(
+  userId: string,
+  year: string,
+  month: string
+): Promise<void> {
+  const monthKey = month.includes('-') ? month : `${year}-${month}`;
+
+  const { data: expenses, error: fetchError } = await supabase
+    .from('expenses')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('year', year)
+    .eq('month', monthKey)
+    .is('deleted_at', null);
+
+  if (fetchError) throw fetchError;
+
+  if (expenses && expenses.length > 0) {
+    await softDeleteExpensesByIds(userId, expenses.map((e) => e.id as string));
+  }
+}
+
+/**
+ * Fetches all non-deleted receipts for a set of expense IDs.
+ * Returns a map of expenseId -> receipts[].
+ */
+export async function getReceiptsByExpenseIds(
+  userId: string,
+  expenseIds: string[]
+): Promise<Record<string, Receipt[]>> {
+  if (expenseIds.length === 0) return {};
+
+  const { data, error } = await supabase
+    .from('receipts')
+    .select('*')
+    .eq('user_id', userId)
+    .in('expense_id', expenseIds)
+    .is('deleted_at', null);
+
+  if (error) throw error;
+
+  const byId: Record<string, Receipt[]> = {};
+  for (const r of data ?? []) {
+    if (!byId[r.expense_id]) byId[r.expense_id] = [];
+    byId[r.expense_id].push({
+      ...r,
+      created_at: new Date(r.created_at),
+      deleted_at: r.deleted_at ? new Date(r.deleted_at) : null,
+    });
+  }
+  return byId;
+}
+
+/**
+ * Restores a soft-deleted year folder and all its expenses.
+ * Sets deleted_at to null for the folder and all its expenses.
+ */
+export async function restoreYear(
+  userId: string,
+  year: string
+): Promise<void> {
+  // Restore all soft-deleted expenses in this year
+  const { error: expensesError } = await supabase
+    .from('expenses')
+    .update({ deleted_at: null })
+    .eq('user_id', userId)
+    .eq('year', year)
+    .not('deleted_at', 'is', null);
+
+  if (expensesError) throw expensesError;
+
+  // Restore the year folder itself
+  const { error: folderError } = await supabase
+    .from('folders')
+    .update({ deleted_at: null })
+    .eq('user_id', userId)
+    .eq('year', year);
+
+  if (folderError) throw folderError;
 }

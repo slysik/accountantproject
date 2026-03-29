@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { getUserFolders, createYearFolders } from '@/lib/database';
+import { getUserFolders, createYearFolders, softDeleteYear, softDeleteMonth } from '@/lib/database';
 import type { FolderNode } from '@/types';
 import {
   LuFolder,
@@ -14,8 +14,13 @@ import {
   LuPlus,
   LuCheck,
   LuX,
+  LuTrash2,
 } from 'react-icons/lu';
 import { SkeletonFolderTree } from './Skeleton';
+
+type DeleteTarget =
+  | { type: 'year'; year: string }
+  | { type: 'month'; year: string; month: string };
 
 interface FolderTreeProps {
   collapsed?: boolean;
@@ -32,6 +37,10 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   const [showAddYear, setShowAddYear] = useState(false);
   const [newYear, setNewYear] = useState(String(new Date().getFullYear()));
   const [addingYear, setAddingYear] = useState(false);
+
+  // Delete state
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchFolders = useCallback(async () => {
     if (!user) return;
@@ -90,6 +99,32 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
       console.error('Failed to create year folders:', err);
     } finally {
       setAddingYear(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!user || !deleteTarget) return;
+    setDeleting(true);
+    try {
+      if (deleteTarget.type === 'year') {
+        await softDeleteYear(user.id, deleteTarget.year);
+        // Navigate away if currently viewing this year
+        if (pathname.startsWith(`/dashboard/${deleteTarget.year}`)) {
+          router.push('/dashboard');
+        }
+      } else {
+        await softDeleteMonth(user.id, deleteTarget.year, deleteTarget.month);
+        // Navigate away if currently viewing this month
+        if (pathname === `/dashboard/${deleteTarget.year}/${deleteTarget.month}`) {
+          router.push('/dashboard');
+        }
+      }
+      await fetchFolders();
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error('Failed to delete:', err);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -170,71 +205,154 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
 
       {folders.map((folder) => {
         const isExpanded = expandedYears.has(folder.year);
+        const isPendingYearDelete =
+          deleteTarget?.type === 'year' && deleteTarget.year === folder.year;
 
         return (
           <div key={folder.year}>
             {/* Year Node */}
-            <button
-              onClick={() => toggleYear(folder.year)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
-              title={collapsed ? folder.year : undefined}
-            >
-              {collapsed ? (
-                <>
-                  {isExpanded ? (
-                    <LuFolderOpen className="mx-auto h-4 w-4 text-accent-primary" />
+            {isPendingYearDelete && !collapsed ? (
+              <div className="flex items-center gap-1 rounded-md border border-error/30 bg-error/5 px-2 py-1.5 text-xs">
+                <span className="flex-1 truncate text-error">Delete {folder.year}?</span>
+                <button
+                  onClick={handleConfirmDelete}
+                  disabled={deleting}
+                  className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-error bg-error/20 hover:bg-error/30 disabled:opacity-50 transition-colors"
+                >
+                  {deleting ? '...' : 'Yes'}
+                </button>
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  disabled={deleting}
+                  className="rounded px-1.5 py-0.5 text-[10px] font-medium text-text-muted hover:bg-bg-tertiary transition-colors"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <div className="group flex items-center">
+                <button
+                  onClick={() => toggleYear(folder.year)}
+                  className="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+                  title={collapsed ? folder.year : undefined}
+                >
+                  {collapsed ? (
+                    <>
+                      {isExpanded ? (
+                        <LuFolderOpen className="mx-auto h-4 w-4 text-accent-primary" />
+                      ) : (
+                        <LuFolder className="mx-auto h-4 w-4" />
+                      )}
+                    </>
                   ) : (
-                    <LuFolder className="mx-auto h-4 w-4" />
+                    <>
+                      {isExpanded ? (
+                        <LuChevronDown className="h-3.5 w-3.5 text-text-muted" />
+                      ) : (
+                        <LuChevronRight className="h-3.5 w-3.5 text-text-muted" />
+                      )}
+                      {isExpanded ? (
+                        <LuFolderOpen className="h-4 w-4 text-accent-primary" />
+                      ) : (
+                        <LuFolder className="h-4 w-4" />
+                      )}
+                      <span>{folder.year}</span>
+                    </>
                   )}
-                </>
-              ) : (
-                <>
-                  {isExpanded ? (
-                    <LuChevronDown className="h-3.5 w-3.5 text-text-muted" />
-                  ) : (
-                    <LuChevronRight className="h-3.5 w-3.5 text-text-muted" />
-                  )}
-                  {isExpanded ? (
-                    <LuFolderOpen className="h-4 w-4 text-accent-primary" />
-                  ) : (
-                    <LuFolder className="h-4 w-4" />
-                  )}
-                  <span>{folder.year}</span>
-                </>
-              )}
-            </button>
+                </button>
+                {!collapsed && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteTarget({ type: 'year', year: folder.year });
+                    }}
+                    className="mr-1 rounded p-1 text-text-muted opacity-0 transition-all group-hover:opacity-100 hover:bg-error/10 hover:text-error"
+                    title={`Delete ${folder.year}`}
+                  >
+                    <LuTrash2 className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Month Nodes */}
             {isExpanded && !collapsed && (
               <div className="ml-2">
                 {folder.months.map((month) => {
                   const active = isActiveMonth(folder.year, month.month);
-                  return (
-                    <button
-                      key={month.month}
-                      onClick={() =>
-                        router.push(`/dashboard/${folder.year}/${month.month}`)
-                      }
-                      className={`flex w-full items-center gap-2 rounded-md py-1.5 pl-6 pr-2 text-xs transition-colors ${
-                        active
-                          ? 'border-l-2 border-accent-primary text-accent-primary bg-bg-tertiary/50'
-                          : 'text-text-muted hover:bg-bg-tertiary hover:text-text-secondary'
-                      }`}
-                    >
-                      <LuCalendar className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span className="flex-1 text-left">{month.name}</span>
-                      {month.expenseCount > 0 && (
-                        <span
-                          className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                            active
-                              ? 'bg-accent-primary/20 text-accent-primary'
-                              : 'bg-bg-tertiary text-text-muted'
-                          }`}
+                  const isPendingMonthDelete =
+                    deleteTarget?.type === 'month' &&
+                    deleteTarget.year === folder.year &&
+                    deleteTarget.month === month.month;
+
+                  if (isPendingMonthDelete) {
+                    return (
+                      <div
+                        key={month.month}
+                        className="flex items-center gap-1 rounded-md border border-error/30 bg-error/5 py-1.5 pl-6 pr-2 text-xs"
+                      >
+                        <span className="flex-1 truncate text-error">Delete {month.name}?</span>
+                        <button
+                          onClick={handleConfirmDelete}
+                          disabled={deleting}
+                          className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-error bg-error/20 hover:bg-error/30 disabled:opacity-50 transition-colors"
                         >
-                          {month.expenseCount}
-                        </span>
+                          {deleting ? '...' : 'Yes'}
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(null)}
+                          disabled={deleting}
+                          className="rounded px-1.5 py-0.5 text-[10px] font-medium text-text-muted hover:bg-bg-tertiary transition-colors"
+                        >
+                          No
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={month.month} className="group flex items-center">
+                      <button
+                        onClick={() =>
+                          router.push(`/dashboard/${folder.year}/${month.month}`)
+                        }
+                        className={`flex flex-1 items-center gap-2 rounded-md py-1.5 pl-6 pr-2 text-xs transition-colors ${
+                          active
+                            ? 'border-l-2 border-accent-primary text-accent-primary bg-bg-tertiary/50'
+                            : 'text-text-muted hover:bg-bg-tertiary hover:text-text-secondary'
+                        }`}
+                      >
+                        <LuCalendar className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="flex-1 text-left">{month.name}</span>
+                        {month.expenseCount > 0 && (
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                              active
+                                ? 'bg-accent-primary/20 text-accent-primary'
+                                : 'bg-bg-tertiary text-text-muted'
+                            }`}
+                          >
+                            {month.expenseCount}
+                          </span>
+                        )}
+                      </button>
+                      {month.expenseCount > 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget({
+                              type: 'month',
+                              year: folder.year,
+                              month: month.month,
+                            });
+                          }}
+                          className="mr-1 rounded p-1 text-text-muted opacity-0 transition-all group-hover:opacity-100 hover:bg-error/10 hover:text-error"
+                          title={`Delete ${month.name}`}
+                        >
+                          <LuTrash2 className="h-3 w-3" />
+                        </button>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
