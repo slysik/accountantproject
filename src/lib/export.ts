@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx';
 import type { CategorizedExpense, AggregationResult, ExpenseSummary } from '@/types';
 import { getCategoryName, IRS_EXPENSE_CATEGORIES } from './categories';
 import { formatCurrency, formatDate, formatMonth } from './expense-processor';
+import { toDateString } from './date-utils';
 
 type SheetData = (string | number)[][];
 
@@ -226,7 +227,7 @@ function styleSheet(ws: XLSX.WorkSheet, data: SheetData): void {
 export function generateCSV(expenses: CategorizedExpense[]): string {
   const header = ["Date", "Description", "Amount", "Category"];
   const rows = expenses.map(e => [
-    e.date.toISOString().split('T')[0],
+    toDateString(e.date instanceof Date ? e.date : new Date(e.date)),
     `"${e.description.replace(/"/g, '""')}"`,
     String(e.amount),
     getCategoryName(e.category)
@@ -234,74 +235,6 @@ export function generateCSV(expenses: CategorizedExpense[]): string {
   return [header.join(','), ...rows].join('\n');
 }
 
-/** Generate a QBO (OFX format) string from categorized expenses. */
-export function generateQBO(expenses: CategorizedExpense[]): string {
-  const bankId = "12345";
-  const acctId = "123456789";
-  const acctType = "CHECKING";
-  const currency = "USD";
-  const today = new Date();
-  const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
-
-  let transactions = '';
-  expenses.forEach(e => {
-    const expenseDate = `${e.date.getFullYear()}${String(e.date.getMonth() + 1).padStart(2, '0')}${String(e.date.getDate()).padStart(2, '0')}`;
-    transactions += `
-<STMTTRN>
-    <TRNTYPE>CREDIT</TRNTYPE>
-    <DTPOSTED>${expenseDate}</DTPOSTED>
-    <TRNAMT>${-e.amount}</TRNAMT>
-    <FITID>${e.id}</FITID>
-    <NAME>${e.description.substring(0, 32)}</NAME>
-    <MEMO>${getCategoryName(e.category)}</MEMO>
-</STMTTRN>
-`;
-  });
-
-  return `
-OFXHEADER:100
-DATA:OFXSGML
-VERSION:102
-SECURITY:NONE
-ENCODING:USASCII
-CHARSET:1252
-COMPRESSION:NONE
-OLDFILEUID:NONE
-NEWFILEUID:NONE
-
-<OFX>
-    <SIGNONMSGSRSV1>
-        <SONRS>
-            <STATUS>
-                <CODE>0</CODE>
-                <SEVERITY>INFO</SEVERITY>
-            </STATUS>
-            <DTSERVER>${dateStr}</DTSERVER>
-            <LANGUAGE>ENG</LANGUAGE>
-        </SONRS>
-    </SIGNONMSGSRSV1>
-    <BANKMSGSRSV1>
-        <STMTTRNRS>
-            <TRNUID>1</TRNUID>
-            <STATUS>
-                <CODE>0</CODE>
-                <SEVERITY>INFO</SEVERITY>
-            </STATUS>
-            <STMTRS>
-                <CURDEF>${currency}</CURDEF>
-                <BANKACCTFROM>
-                    <BANKID>${bankId}</BANKID>
-                    <ACCTID>${acctId}</ACCTID>
-                    <ACCTTYPE>${acctType}</ACCTTYPE>
-                </BANKACCTFROM>
-                <BANKTRANLIST>
-                    <DTSTART>${dateStr}</DTSTART>
-                    <DTEND>${dateStr}</DTEND>
-                    ${transactions}
-                </BANKTRANLIST>
-            </STMTRS>
-        </STMTTRNRS>
-    </BANKMSGSRSV1>
-</OFX>
-    `.trim();
-}
+// NOTE: QBO export is handled by qbo-export.ts which correctly uses
+// TRNTYPE=DEBIT with negative TRNAMT for expense outflows.
+// See: src/lib/qbo-export.ts → generateQBOFile() and downloadQBO()

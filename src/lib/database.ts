@@ -77,11 +77,20 @@ export async function createExpense(
 }
 
 /**
+ * Generate a deduplication key for an expense row.
+ * Used to prevent re-importing identical transactions.
+ */
+function deduplicationKey(row: { date: string; description: string; amount: number; filename: string }): string {
+  return `${row.date}|${row.description}|${row.amount}|${row.filename}`;
+}
+
+/**
  * Bulk-insert expenses in a single round-trip. Returns the count of inserted rows.
  * Year and month are always derived from each expense's date.
- * Uses a deduplication key (date + description + amount + filename) to make
- * retries safe — duplicates are silently skipped via ON CONFLICT DO NOTHING
- * (requires the unique index below, or the caller deduplicates manually).
+ *
+ * Client-side deduplication: before inserting, fetches existing expenses for the
+ * same user+year(s) and filters out rows that match on (date, description, amount,
+ * filename). This prevents duplicate imports even without a DB unique index.
  */
 export async function bulkCreateExpenses(
   userId: string,
@@ -106,13 +115,49 @@ export async function bulkCreateExpenses(
     };
   });
 
+  // ── Client-side dedup: fetch existing keys for the affected years ──
+  const years = Array.from(new Set(rows.map((r) => r.year)));
+  const existingKeys = new Set<string>();
+
+  for (const year of years) {
+    const { data: existing, error: fetchErr } = await supabase
+      .from('expenses')
+      .select('date, description, amount, filename')
+      .eq('user_id', userId)
+      .eq('year', year)
+      .is('deleted_at', null);
+
+    if (fetchErr) throw fetchErr;
+    for (const e of existing ?? []) {
+      existingKeys.add(
+        deduplicationKey({
+          date: e.date as string,
+          description: e.description as string,
+          amount: Number(e.amount),
+          filename: (e.filename as string) ?? '',
+        })
+      );
+    }
+  }
+
+  // Filter out duplicates
+  const deduped = rows.filter((r) => {
+    const key = deduplicationKey({ date: r.date, description: r.description, amount: r.amount, filename: r.filename });
+    if (existingKeys.has(key)) return false;
+    // Also dedup within the batch itself
+    existingKeys.add(key);
+    return true;
+  });
+
+  if (deduped.length === 0) return 0;
+
   // Supabase/PostgREST supports batch insert natively.
   // Insert in chunks of 500 to stay within payload limits.
   const CHUNK_SIZE = 500;
   let inserted = 0;
 
-  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-    const chunk = rows.slice(i, i + CHUNK_SIZE);
+  for (let i = 0; i < deduped.length; i += CHUNK_SIZE) {
+    const chunk = deduped.slice(i, i + CHUNK_SIZE);
     const { data, error } = await supabase
       .from('expenses')
       .insert(chunk)
@@ -481,10 +526,10 @@ export async function softDeleteYear(
     await softDeleteExpensesByIds(userId, expenseIds);
   }
 
-  // Soft delete the year folder itself
+  // Delete the year folder record (folders table has no deleted_at column)
   const { error: folderError } = await supabase
     .from('folders')
-    .update({ deleted_at: new Date().toISOString() })
+    .delete()
     .eq('user_id', userId)
     .eq('year', year);
 
@@ -585,12 +630,13 @@ export async function restoreYear(
 
   if (expensesError) throw expensesError;
 
-  // Restore the year folder itself
+  // Re-create the year folder record (it was hard-deleted since folders has no deleted_at)
   const { error: folderError } = await supabase
     .from('folders')
-    .update({ deleted_at: null })
-    .eq('user_id', userId)
-    .eq('year', year);
+    .upsert(
+      { user_id: userId, year },
+      { onConflict: 'user_id,year' }
+    );
 
   if (folderError) throw folderError;
 }

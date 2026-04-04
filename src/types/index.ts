@@ -58,3 +58,22 @@ export interface ExportOptions {
   aggregation?: AggregationResult;
   summary?: ExpenseSummary;
 }
+
+export interface Receipt {
+  id: string;
+  expense_id: string;
+  user_id: string;
+  filename: string;
+  storage_path: string;
+  file_type: string;
+  size_bytes: number;
+  uploaded_by?: string;
+  created_at: Date;
+  deleted_at: Date | null;
+}
+
+export interface ReceiptUploadResult {
+  success: boolean;
+  receipt?: Receipt;
+  error?: string;
+}
