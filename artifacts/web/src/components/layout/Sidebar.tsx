@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Folder, ChevronRight, ChevronDown, Trash2, Home, Upload, HelpCircle, FileText } from "lucide-react";
 import { useGetFolders, useDeleteYear, getGetFoldersQueryKey } from "@workspace/api-client-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
@@ -10,6 +10,7 @@ export function Sidebar({ onImportClick }: { onImportClick: () => void }) {
   const [location] = useLocation();
   const { data: folders } = useGetFolders();
   const [expandedYears, setExpandedYears] = useState<Record<string, boolean>>({});
+  const [confirmDeleteYear, setConfirmDeleteYear] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
   const deleteYear = useDeleteYear({
@@ -73,18 +74,32 @@ export function Sidebar({ onImportClick }: { onImportClick: () => void }) {
               
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/10 text-muted-foreground">${Math.round(folder.totalExpenses / 1000)}k</span>
-                <button 
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/20 hover:text-destructive rounded transition-all"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`Delete entire year ${folder.year}?`)) {
-                      deleteYear.mutate({ data: { year: folder.year } });
-                    }
-                  }}
-                  title="Delete Year"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {confirmDeleteYear === folder.year ? (
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      className="px-2 py-0.5 text-xs font-bold rounded bg-destructive/20 text-destructive hover:bg-destructive hover:text-white transition-colors"
+                      onClick={() => {
+                        deleteYear.mutate({ data: { year: folder.year } });
+                        setConfirmDeleteYear(null);
+                      }}
+                    >Yes</button>
+                    <button
+                      className="px-2 py-0.5 text-xs font-bold rounded bg-white/10 text-foreground/70 hover:bg-white/20 transition-colors"
+                      onClick={() => setConfirmDeleteYear(null)}
+                    >No</button>
+                  </div>
+                ) : (
+                  <button 
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/20 hover:text-destructive rounded transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmDeleteYear(folder.year);
+                    }}
+                    title="Delete Year"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -163,7 +178,7 @@ export function Sidebar({ onImportClick }: { onImportClick: () => void }) {
         </Link>
         <button 
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors font-medium text-sm text-foreground/70 hover:bg-white/5 hover:text-foreground"
-          onClick={() => alert("Docs coming soon!")}
+          onClick={() => window.open('https://github.com/vsawhney/accountantproject#readme', '_blank')}
         >
           <HelpCircle className="w-5 h-5" />
           Need Help?

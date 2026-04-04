@@ -1,5 +1,4 @@
 import { categorizeExpense } from "./categories";
-import { toDateString } from "./date-utils";
 
 export interface ParsedExpense {
   date: string; // YYYY-MM-DD

@@ -1,15 +1,13 @@
 /**
- * Timezone-safe date utilities.
+ * Timezone-safe date utilities for the artifact UI layer.
  *
- * All expense dates are stored as DATE (YYYY-MM-DD) in Supabase.
- * We treat them as **local calendar dates**, never UTC timestamps,
- * to avoid the off-by-one-day bug where `new Date('2024-03-01')`
- * becomes Feb 29 in US timezones.
+ * All expense dates are stored as DATE (YYYY-MM-DD) strings.
+ * We treat them as local calendar dates, never UTC timestamps,
+ * to avoid off-by-one-day bugs.
  */
 
 /**
  * Parse a YYYY-MM-DD string into a local Date (noon to avoid DST edge cases).
- * This is the ONLY way DB date strings should be converted to Date objects.
  */
 export function parseDateString(dateStr: string): Date {
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -18,7 +16,6 @@ export function parseDateString(dateStr: string): Date {
 
 /**
  * Format a Date as a YYYY-MM-DD string using local time.
- * This is the ONLY way Date objects should be serialized for the DB.
  */
 export function toDateString(date: Date): string {
   const y = date.getFullYear();

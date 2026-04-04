@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Trash2, Search, FileDown, ArrowDownToLine, ChevronDown, PieChart, LayoutGrid } from "lucide-react";
 import { formatMonthDisplay } from "@/lib/date-utils";
-import { useState, useMemo } from "react";
-import { generateCSV, generateExcelReport, generateQBO } from "@/lib/export";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { generateCSV } from "@/lib/export";
+import { downloadQBO } from "@/lib/qbo-export";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,19 @@ export function MonthView() {
   const [search, setSearch] = useState("");
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  // Close export dropdown on outside click
+  useEffect(() => {
+    if (!isExportOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setIsExportOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isExportOpen]);
   
   const queryClient = useQueryClient();
   const { data: expenses, isLoading } = useGetExpenses({ year, month });
@@ -84,8 +98,7 @@ export function MonthView() {
 
   const handleExport = (format: 'csv' | 'excel' | 'qbo') => {
     if (format === 'csv') generateCSV(filtered);
-    if (format === 'excel') generateExcelReport(filtered);
-    if (format === 'qbo') generateQBO(filtered);
+    if (format === 'qbo') downloadQBO(filtered);
     setIsExportOpen(false);
   };
 
@@ -108,7 +121,7 @@ export function MonthView() {
           </div>
           
           <div className="flex gap-3 relative">
-            <div className="relative">
+            <div className="relative" ref={exportRef}>
               <Button 
                 variant="outline" 
                 className="gap-2 bg-white/5 border-white/10 hover:bg-white/10"
@@ -120,9 +133,6 @@ export function MonthView() {
                 <div className="absolute right-0 mt-2 w-48 rounded-xl glass-panel shadow-2xl z-50 overflow-hidden py-1 border border-white/10 animate-in fade-in zoom-in-95 duration-200">
                   <button onClick={() => handleExport('csv')} className="w-full text-left px-4 py-2.5 text-sm hover:bg-white/10 transition-colors flex items-center gap-2">
                     <FileDown className="w-4 h-4 text-muted-foreground" /> CSV File
-                  </button>
-                  <button onClick={() => handleExport('excel')} className="w-full text-left px-4 py-2.5 text-sm hover:bg-white/10 transition-colors flex items-center gap-2">
-                    <FileDown className="w-4 h-4 text-muted-foreground" /> Excel Report
                   </button>
                   <button onClick={() => handleExport('qbo')} className="w-full text-left px-4 py-2.5 text-sm hover:bg-white/10 transition-colors flex items-center gap-2">
                     <ArrowDownToLine className="w-4 h-4 text-muted-foreground" /> QuickBooks (QBO)

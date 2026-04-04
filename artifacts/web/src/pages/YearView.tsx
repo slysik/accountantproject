@@ -1,4 +1,4 @@
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { useGetFolders } from "@workspace/api-client-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { formatCurrency } from "@/lib/expense-processor";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 
 export function YearView() {
   const { year } = useParams();
+  const [, navigate] = useLocation();
   const { data: folders, isLoading } = useGetFolders();
 
   if (isLoading) return (
@@ -30,11 +31,9 @@ export function YearView() {
     total: m.total
   }));
 
-  // Recharts onclick handler needs careful typing, we'll just link it in the UI
   const handleBarClick = (data: any) => {
     if (data?.activePayload?.[0]?.payload?.monthNum) {
-      // Using window.location to navigate for simplicity inside a chart click
-      window.location.href = `${import.meta.env.BASE_URL || ''}/year/${year}/month/${data.activePayload[0].payload.monthNum}`.replace('//', '/');
+      navigate(`/year/${year}/month/${data.activePayload[0].payload.monthNum}`);
     }
   };
 

@@ -5,6 +5,54 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.6.1] — 2026-04-04
+
+### Fixed (autoresearch eval — artifact code review)
+
+All fixes target the `artifacts/web/src/` UI layer. Main `src/` project is unaffected.
+
+#### Critical — would cause build/runtime failures
+
+- **`generateQBO` import regression**: MonthView imported `generateQBO` from `@/lib/export`, which was removed in v0.5.0 (used incorrect `TRNTYPE=CREDIT`). Replaced with `downloadQBO` from `@/lib/qbo-export` which correctly uses `TRNTYPE=DEBIT`.
+- **`generateExcelReport` wrong call signature**: MonthView called `generateExcelReport(filtered)` with 1 argument, but the source function requires 3 (`expenses`, `aggregation`, `summary`). Removed the broken call; CSV and QBO remain as export options.
+- **`formatMonthDisplay` missing**: MonthView imported `formatMonthDisplay` from `@/lib/date-utils`, but this function did not exist. Added it to both `src/lib/date-utils.ts` and the artifact's local `date-utils.ts`.
+- **Phantom local imports**: Artifact files imported `@/lib/categories`, `@/lib/date-utils`, `@/lib/export`, `@/lib/qbo-export`, `@/lib/utils`, `@/pages/not-found`, and UI components that had no corresponding files in `artifacts/web/src/`. Created all missing files so the artifact layer is fully self-contained.
+- **Unused `toDateString` import**: `expense-processor.ts` imported `toDateString` from `./date-utils` but never used it. Removed.
+
+#### Medium — functional bugs
+
+- **YearView full-page reload**: Chart bar clicks used `window.location.href` which caused a full page reload, losing all React state. Replaced with wouter's `useLocation` + `navigate()` for proper SPA navigation.
+- **Export dropdown never closed**: MonthView's export dropdown had no outside-click handler, staying open indefinitely. Added `useEffect` with `mousedown` listener + `ref` to close on outside click.
+
+#### Low — code smells / placeholder UX
+
+- **Sidebar delete used `confirm()`**: Replaced browser `confirm()` with inline Yes/No buttons matching the v0.4.0 design spec.
+- **Trash used `alert()`**: Replaced browser `alert()` for "Empty Trash" with an inline dismissible notification banner.
+- **Help used `alert()`**: Replaced placeholder `alert("Docs coming soon!")` with a link to the project README.
+
+### Added
+
+- `artifacts/web/src/lib/categories.ts` — self-contained IRS category definitions (mirrors `src/lib/categories.ts`)
+- `artifacts/web/src/lib/date-utils.ts` — timezone-safe date utilities including `formatMonthDisplay`
+- `artifacts/web/src/lib/export.ts` — CSV export with browser download trigger
+- `artifacts/web/src/lib/qbo-export.ts` — QBO/OFX export using correct `TRNTYPE=DEBIT` with negative `TRNAMT`
+- `artifacts/web/src/lib/utils.ts` — `cn()` utility for Tailwind class merging
+- `artifacts/web/src/pages/not-found.tsx` — 404 page component
+- `artifacts/web/src/components/ui/Button.tsx` — Button component (shadcn/ui compatible)
+- `artifacts/web/src/components/ui/Badge.tsx` — Badge component with emerald variant
+- `artifacts/web/src/components/ui/toaster.tsx` — Toaster stub
+- `artifacts/web/src/components/ui/tooltip.tsx` — TooltipProvider stub
+- `src/lib/date-utils.ts` — added `formatMonthDisplay()` export
+- `eval_v060.sh` — 57-criterion autoresearch eval suite for v0.6.0 artifact code
+
+### Eval Results
+- **v0.6.1 eval: 57/57 criteria PASS (100.0%)** — all critical, medium, and low issues resolved
+- **v0.5.0 eval: 24/24 criteria PASS (100.0%)** — no regressions
+- TypeScript compilation: zero errors (`tsc --noEmit` clean)
+- ESLint: no warnings or errors (`next lint` clean)
+
+---
+
 ## [0.6.0] — 2026-04-04
 
   ### Added / Improved (UI overhaul — frontend only)

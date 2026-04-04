@@ -4,7 +4,7 @@ import { getCategoryName } from "@/lib/categories";
 import { Button } from "@/components/ui/Button";
 import { RefreshCw, Trash2, AlertTriangle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 export function Trash() {
   const queryClient = useQueryClient();
@@ -19,10 +19,7 @@ export function Trash() {
     }
   });
 
-  // Just a visual button for empty trash
-  const handleEmptyTrash = () => {
-    alert("Emptying entire trash is coming soon! For now, expenses auto-delete after 30 days.");
-  };
+  const [showEmptyNotice, setShowEmptyNotice] = useState(false);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -56,11 +53,18 @@ export function Trash() {
         </div>
         
         {expenses && expenses.length > 0 && (
-          <Button variant="destructive" className="gap-2" onClick={handleEmptyTrash}>
+          <Button variant="destructive" className="gap-2" onClick={() => setShowEmptyNotice(true)}>
             <Trash2 className="w-4 h-4" /> Empty Trash
           </Button>
         )}
       </div>
+
+      {showEmptyNotice && (
+        <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl flex items-center justify-between">
+          <p className="text-sm font-medium text-yellow-200">Bulk empty is coming soon. For now, expenses auto-delete after 30 days.</p>
+          <button onClick={() => setShowEmptyNotice(false)} className="text-yellow-400 hover:text-yellow-200 text-sm font-bold ml-4">Dismiss</button>
+        </div>
+      )}
 
       <div className="border border-white/10 rounded-2xl overflow-hidden glass-panel flex-1 flex flex-col max-h-[calc(100vh-200px)]">
         {expenses?.length === 0 ? (
