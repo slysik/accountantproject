@@ -54,6 +54,9 @@ export async function createExpense(
 ): Promise<string> {
   const { dateStr, year, month } = canonicalize(expense);
 
+  // Ensure the year folder exists so the expense is visible in the sidebar
+  await createYearFolders(userId, year);
+
   const { data, error } = await supabase
     .from('expenses')
     .insert({
@@ -117,6 +120,12 @@ export async function bulkCreateExpenses(
 
   // ── Client-side dedup: fetch existing keys for the affected years ──
   const years = Array.from(new Set(rows.map((r) => r.year)));
+
+  // Ensure folder records exist for all affected years so expenses are visible
+  for (const year of years) {
+    await createYearFolders(userId, year);
+  }
+
   const existingKeys = new Set<string>();
 
   for (const year of years) {
@@ -158,13 +167,28 @@ export async function bulkCreateExpenses(
 
   for (let i = 0; i < deduped.length; i += CHUNK_SIZE) {
     const chunk = deduped.slice(i, i + CHUNK_SIZE);
+    // Use upsert with ON CONFLICT DO NOTHING for DB-level dedup (requires
+    // the unique index from migrations/001_add_expense_dedup_index.sql).
+    // Falls back to plain insert if the index hasn't been applied yet.
     const { data, error } = await supabase
       .from('expenses')
-      .insert(chunk)
+      .upsert(chunk, {
+        onConflict: 'user_id,date,description,amount,filename',
+        ignoreDuplicates: true,
+      })
       .select('id');
 
-    if (error) throw error;
-    inserted += data?.length ?? 0;
+    if (error) {
+      // Index may not exist yet — fall back to plain insert
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('expenses')
+        .insert(chunk)
+        .select('id');
+      if (fallbackError) throw fallbackError;
+      inserted += fallbackData?.length ?? 0;
+    } else {
+      inserted += data?.length ?? 0;
+    }
   }
 
   return inserted;
@@ -247,6 +271,12 @@ export async function restoreExpense(
     .eq('user_id', userId);
 
   if (error) throw error;
+
+  // Ensure the year folder exists so the restored expense is visible in the
+  // sidebar.  The folder row may have been hard-deleted when the year was trashed.
+  if (_year) {
+    await createYearFolders(userId, _year);
+  }
 }
 
 /**
@@ -443,6 +473,33 @@ export async function permanentDeleteReceipts(
 ): Promise<void> {
   if (receiptIds.length === 0) return;
 
+  // Fetch storage paths before deleting DB rows so we can clean up Storage
+  const { data: receipts, error: fetchError } = await supabase
+    .from('receipts')
+    .select('storage_path')
+    .eq('user_id', userId)
+    .in('id', receiptIds);
+
+  if (fetchError) throw fetchError;
+
+  // Delete blobs from Supabase Storage
+  const storagePaths = (receipts ?? [])
+    .map((r) => r.storage_path as string)
+    .filter(Boolean);
+
+  if (storagePaths.length > 0) {
+    const { error: storageError } = await supabase.storage
+      .from('expense-receipts')
+      .remove(storagePaths);
+
+    if (storageError) {
+      // Log but don't block — the DB rows should still be removed so the
+      // user isn't stuck.  Orphaned blobs can be cleaned up separately.
+      console.error('Failed to delete receipt files from storage:', storageError);
+    }
+  }
+
+  // Delete DB rows
   const { error } = await supabase
     .from('receipts')
     .delete()

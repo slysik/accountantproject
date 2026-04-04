@@ -5,6 +5,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.7.0] — 2026-04-04
+
+### Fixed
+
+#### High — Restoring expense from deleted year left it orphaned
+- `restoreExpense()` now calls `createYearFolders()` after clearing `deleted_at`, re-creating the folder row that was hard-deleted when the year was trashed
+- Restored expenses are immediately visible in the sidebar again
+
+#### High — Permanent delete leaked receipt files in Supabase Storage
+- `permanentDeleteReceipts()` now fetches `storage_path` for each receipt before deleting DB rows, then calls `supabase.storage.remove()` to delete the actual blobs from the `expense-receipts` bucket
+- Storage errors are logged but do not block DB cleanup to avoid leaving the user stuck
+- Fixes ongoing orphaned-blob storage cost from permanent deletes and "Empty Trash"
+
+#### Medium — Wizard mishandled multi-year imports
+- `StepFolders` now detects **all** unique years in the imported data (not just the most common one), displays them grouped by year → month, and creates folder records for every year
+- `bulkCreateExpenses()` and `createExpense()` now call `createYearFolders()` for every year present in the data before inserting rows — belt-and-suspenders guard so even non-wizard code paths cannot create invisible expenses
+
+#### Medium — Duplicate prevention was race-prone (client-side only)
+- Added `migrations/001_add_expense_dedup_index.sql` which creates a `UNIQUE` index on `(user_id, date, description, amount, filename)`
+- `bulkCreateExpenses()` now uses `.upsert(..., { onConflict, ignoreDuplicates: true })` mapping to `INSERT ... ON CONFLICT DO NOTHING`
+- If the migration has not been applied yet, the upsert error is caught and it falls back to plain `.insert()`, preserving the existing client-side dedup
+
+### Added
+
+- `migrations/001_add_expense_dedup_index.sql` — unique index for database-enforced expense deduplication
+
+---
+
 ## [0.6.1] — 2026-04-04
 
 ### Fixed (autoresearch eval — artifact code review)
