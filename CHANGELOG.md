@@ -5,6 +5,61 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.6.0] — 2026-04-04
+
+  ### Added / Improved (UI overhaul — frontend only)
+
+  #### Login page
+  - Feature pills replaced with inline badge chips (IRS Schedule C · Smart CSV import · Excel & QBO)
+  - Emerald glow card effect on the sign-in card
+  - "Trusted by self-employed professionals" tagline below CTA
+
+  #### Top Navigation
+  - Logo icon animates with a pulsing emerald glow ring
+  - User avatar shows a green "online" dot indicator
+  - Logout icon rotates on hover; button turns red
+
+  #### Sidebar
+  - "Import CSV" promoted to a bright emerald CTA button
+  - Year/month folder pills show spend totals
+  - Framer Motion smooth expand/collapse on folder groups
+  - Empty-state guide with dashed border pointing users to import
+
+  #### Dashboard (empty state)
+  - Personalized welcome greeting using the authenticated user's name
+  - Three numbered "Getting Started" step cards
+  - Large Import CSV card with glowing border
+  - Three feature highlight pills
+
+  #### Import Wizard
+  - Full drag-and-drop zone with marching dashed-border animation that glows on hover
+  - Numbered step circles with connecting lines and checkmarks on completed steps
+  - Step 2 shows transaction count + total amount summary
+  - Step 4 confetti CSS animation on successful import
+
+  #### Month View
+  - Color-coded category dot next to each expense row
+  - Export buttons consolidated into a clean dropdown menu
+  - Skeleton loading rows while data fetches
+  - Top Category stat card (4th metric)
+  - Empty-search friendly state message
+
+  #### Year View
+  - Month cards link directly to their month view with "View Month →" hover overlay
+  - Chart bars are also clickable
+
+  #### Trash
+  - Improved empty-state illustration
+  - Category column restored
+
+  ### Fixed
+
+  - `parseCSVLine`: fixed `text` (undefined) → `line` variable reference in escaped-quote detection branch
+  - `parseDateToISOString`: replaced `new Date(rawDate)` timezone-sensitive parsing with explicit format matchers (MM/DD/YYYY, YYYY-MM-DD, MM-DD-YYYY, YYYY/MM/DD)
+  - Amount guard: skip rows where `|amount| > $999,999.99` — prevents mis-detected balance/account-number columns from causing DB overflow
+  - Import now throws a user-friendly error when zero valid rows are parsed
+
+  
 ## [0.5.0] — 2026-04-04
 
 ### Fixed
