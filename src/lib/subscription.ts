@@ -24,7 +24,7 @@ export interface PlanDetails {
 export const PLANS: Record<Exclude<Plan, 'trial'>, PlanDetails> = {
   personal: {
     name: 'Personal',
-    price: 1,
+    price: 5,
     maxUsers: 1,
     maxTransactions: 500,
     maxYears: null,

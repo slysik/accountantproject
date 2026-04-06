@@ -14,7 +14,11 @@ interface CSVUploaderProps {
   onUploadComplete: () => void;
 }
 
-export default function CSVUploader({ companyName, year: _year, month: _month, onUploadComplete }: CSVUploaderProps) {
+function rewriteSampleDataYear(csvText: string, targetYear: string): string {
+  return csvText.replace(/(\b\d{1,2}\/\d{1,2}\/)\d{4}\b/g, `$1${targetYear}`);
+}
+
+export default function CSVUploader({ companyName, year, month: _month, onUploadComplete }: CSVUploaderProps) {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -23,11 +27,13 @@ export default function CSVUploader({ companyName, year: _year, month: _month, o
   const [saving, setSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [preview, setPreview] = useState<CategorizedExpense[] | null>(null);
   const [filename, setFilename] = useState<string>('');
 
   const processFile = useCallback(async (file: File) => {
     setError(null);
+    setInfo(null);
     setPreview(null);
     setParsing(true);
 
@@ -55,6 +61,7 @@ export default function CSVUploader({ companyName, year: _year, month: _month, o
 
   const processCSVText = useCallback(async (text: string, name: string) => {
     setError(null);
+    setInfo(null);
     setPreview(null);
     setParsing(true);
 
@@ -101,17 +108,19 @@ export default function CSVUploader({ companyName, year: _year, month: _month, o
 
   const handleTrySample = useCallback(async () => {
     setError(null);
+    setInfo(null);
     setParsing(true);
     try {
       const response = await fetch('/sample-data/sample_transactions.csv');
       if (!response.ok) throw new Error('Failed to fetch sample data.');
       const text = await response.text();
-      await processCSVText(text, 'sample_transactions.csv');
+      const rewritten = rewriteSampleDataYear(text, year);
+      await processCSVText(rewritten, `sample_transactions_${year}.csv`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load sample data.');
       setParsing(false);
     }
-  }, [processCSVText]);
+  }, [processCSVText, year]);
 
   const handleConfirmSave = useCallback(async () => {
     if (!preview || !user) return;
@@ -119,6 +128,7 @@ export default function CSVUploader({ companyName, year: _year, month: _month, o
     setSaving(true);
     setSaveProgress(0);
     setError(null);
+    setInfo(null);
 
     try {
       setSaveProgress(10);
@@ -126,8 +136,12 @@ export default function CSVUploader({ companyName, year: _year, month: _month, o
       setSaveProgress(100);
 
       if (inserted === 0) {
-        setError('No new expenses were inserted (possible duplicates).');
+        setInfo('No new expenses were inserted because every row already exists for this account and year.');
         return;
+      }
+
+      if (inserted < preview.length) {
+        setInfo(`${inserted} expense${inserted === 1 ? '' : 's'} saved. ${preview.length - inserted} duplicate row${preview.length - inserted === 1 ? '' : 's'} were skipped.`);
       }
 
       setPreview(null);
@@ -145,6 +159,7 @@ export default function CSVUploader({ companyName, year: _year, month: _month, o
     setPreview(null);
     setFilename('');
     setError(null);
+    setInfo(null);
   }, []);
 
   // Preview mode
@@ -299,6 +314,12 @@ export default function CSVUploader({ companyName, year: _year, month: _month, o
         </div>
       )}
 
+      {info && (
+        <div className="mt-3 rounded-lg border border-accent-primary/20 bg-accent-primary/10 px-4 py-3 text-xs text-text-secondary">
+          {info}
+        </div>
+      )}
+
       {/* Try Sample Data button */}
       <div className="mt-3 flex justify-center">
         <button
@@ -310,7 +331,7 @@ export default function CSVUploader({ companyName, year: _year, month: _month, o
           className="flex items-center gap-2 rounded-lg border border-border-primary px-4 py-2 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary disabled:opacity-50"
         >
           <LuFlaskConical className="h-3.5 w-3.5" />
-          Try Sample Data
+          Try Sample Data for {year}
         </button>
       </div>
     </section>
