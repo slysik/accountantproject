@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
 import { LuUser, LuShield, LuUsers, LuChartBar, LuChevronLeft } from 'react-icons/lu';
+import { APP_VERSION } from '@/lib/version';
 
 const NAV = [
   { href: '/settings/account', icon: LuUser, label: 'Account' },
@@ -61,7 +62,12 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             </aside>
 
             {/* Page content */}
-            <main className="min-w-0 flex-1">{children}</main>
+            <main className="min-w-0 flex-1">
+              {children}
+              <div className="mt-8 text-center text-xs text-text-muted">
+                Version {APP_VERSION}
+              </div>
+            </main>
           </div>
         </div>
       </div>
