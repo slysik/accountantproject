@@ -361,6 +361,54 @@ export async function createCompany(userId: string, companyName: string): Promis
   if (error) throw error;
 }
 
+export async function renameCompany(
+  userId: string,
+  currentName: string,
+  nextName: string
+): Promise<void> {
+  const from = currentName.trim();
+  const to = nextName.trim();
+
+  if (!from || !to) throw new Error('Company name is required.');
+  if (from === to) return;
+
+  const { data: existing, error: existingError } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('name', to)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+  if (existing) {
+    throw new Error('A company with that name already exists.');
+  }
+
+  const { error: companiesError } = await supabase
+    .from('companies')
+    .update({ name: to })
+    .eq('user_id', userId)
+    .eq('name', from);
+
+  if (companiesError) throw companiesError;
+
+  const { error: foldersError } = await supabase
+    .from('folders')
+    .update({ company_name: to })
+    .eq('user_id', userId)
+    .eq('company_name', from);
+
+  if (foldersError) throw foldersError;
+
+  const { error: expensesError } = await supabase
+    .from('expenses')
+    .update({ company_name: to })
+    .eq('user_id', userId)
+    .eq('company_name', from);
+
+  if (expensesError) throw expensesError;
+}
+
 /**
  * Creates a year entry within a company and ensures the folder record exists.
  */

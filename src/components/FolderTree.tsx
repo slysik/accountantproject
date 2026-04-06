@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { createCompany, createYearFolders, getUserFolders, softDeleteMonth, softDeleteYear } from '@/lib/database';
+import { createCompany, createYearFolders, getUserFolders, renameCompany, softDeleteMonth, softDeleteYear } from '@/lib/database';
 import { decodeCompanySlug, encodeCompanySlug } from '@/lib/company';
 import type { CompanyNode } from '@/types';
 import {
@@ -12,6 +12,7 @@ import {
   LuCheck,
   LuChevronDown,
   LuChevronRight,
+  LuPencil,
   LuFolder,
   LuFolderOpen,
   LuPlus,
@@ -41,6 +42,9 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   const [showAddCompany, setShowAddCompany] = useState(false);
   const [newCompany, setNewCompany] = useState('');
   const [addingCompany, setAddingCompany] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<string | null>(null);
+  const [editedCompanyName, setEditedCompanyName] = useState('');
+  const [renamingCompany, setRenamingCompany] = useState(false);
 
   const [addingYearCompany, setAddingYearCompany] = useState<string | null>(null);
   const [newYear, setNewYear] = useState(String(new Date().getFullYear()));
@@ -128,6 +132,50 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
       console.error('Failed to create year folders:', err);
     } finally {
       setAddingYear(false);
+    }
+  };
+
+  const handleStartRenameCompany = (companyName: string) => {
+    setEditingCompany(companyName);
+    setEditedCompanyName(companyName);
+    setShowAddCompany(false);
+  };
+
+  const handleRenameCompany = async (currentName: string) => {
+    if (!user || !editedCompanyName.trim()) return;
+    setRenamingCompany(true);
+    try {
+      const nextName = editedCompanyName.trim();
+      await renameCompany(user.id, currentName, nextName);
+      await fetchFolders();
+      setExpandedCompanies((prev) => {
+        const next = new Set(prev);
+        if (next.has(currentName)) {
+          next.delete(currentName);
+          next.add(nextName);
+        }
+        return next;
+      });
+      setExpandedYears((prev) => {
+        const next = new Set<string>();
+        prev.forEach((key) => {
+          if (key.startsWith(`${currentName}::`)) {
+            next.add(key.replace(`${currentName}::`, `${nextName}::`));
+          } else {
+            next.add(key);
+          }
+        });
+        return next;
+      });
+      if (pathname.startsWith(`/dashboard/${encodeCompanySlug(currentName)}`)) {
+        router.push(pathname.replace(`/dashboard/${encodeCompanySlug(currentName)}`, `/dashboard/${encodeCompanySlug(nextName)}`));
+      }
+      setEditingCompany(null);
+      setEditedCompanyName('');
+    } catch (err) {
+      console.error('Failed to rename company:', err);
+    } finally {
+      setRenamingCompany(false);
     }
   };
 
@@ -220,25 +268,73 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
         return (
           <div key={company.companyName}>
             <div className="group flex items-center">
-              <button
-                onClick={() => toggleCompany(company.companyName)}
-                className="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
-                title={collapsed ? company.companyName : undefined}
-              >
-                {collapsed ? (
-                  <LuBuilding2 className="mx-auto h-4 w-4 text-accent-primary" />
-                ) : (
-                  <>
-                    {companyExpanded ? (
-                      <LuChevronDown className="h-3.5 w-3.5 text-text-muted" />
-                    ) : (
-                      <LuChevronRight className="h-3.5 w-3.5 text-text-muted" />
-                    )}
-                    <LuBuilding2 className="h-4 w-4 text-accent-primary" />
-                    <span className="truncate">{company.companyName}</span>
-                  </>
-                )}
-              </button>
+              {editingCompany === company.companyName && !collapsed ? (
+                <div className="flex flex-1 items-center gap-1 px-2 py-1">
+                  <input
+                    type="text"
+                    value={editedCompanyName}
+                    onChange={(e) => setEditedCompanyName(e.target.value)}
+                    className="w-full rounded border border-border-primary bg-bg-tertiary px-2 py-1 text-xs text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/40"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRenameCompany(company.companyName);
+                      if (e.key === 'Escape') {
+                        setEditingCompany(null);
+                        setEditedCompanyName('');
+                      }
+                    }}
+                    autoFocus
+                    disabled={renamingCompany}
+                  />
+                  <button
+                    onClick={() => handleRenameCompany(company.companyName)}
+                    disabled={renamingCompany}
+                    className="rounded p-1 text-success transition-colors hover:bg-bg-tertiary disabled:opacity-50"
+                    title="Save"
+                  >
+                    <LuCheck className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingCompany(null);
+                      setEditedCompanyName('');
+                    }}
+                    disabled={renamingCompany}
+                    className="rounded p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+                    title="Cancel"
+                  >
+                    <LuX className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => toggleCompany(company.companyName)}
+                  className="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+                  title={collapsed ? company.companyName : undefined}
+                >
+                  {collapsed ? (
+                    <LuBuilding2 className="mx-auto h-4 w-4 text-accent-primary" />
+                  ) : (
+                    <>
+                      {companyExpanded ? (
+                        <LuChevronDown className="h-3.5 w-3.5 text-text-muted" />
+                      ) : (
+                        <LuChevronRight className="h-3.5 w-3.5 text-text-muted" />
+                      )}
+                      <LuBuilding2 className="h-4 w-4 text-accent-primary" />
+                      <span className="truncate">{company.companyName}</span>
+                    </>
+                  )}
+                </button>
+              )}
+              {!collapsed && editingCompany !== company.companyName && (
+                <button
+                  onClick={() => handleStartRenameCompany(company.companyName)}
+                  className="opacity-0 rounded p-1 text-text-muted transition-all hover:bg-bg-tertiary hover:text-text-primary group-hover:opacity-100"
+                  title={`Rename ${company.companyName}`}
+                >
+                  <LuPencil className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
 
             {!collapsed && companyExpanded && (

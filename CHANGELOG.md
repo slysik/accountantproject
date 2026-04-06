@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.1] — 2026-04-05
+
+### Changed
+
+#### Dashboard Polish
+- Year pages now open with a richer visual summary including annual spend, transaction count, active months, and improved month cards
+- Month pages now use a more polished analysis layout with KPI cards, a stronger hero section, and cleaner analytics panels
+- Empty year and month states now feel more intentional and guided instead of looking sparse
+
+#### Company Management
+- Companies can now be renamed directly from the sidebar
+- Renaming a company also updates related expense and folder records so navigation stays in sync
+
+#### Authentication / Account Experience
+- Sign-up now clears stale sessions before creating a new account so new users are not dropped into someone else’s session
+- Users on inherited team access now correctly see the effective account plan badge in the top-right dashboard nav
+- Light mode is now the default for first-time visitors, while saved theme preference still takes precedence
+
 ## [1.5.0] — 2026-04-05
 
 ### Added
