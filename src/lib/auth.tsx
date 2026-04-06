@@ -16,7 +16,10 @@ interface AuthContextType {
   loading: boolean;
   mfaRequired: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (
+    email: string,
+    password: string
+  ) => Promise<{ sessionCreated: boolean; emailConfirmationRequired: boolean }>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
@@ -70,8 +73,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    // Prevent a stale session from surviving a sign-up attempt and making the
+    // app appear to log into the previously authenticated user.
+    await supabase.auth.signOut({ scope: 'local' });
+
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
+
+    return {
+      sessionCreated: !!data.session,
+      emailConfirmationRequired: !data.session,
+    };
   };
 
   const signInWithGoogle = async () => {

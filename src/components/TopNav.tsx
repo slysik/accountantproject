@@ -94,7 +94,7 @@ interface TopNavProps {
 export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { sub } = useSubscription(user?.id);
+  const { sub } = useSubscription(user?.id, user?.email);
   const planLabel = sub?.plan === 'trial'
     ? 'Trial'
     : sub?.plan

@@ -31,8 +31,14 @@ export default function LoginPage() {
         await signInWithEmail(email, password);
         router.push('/dashboard');
       } else {
-        await signUpWithEmail(email, password);
-        router.push('/dashboard');
+        const result = await signUpWithEmail(email, password);
+        if (result.sessionCreated) {
+          router.push('/dashboard');
+        } else {
+          setSuccess('Account created. Check your email to confirm your address before signing in.');
+          setMode('signin');
+          setPassword('');
+        }
       }
     } catch (err: unknown) {
       const supabaseError = err as { message?: string; status?: number };
