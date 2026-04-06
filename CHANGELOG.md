@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.0] — 2026-04-04
+
+### Added
+
+#### Password Reset
+- "Forgot password?" link on the Sign In form — switches to a single-field email view
+- `sendPasswordReset(email)` in `auth.tsx` calls Supabase's `resetPasswordForEmail` with redirect to `/reset-password`
+- New `/reset-password` page — validates the recovery session from the email link, accepts a new password + confirmation, shows success state and redirects to dashboard
+- Invalid/expired links show a clear error with a "Back to Sign In" button
+- `updatePassword(newPassword)` added to `AuthContext`
+
+---
+
 ## [0.7.0] — 2026-04-04
 
 ### Fixed
