@@ -8,12 +8,13 @@ import { useAuth } from '@/lib/auth';
 import type { CategorizedExpense } from '@/types';
 
 interface CSVUploaderProps {
+  companyName: string;
   year: string;
   month: string;
   onUploadComplete: () => void;
 }
 
-export default function CSVUploader({ year: _year, month: _month, onUploadComplete }: CSVUploaderProps) {
+export default function CSVUploader({ companyName, year: _year, month: _month, onUploadComplete }: CSVUploaderProps) {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,7 +122,7 @@ export default function CSVUploader({ year: _year, month: _month, onUploadComple
 
     try {
       setSaveProgress(10);
-      const inserted = await bulkCreateExpenses(user.id, preview);
+      const inserted = await bulkCreateExpenses(user.id, companyName, preview);
       setSaveProgress(100);
 
       if (inserted === 0) {
@@ -138,7 +139,7 @@ export default function CSVUploader({ year: _year, month: _month, onUploadComple
       setSaving(false);
       setSaveProgress(0);
     }
-  }, [preview, user, onUploadComplete]);
+  }, [preview, user, companyName, onUploadComplete]);
 
   const handleCancel = useCallback(() => {
     setPreview(null);

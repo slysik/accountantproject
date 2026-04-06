@@ -1,6 +1,7 @@
 export interface Expense {
   id: string;
   date: Date;
+  companyName?: string;
   month: string; // YYYY-MM
   description: string;
   amount: number;
@@ -20,6 +21,11 @@ export interface IrsCategory {
   name: string;
   description: string;
   keywords: string[];
+}
+
+export interface CompanyNode {
+  companyName: string;
+  years: FolderNode[];
 }
 
 export interface FolderNode {

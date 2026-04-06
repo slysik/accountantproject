@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { parseDateString, toDateString, getYear, getYearMonth } from './date-utils';
-import type { CategorizedExpense, FolderNode, MonthNode, Receipt } from '@/types';
+import { DEFAULT_COMPANY_NAME } from './company';
+import type { CategorizedExpense, CompanyNode, FolderNode, MonthNode, Receipt } from '@/types';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -16,6 +17,7 @@ function rowToExpense(row: Record<string, unknown>): CategorizedExpense {
   return {
     id: row.id as string,
     date,
+    companyName: (row.company_name as string) ?? DEFAULT_COMPANY_NAME,
     month: row.month as string,
     year: row.year as string,
     description: row.description as string,
@@ -48,6 +50,7 @@ function canonicalize(expense: CategorizedExpense) {
  */
 export async function createExpense(
   userId: string,
+  companyName: string,
   _year: string,
   _month: string,
   expense: CategorizedExpense
@@ -55,12 +58,13 @@ export async function createExpense(
   const { dateStr, year, month } = canonicalize(expense);
 
   // Ensure the year folder exists so the expense is visible in the sidebar
-  await createYearFolders(userId, year);
+  await createYearFolders(userId, companyName, year);
 
   const { data, error } = await supabase
     .from('expenses')
     .insert({
       user_id: userId,
+      company_name: companyName,
       date: dateStr,
       month,
       year,
@@ -97,6 +101,7 @@ function deduplicationKey(row: { date: string; description: string; amount: numb
  */
 export async function bulkCreateExpenses(
   userId: string,
+  companyName: string,
   expenses: CategorizedExpense[]
 ): Promise<number> {
   if (expenses.length === 0) return 0;
@@ -105,6 +110,7 @@ export async function bulkCreateExpenses(
     const { dateStr, year, month } = canonicalize(expense);
     return {
       user_id: userId,
+      company_name: companyName,
       date: dateStr,
       month,
       year,
@@ -123,7 +129,7 @@ export async function bulkCreateExpenses(
 
   // Ensure folder records exist for all affected years so expenses are visible
   for (const year of years) {
-    await createYearFolders(userId, year);
+    await createYearFolders(userId, companyName, year);
   }
 
   const existingKeys = new Set<string>();
@@ -133,6 +139,7 @@ export async function bulkCreateExpenses(
       .from('expenses')
       .select('date, description, amount, filename')
       .eq('user_id', userId)
+      .eq('company_name', companyName)
       .eq('year', year)
       .is('deleted_at', null);
 
@@ -200,6 +207,7 @@ export async function bulkCreateExpenses(
  */
 export async function getExpenses(
   userId: string,
+  companyName: string,
   year: string,
   month: string
 ): Promise<CategorizedExpense[]> {
@@ -209,6 +217,7 @@ export async function getExpenses(
     .from('expenses')
     .select('*')
     .eq('user_id', userId)
+    .eq('company_name', companyName)
     .eq('year', year)
     .eq('month', monthKey)
     .is('deleted_at', null)
@@ -260,6 +269,7 @@ export async function softDeleteExpense(
  */
 export async function restoreExpense(
   userId: string,
+  companyName: string,
   _year: string,
   _month: string,
   expenseId: string
@@ -275,7 +285,7 @@ export async function restoreExpense(
   // Ensure the year folder exists so the restored expense is visible in the
   // sidebar.  The folder row may have been hard-deleted when the year was trashed.
   if (_year) {
-    await createYearFolders(userId, _year);
+    await createYearFolders(userId, companyName, _year);
   }
 }
 
@@ -320,75 +330,130 @@ export async function getTrash(userId: string): Promise<CategorizedExpense[]> {
 }
 
 /**
+ * Fetches all non-deleted expenses across the user's account.
+ */
+export async function getAllExpenses(userId: string): Promise<CategorizedExpense[]> {
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('*')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .order('date', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map(rowToExpense);
+}
+
+/**
  * Creates a year entry and ensures the folder record exists.
  */
-export async function createYearFolders(userId: string, year: string): Promise<void> {
+export async function createCompany(userId: string, companyName: string): Promise<void> {
+  const normalized = companyName.trim();
+  if (!normalized) throw new Error('Company name is required.');
+
   const { error } = await supabase
-    .from('folders')
+    .from('companies')
     .upsert(
-      { user_id: userId, year },
-      { onConflict: 'user_id,year' }
+      { user_id: userId, name: normalized },
+      { onConflict: 'user_id,name' }
     );
 
   if (error) throw error;
 }
 
 /**
- * Fetches all years and computes month-level stats from expenses.
- * Returns sorted array of FolderNodes.
+ * Creates a year entry within a company and ensures the folder record exists.
  */
-export async function getUserFolders(userId: string): Promise<FolderNode[]> {
-  // Get all folder years
+export async function createYearFolders(userId: string, companyName: string, year: string): Promise<void> {
+  await createCompany(userId, companyName);
+
+  const { error } = await supabase
+    .from('folders')
+    .upsert(
+      { user_id: userId, company_name: companyName, year },
+      { onConflict: 'user_id,company_name,year' }
+    );
+
+  if (error) throw error;
+}
+
+/**
+ * Fetches all companies, years, and month-level stats.
+ */
+export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
+  const { data: companyRows, error: companiesError } = await supabase
+    .from('companies')
+    .select('name')
+    .eq('user_id', userId)
+    .order('name', { ascending: true });
+
+  if (companiesError) throw companiesError;
+
   const { data: folderRows, error: foldersError } = await supabase
     .from('folders')
-    .select('year')
+    .select('company_name, year')
     .eq('user_id', userId)
+    .order('company_name', { ascending: true })
     .order('year', { ascending: true });
 
   if (foldersError) throw foldersError;
-  if (!folderRows || folderRows.length === 0) return [];
 
   // Get all non-deleted expenses for this user to compute stats
   const { data: expenseRows, error: expensesError } = await supabase
     .from('expenses')
-    .select('year, month, amount')
+    .select('company_name, year, month, amount')
     .eq('user_id', userId)
     .is('deleted_at', null);
 
   if (expensesError) throw expensesError;
 
-  // Build a lookup: year -> month -> { count, total }
-  const stats: Record<string, Record<string, { count: number; total: number }>> = {};
+  const companyNames = new Set<string>();
+  for (const company of companyRows ?? []) companyNames.add(company.name as string);
+  for (const folder of folderRows ?? []) companyNames.add((folder.company_name as string) ?? DEFAULT_COMPANY_NAME);
+  for (const expense of expenseRows ?? []) companyNames.add((expense.company_name as string) ?? DEFAULT_COMPANY_NAME);
+  if (companyNames.size === 0) return [];
+
+  // Build a lookup: company -> year -> month -> { count, total }
+  const stats: Record<string, Record<string, Record<string, { count: number; total: number }>>> = {};
   for (const row of expenseRows ?? []) {
+    const companyName = (row.company_name as string) ?? DEFAULT_COMPANY_NAME;
     const y = row.year as string;
-    // month is stored as "YYYY-MM", extract the MM part
     const monthStr = (row.month as string).split('-')[1] ?? '';
-    if (!stats[y]) stats[y] = {};
-    if (!stats[y][monthStr]) stats[y][monthStr] = { count: 0, total: 0 };
-    stats[y][monthStr].count += 1;
-    stats[y][monthStr].total += Number(row.amount);
+    if (!stats[companyName]) stats[companyName] = {};
+    if (!stats[companyName][y]) stats[companyName][y] = {};
+    if (!stats[companyName][y][monthStr]) stats[companyName][y][monthStr] = { count: 0, total: 0 };
+    stats[companyName][y][monthStr].count += 1;
+    stats[companyName][y][monthStr].total += Number(row.amount);
   }
 
-  // Build folder nodes with all 12 months per year
-  const folders: FolderNode[] = folderRows.map((f) => {
-    const year = f.year as string;
-    const yearStats = stats[year] ?? {};
+  return Array.from(companyNames)
+    .sort((a, b) => a.localeCompare(b))
+    .map((companyName) => {
+      const years = (folderRows ?? [])
+        .filter((row) => ((row.company_name as string) ?? DEFAULT_COMPANY_NAME) === companyName)
+        .map((row) => row.year as string);
 
-    const months: MonthNode[] = MONTH_NAMES.map((name, index) => {
-      const monthNum = String(index + 1).padStart(2, '0');
-      const monthStat = yearStats[monthNum] ?? { count: 0, total: 0 };
-      return {
-        month: monthNum,
-        name,
-        expenseCount: monthStat.count,
-        total: monthStat.total,
-      };
+      const uniqueYears = Array.from(new Set(years)).sort((a, b) => a.localeCompare(b));
+
+      const yearNodes: FolderNode[] = uniqueYears.map((year) => {
+        const yearStats = stats[companyName]?.[year] ?? {};
+
+        const months: MonthNode[] = MONTH_NAMES.map((name, index) => {
+          const monthNum = String(index + 1).padStart(2, '0');
+          const monthStat = yearStats[monthNum] ?? { count: 0, total: 0 };
+          return {
+            month: monthNum,
+            name,
+            expenseCount: monthStat.count,
+            total: monthStat.total,
+          };
+        });
+
+        return { year, months };
+      });
+
+      return { companyName, years: yearNodes };
     });
-
-    return { year, months };
-  });
-
-  return folders;
 }
 
 /**
@@ -565,6 +630,7 @@ export async function softDeleteExpensesByIds(
  */
 export async function softDeleteYear(
   userId: string,
+  companyName: string,
   year: string
 ): Promise<void> {
   // First, get all non-deleted expenses for this year
@@ -572,6 +638,7 @@ export async function softDeleteYear(
     .from('expenses')
     .select('id')
     .eq('user_id', userId)
+    .eq('company_name', companyName)
     .eq('year', year)
     .is('deleted_at', null);
 
@@ -588,6 +655,7 @@ export async function softDeleteYear(
     .from('folders')
     .delete()
     .eq('user_id', userId)
+    .eq('company_name', companyName)
     .eq('year', year);
 
   if (folderError) throw folderError;
@@ -599,12 +667,14 @@ export async function softDeleteYear(
  */
 export async function getDeletedExpensesByYear(
   userId: string,
+  companyName: string,
   year: string
 ): Promise<CategorizedExpense[]> {
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
     .eq('user_id', userId)
+    .eq('company_name', companyName)
     .eq('year', year)
     .not('deleted_at', 'is', null)
     .order('deleted_at', { ascending: false });
@@ -618,6 +688,7 @@ export async function getDeletedExpensesByYear(
  */
 export async function softDeleteMonth(
   userId: string,
+  companyName: string,
   year: string,
   month: string
 ): Promise<void> {
@@ -627,6 +698,7 @@ export async function softDeleteMonth(
     .from('expenses')
     .select('id')
     .eq('user_id', userId)
+    .eq('company_name', companyName)
     .eq('year', year)
     .eq('month', monthKey)
     .is('deleted_at', null);
@@ -675,6 +747,7 @@ export async function getReceiptsByExpenseIds(
  */
 export async function restoreYear(
   userId: string,
+  companyName: string,
   year: string
 ): Promise<void> {
   // Restore all soft-deleted expenses in this year
@@ -682,6 +755,7 @@ export async function restoreYear(
     .from('expenses')
     .update({ deleted_at: null })
     .eq('user_id', userId)
+    .eq('company_name', companyName)
     .eq('year', year)
     .not('deleted_at', 'is', null);
 
@@ -691,8 +765,8 @@ export async function restoreYear(
   const { error: folderError } = await supabase
     .from('folders')
     .upsert(
-      { user_id: userId, year },
-      { onConflict: 'user_id,year' }
+      { user_id: userId, company_name: companyName, year },
+      { onConflict: 'user_id,company_name,year' }
     );
 
   if (folderError) throw folderError;

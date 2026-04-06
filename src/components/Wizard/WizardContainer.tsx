@@ -18,6 +18,7 @@ const STEPS = [
 export default function WizardContainer() {
   const [currentStep, setCurrentStep] = useState(0);
   const [parsedExpenses, setParsedExpenses] = useState<CategorizedExpense[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
   const [categorizedExpenses, setCategorizedExpenses] = useState<
     CategorizedExpense[]
@@ -33,7 +34,8 @@ export default function WizardContainer() {
   );
 
   const handleFoldersComplete = useCallback(
-    (year: string, _assigned: Map<string, CategorizedExpense[]>) => {
+    (companyName: string, year: string, _assigned: Map<string, CategorizedExpense[]>) => {
+      setSelectedCompany(companyName);
       setSelectedYear(year);
       setCurrentStep(2);
     },
@@ -134,7 +136,7 @@ export default function WizardContainer() {
           />
         )}
         {currentStep === 3 && (
-          <StepExport expenses={categorizedExpenses} year={selectedYear} />
+          <StepExport expenses={categorizedExpenses} companyName={selectedCompany} year={selectedYear} />
         )}
       </div>
 
@@ -148,7 +150,7 @@ export default function WizardContainer() {
           Back
         </button>
         <span className="text-xs text-text-muted">
-          Step {currentStep + 1} of {STEPS.length}
+          Step {currentStep + 1} of {STEPS.length}{selectedCompany ? ` · ${selectedCompany}` : ''}
         </span>
         {/* Next button only shown as disabled hint; actual progression is via step onComplete */}
         <button

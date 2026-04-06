@@ -31,19 +31,21 @@ export default function TrashPage() {
    * Extract year and month from the expense's own month/year fields.
    */
   function getExpenseLocation(expense: CategorizedExpense): {
+    companyName: string;
     year: string;
     month: string;
   } {
+    const companyName = expense.companyName ?? 'My Company';
     const year = expense.year ?? expense.month.split('-')[0];
     const month = expense.month.split('-')[1];
-    return { year, month };
+    return { companyName, year, month };
   }
 
   const handleRestore = useCallback(
     async (expense: CategorizedExpense) => {
       if (!user) return;
-      const { year, month } = getExpenseLocation(expense);
-      await restoreExpense(user.id, year, month, expense.id);
+      const { companyName, year, month } = getExpenseLocation(expense);
+      await restoreExpense(user.id, companyName, year, month, expense.id);
       await fetchTrash();
     },
     [user, fetchTrash]

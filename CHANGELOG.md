@@ -5,6 +5,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.0] — 2026-04-05
+
+### Added
+
+#### Company-Level Folder Organization
+- Added a real company layer above year/month folders so the dashboard navigation is now **Company → Year → Month**
+- New `companies` table and `company_name` support on folder/expense records via `migrations/004_add_companies.sql`
+- Sidebar now supports adding companies, then adding years underneath each company
+- Dashboard routes now support company-aware URLs like `/dashboard/{company}/{year}/{month}`
+- Legacy year/month dashboard URLs are redirected into the default company path for backward compatibility
+- CSV imports and wizard saves now write expenses into the selected company
+
+#### Team / Account Settings
+- Added a dedicated Settings layout with Account, Team, and Security navigation
+- New `/settings/account` page with plan summary and password update flow
+- New `/settings/team` page for managing team members by email
+- Added `account_members` table and policies via `migrations/003_add_account_members.sql`
+- Team-member access now checks owner subscriptions correctly before creating a personal trial
+- Team seat limits are enforced in app logic and row-level policies
+
+#### Dashboard Analytics Landing View
+- Replaced the placeholder post-login dashboard with a real analysis overview
+- Dashboard now shows account-wide spend visuals including summary cards, spend trend, expense-by-category, and year-over-year analysis
+- Empty accounts now see clearly labeled sample analytics instead of blank placeholders
+
+### Changed
+
+#### Navigation / Header
+- Top-right dashboard nav now shows the current account type (Trial, Lite, Business, Elite)
+- Chat API now supports the existing `claude_key` environment variable, with `ANTHROPIC_API_KEY` retained as a fallback
+
 ## [1.4.0] — 2026-04-04
 
 ### Changed

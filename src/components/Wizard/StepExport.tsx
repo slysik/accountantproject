@@ -10,11 +10,12 @@ import { bulkCreateExpenses } from '@/lib/database';
 import type { CategorizedExpense } from '@/types';
 
 interface StepExportProps {
+  companyName: string;
   expenses: CategorizedExpense[];
   year: string;
 }
 
-export default function StepExport({ expenses, year }: StepExportProps) {
+export default function StepExport({ companyName, expenses, year }: StepExportProps) {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState(0);
@@ -63,7 +64,7 @@ export default function StepExport({ expenses, year }: StepExportProps) {
     setSaveProgress(0);
     try {
       setSaveProgress(10);
-      await bulkCreateExpenses(user.id, expenses);
+      await bulkCreateExpenses(user.id, companyName, expenses);
       setSaveProgress(100);
       setSaved(true);
     } catch (err) {
@@ -71,7 +72,7 @@ export default function StepExport({ expenses, year }: StepExportProps) {
     } finally {
       setSaving(false);
     }
-  }, [user, expenses]);
+  }, [user, companyName, expenses]);
 
   return (
     <div>
@@ -127,7 +128,7 @@ export default function StepExport({ expenses, year }: StepExportProps) {
                 Saved {expenses.length} expenses to database
               </p>
               <p className="text-[11px] text-text-muted">
-                Expenses are now in your {year} folders and visible in the sidebar.
+                Expenses are now in {companyName} / {year} and visible in the sidebar.
               </p>
             </div>
           </div>
@@ -141,7 +142,7 @@ export default function StepExport({ expenses, year }: StepExportProps) {
             </div>
             <p className="mb-3 text-[11px] text-text-muted">
               Save all {expenses.length} expenses to their assigned year/month
-              folders in your account.
+              folders under {companyName}.
             </p>
 
             {saving && (

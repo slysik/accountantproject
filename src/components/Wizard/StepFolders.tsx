@@ -4,16 +4,18 @@ import { useState, useMemo, useCallback } from 'react';
 import { LuCheck, LuFolderOpen } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
 import { createYearFolders } from '@/lib/database';
+import { DEFAULT_COMPANY_NAME } from '@/lib/company';
 import { formatMonth } from '@/lib/expense-processor';
 import type { CategorizedExpense } from '@/types';
 
 interface StepFoldersProps {
   expenses: CategorizedExpense[];
-  onComplete: (year: string, assignedExpenses: Map<string, CategorizedExpense[]>) => void;
+  onComplete: (companyName: string, year: string, assignedExpenses: Map<string, CategorizedExpense[]>) => void;
 }
 
 export default function StepFolders({ expenses, onComplete }: StepFoldersProps) {
   const { user } = useAuth();
+  const [companyName, setCompanyName] = useState(DEFAULT_COMPANY_NAME);
 
   // Detect ALL unique years from the data (sorted), plus identify the most common one
   const { allYears, primaryYear } = useMemo(() => {
@@ -76,17 +78,17 @@ export default function StepFolders({ expenses, onComplete }: StepFoldersProps) 
     try {
       // Create folder records for EVERY year found in the data
       for (const { year } of allYears) {
-        await createYearFolders(user.id, year);
+        await createYearFolders(user.id, companyName.trim(), year);
       }
       setCreated(true);
     } finally {
       setCreating(false);
     }
-  }, [user, allYears]);
+  }, [user, allYears, companyName]);
 
   const handleContinue = useCallback(() => {
-    onComplete(primaryYear, byMonth);
-  }, [primaryYear, byMonth, onComplete]);
+    onComplete(companyName.trim(), primaryYear, byMonth);
+  }, [companyName, primaryYear, byMonth, onComplete]);
 
   return (
     <div>
@@ -95,6 +97,17 @@ export default function StepFolders({ expenses, onComplete }: StepFoldersProps) 
       </h2>
 
       {/* Year summary */}
+      <div className="mb-5">
+        <label className="mb-2 block text-xs text-text-muted">Company name</label>
+        <input
+          type="text"
+          value={companyName}
+          onChange={(e) => setCompanyName(e.target.value)}
+          placeholder="My Company"
+          className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+        />
+      </div>
+
       <div className="mb-5">
         <label className="mb-2 block text-xs text-text-muted">
           {allYears.length === 1
@@ -159,7 +172,7 @@ export default function StepFolders({ expenses, onComplete }: StepFoldersProps) 
       {!created ? (
         <button
           onClick={handleCreateFolders}
-          disabled={creating || allYears.length === 0}
+          disabled={creating || allYears.length === 0 || !companyName.trim()}
           className="flex items-center gap-2 rounded-lg bg-accent-primary px-4 py-2 text-xs font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50"
         >
           {creating ? (
