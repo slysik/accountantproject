@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { LuChartBar, LuShield, LuMail, LuSmartphone } from 'react-icons/lu';
+import { LuShield, LuMail, LuSmartphone } from 'react-icons/lu';
 
 type Method = 'totp' | 'email';
 
@@ -136,7 +136,7 @@ export default function MFAVerifyPage() {
             {!emailSent ? (
               <>
                 <p className="text-sm text-text-muted">
-                  We'll send a one-time code to <span className="font-medium text-text-secondary">{user?.email}</span>.
+                  We&apos;ll send a one-time code to <span className="font-medium text-text-secondary">{user?.email}</span>.
                 </p>
                 {error && <p className="text-sm text-error">{error}</p>}
                 <button
