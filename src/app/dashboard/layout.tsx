@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import Sidebar from '@/components/Sidebar';
 import TopNav from '@/components/TopNav';
-import { APP_VERSION } from '@/lib/version';
 
 export default function DashboardLayout({
   children,
@@ -61,12 +60,7 @@ export default function DashboardLayout({
         {/* Right: TopNav + Content */}
         <div className="flex flex-1 flex-col overflow-hidden">
           <TopNav onMobileMenuToggle={toggleMobileSidebar} />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6">
-            {children}
-            <div className="mt-8 pb-2 text-center text-xs text-text-muted">
-              Version {APP_VERSION}
-            </div>
-          </main>
+          <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
         </div>
       </div>
     </AuthGuard>

@@ -7,6 +7,7 @@ import {
   LuTrash2,
 } from 'react-icons/lu';
 import FolderTree from './FolderTree';
+import { APP_VERSION } from '@/lib/version';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -40,7 +41,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         <FolderTree collapsed={collapsed} />
       </div>
 
-      {/* Bottom: Trash Link */}
+      {/* Bottom: Trash Link + Version */}
       <div className="border-t border-border-primary p-2">
         <Link
           href="/dashboard/trash"
@@ -52,6 +53,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <LuTrash2 className="h-4 w-4 flex-shrink-0" />
           {!collapsed && <span>Trash</span>}
         </Link>
+        <div
+          className={`mt-2 rounded-md px-2 py-2 text-xs text-text-muted ${
+            collapsed ? 'text-center' : ''
+          }`}
+          title={`Version ${APP_VERSION}`}
+        >
+          {collapsed ? APP_VERSION : `Version ${APP_VERSION}`}
+        </div>
       </div>
     </aside>
   );

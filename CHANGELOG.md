@@ -23,6 +23,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Users on inherited team access now correctly see the effective account plan badge in the top-right dashboard nav
 - Light mode is now the default for first-time visitors, while saved theme preference still takes precedence
 
+#### Chatbot / Navigation
+- Expense chat is now powered by OpenAI and supports the `OPENAI_API_KEY` configuration path
+- Chatbot delete requests now show a delete summary first and only proceed after the user types exactly `I agree`
+- Chat-based deletes move matching expenses to Trash in Supabase instead of permanently removing them
+- Authenticated app version display was moved into the left navigation sidebar for easier visibility
+
 ## [1.5.0] — 2026-04-05
 
 ### Added

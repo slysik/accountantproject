@@ -503,7 +503,7 @@ export default function DashboardSlugPage() {
         )}
       </div>
 
-      <ExpenseChat year={year} month={month} />
+      <ExpenseChat companyName={companyName} year={year} month={month} />
     </div>
   );
 }

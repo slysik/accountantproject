@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { LuBot, LuSend, LuX, LuChevronDown, LuLoader } from 'react-icons/lu';
+import { LuBot, LuChevronDown, LuLoader, LuSend, LuTriangle } from 'react-icons/lu';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -9,8 +9,29 @@ interface Message {
 }
 
 interface ExpenseChatProps {
+  companyName?: string;
   year?: string;
   month?: string;
+}
+
+interface PendingDelete {
+  type: 'expenses' | 'month' | 'year';
+  expenseIds: string[];
+  count: number;
+  total: number;
+  companyName: string | null;
+  year: string | null;
+  month: string | null;
+  category: string | null;
+  descriptionContains: string | null;
+  summary: string;
+}
+
+interface ChatResponse {
+  reply: string;
+  pendingDelete?: PendingDelete;
+  clearPendingDelete?: boolean;
+  deletedCount?: number;
 }
 
 const SUGGESTIONS = [
@@ -20,12 +41,13 @@ const SUGGESTIONS = [
   'How much did I spend on meals?',
 ];
 
-export default function ExpenseChat({ year, month }: ExpenseChatProps) {
+export default function ExpenseChat({ companyName, year, month }: ExpenseChatProps) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -47,13 +69,11 @@ export default function ExpenseChat({ year, month }: ExpenseChatProps) {
     if (open) setTimeout(() => inputRef.current?.focus(), 100);
   }, [open]);
 
-  const send = useCallback(async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || loading) return;
-
-    const newMessages: Message[] = [...messages, { role: 'user', content: trimmed }];
-    setMessages(newMessages);
-    setInput('');
+  const runChatRequest = useCallback(async (
+    nextMessages: Message[],
+    options?: { confirmDelete?: boolean; clearPendingDeleteLocally?: boolean }
+  ) => {
+    setMessages(nextMessages);
     setLoading(true);
     setError('');
 
@@ -62,21 +82,47 @@ export default function ExpenseChat({ year, month }: ExpenseChatProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: newMessages,
+          messages: nextMessages,
+          companyName,
           year,
           month,
+          confirmDelete: options?.confirmDelete ?? false,
+          pendingDelete,
         }),
       });
 
-      if (!res.ok) throw new Error('Request failed');
-      const data = await res.json();
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
-    } catch {
-      setError('Something went wrong. Please try again.');
+      const data = (await res.json()) as Partial<ChatResponse> & { error?: string };
+      if (!res.ok) throw new Error(data.error ?? 'Request failed');
+
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply ?? 'Done.' }]);
+
+      if (data.pendingDelete) {
+        setPendingDelete(data.pendingDelete);
+      } else if (data.clearPendingDelete || options?.clearPendingDeleteLocally) {
+        setPendingDelete(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [messages, loading, year, month]);
+  }, [companyName, year, month, pendingDelete]);
+
+  const send = useCallback(async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || loading) return;
+
+    const nextMessages: Message[] = [...messages, { role: 'user', content: trimmed }];
+    setInput('');
+    await runChatRequest(nextMessages, {
+      confirmDelete: Boolean(pendingDelete) && trimmed.toLowerCase() === 'i agree',
+    });
+  }, [messages, loading, runChatRequest]);
+
+  const cancelDelete = useCallback(() => {
+    setPendingDelete(null);
+    setMessages((prev) => [...prev, { role: 'assistant', content: 'Delete request canceled. Nothing was removed.' }]);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +167,7 @@ export default function ExpenseChat({ year, month }: ExpenseChatProps) {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -152,6 +198,37 @@ export default function ExpenseChat({ year, month }: ExpenseChatProps) {
               <p className="text-center text-xs text-error">{error}</p>
             )}
 
+            {pendingDelete && !loading && (
+              <div className="rounded-2xl border border-error/30 bg-error/5 p-3">
+                <div className="mb-2 flex items-start gap-2">
+                  <div className="mt-0.5 rounded-full bg-error/10 p-1">
+                    <LuTriangle className="h-3.5 w-3.5 text-error" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-text-primary">Ready to move data to Trash</p>
+                    <p className="mt-1 text-[11px] text-text-muted">
+                      {pendingDelete.count} expense{pendingDelete.count === 1 ? '' : 's'} selected. This will soft-delete the matching data in Supabase.
+                    </p>
+                  </div>
+                </div>
+                <pre className="max-h-24 overflow-y-auto rounded-xl bg-bg-primary/70 p-2 text-[10px] leading-relaxed text-text-muted whitespace-pre-wrap">
+                  {pendingDelete.summary}
+                </pre>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelDelete}
+                    className="rounded-lg border border-border-primary px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-primary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <p className="mt-3 text-[11px] text-text-muted">
+                  Type exactly <span className="font-semibold text-text-primary">I agree</span> in the chat box below to continue.
+                </p>
+              </div>
+            )}
+
             {/* Suggestions — shown after greeting only */}
             {messages.length === 1 && !loading && (
               <div className="flex flex-wrap gap-1.5 pt-1">
@@ -178,7 +255,7 @@ export default function ExpenseChat({ year, month }: ExpenseChatProps) {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about your expenses..."
+                placeholder="Ask about your expenses or say what to delete..."
                 disabled={loading}
                 className="flex-1 rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2 text-xs text-text-primary placeholder-text-muted outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary disabled:opacity-50"
               />
