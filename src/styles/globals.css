@@ -102,15 +102,21 @@
   }
 
   .shell-panel {
-    @apply rounded-[28px] border border-border-primary/80 bg-bg-secondary/85 shadow-[0_20px_60px_rgba(0,0,0,0.16)] backdrop-blur-xl;
+    @apply rounded-[28px] border shadow-[0_20px_60px_rgba(0,0,0,0.16)] backdrop-blur-xl;
+    border-color: color-mix(in srgb, var(--border-primary) 80%, transparent);
+    background-color: color-mix(in srgb, var(--bg-secondary) 85%, transparent);
   }
 
   .muted-panel {
-    @apply rounded-2xl border border-border-primary/70 bg-bg-tertiary/65 backdrop-blur-md;
+    @apply rounded-2xl border backdrop-blur-md;
+    border-color: color-mix(in srgb, var(--border-primary) 70%, transparent);
+    background-color: color-mix(in srgb, var(--bg-tertiary) 65%, transparent);
   }
 
   .hero-surface {
-    @apply overflow-hidden rounded-[32px] border border-border-primary/80 bg-bg-secondary/90 shadow-[0_28px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl;
+    @apply overflow-hidden rounded-[32px] border shadow-[0_28px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl;
+    border-color: color-mix(in srgb, var(--border-primary) 80%, transparent);
+    background-color: color-mix(in srgb, var(--bg-secondary) 90%, transparent);
   }
 
   .section-kicker {
@@ -118,7 +124,9 @@
   }
 
   .metric-card {
-    @apply rounded-2xl border border-border-primary/70 bg-bg-primary/55 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)];
+    @apply rounded-2xl border p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)];
+    border-color: color-mix(in srgb, var(--border-primary) 70%, transparent);
+    background-color: color-mix(in srgb, var(--bg-primary) 55%, transparent);
   }
 
   .metric-label {
@@ -126,6 +134,12 @@
   }
 
   .action-pill {
-    @apply inline-flex items-center gap-2 rounded-full border border-border-primary/70 bg-bg-primary/65 px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary;
+    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-text-primary;
+    border-color: color-mix(in srgb, var(--border-primary) 70%, transparent);
+    background-color: color-mix(in srgb, var(--bg-primary) 65%, transparent);
+  }
+
+  .action-pill:hover {
+    background-color: var(--bg-tertiary);
   }
 }
