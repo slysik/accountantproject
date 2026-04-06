@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { LuChartBar, LuCheck, LuArrowRight, LuSun, LuMoon, LuZap } from 'react-icons/lu';
 import { useTheme } from '@/lib/theme';
 import { PLANS } from '@/lib/subscription';
+import PublicFooter from '@/components/PublicFooter';
 
 const plans = [
   {
@@ -182,14 +183,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border-primary py-8 text-center text-xs text-text-muted">
-        <div className="flex items-center justify-center gap-2">
-          <LuChartBar className="h-4 w-4 text-accent-primary" />
-          <span>Accountant&apos;s Best Friend</span>
-        </div>
-        <p className="mt-2">Built for independent professionals. Your data stays yours.</p>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

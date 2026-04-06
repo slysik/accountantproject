@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.4.0] — 2026-04-04
+
+### Changed
+
+#### Corporate Blue Color Theme
+- Replaced yellow/gold accent (`#F8D448`) with corporate blue (`#3B82F6` dark / `#2563EB` light)
+- Updated dark-mode backgrounds to a deeper navy palette (`#0F1117`, `#161B27`, `#1E2638`)
+- Light-mode backgrounds updated to a cool blue-tinted white (`#F1F5FB`, `#E4EAF5`)
+- All `--accent-primary` / `--accent-dark` CSS vars updated — no component changes needed
+
+#### Legal Footer
+- New `PublicFooter` component with copyright notice, nav links (Pricing, Privacy Policy, Terms of Service, Sign In), and tax-disclaimer language
+- Replaces the minimal footer on the landing page and pricing page
+
+---
+
 ## [1.3.0] — 2026-04-04
 
 ### Added
