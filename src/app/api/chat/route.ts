@@ -3,12 +3,18 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+const anthropicApiKey = process.env.claude_key ?? process.env.ANTHROPIC_API_KEY;
+
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+  apiKey: anthropicApiKey!,
 });
 
 export async function POST(req: NextRequest) {
   try {
+    if (!anthropicApiKey) {
+      return NextResponse.json({ error: 'Chat API key is not configured' }, { status: 500 });
+    }
+
     // Authenticate the user via Supabase session cookie
     const cookieStore = cookies();
     const supabase = createServerClient(
