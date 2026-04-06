@@ -42,11 +42,11 @@ export const PLANS: Record<Exclude<Plan, 'trial'>, PlanDetails> = {
     name: 'Lite',
     price: 10,
     maxUsers: 1,
-    maxTransactions: 500,
+    maxTransactions: null,
     maxYears: null,
     features: [
       'Single user',
-      'Up to 500 transactions',
+      'Unlimited transactions',
       'Unlimited years',
       'CSV import & export',
       'IRS Schedule C categories',

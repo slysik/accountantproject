@@ -172,7 +172,7 @@ export default function PricingPage() {
               },
               {
                 q: 'What counts as a transaction?',
-                a: 'Each imported expense row counts as one transaction. Personal includes 500 transactions and Lite includes 500 transactions per month.',
+                a: 'Each imported expense row counts as one transaction. Personal includes 500 transactions, while Lite and above include unlimited transactions.',
               },
               {
                 q: 'Is there a contract or commitment?',
