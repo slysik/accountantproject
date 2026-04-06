@@ -10,24 +10,24 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          primary: "#121413",
-          secondary: "#1A1D1C",
-          tertiary: "#2C302E",
+          primary: "var(--bg-primary)",
+          secondary: "var(--bg-secondary)",
+          tertiary: "var(--bg-tertiary)",
         },
         border: {
-          primary: "#363A38",
+          primary: "var(--border-primary)",
         },
         text: {
-          primary: "#F5F5F5",
-          secondary: "#A8A8A8",
-          muted: "#707070",
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
         },
         accent: {
-          primary: "#F8D448",
-          dark: "#E4C040",
+          primary: "var(--accent-primary)",
+          dark: "var(--accent-dark)",
         },
-        success: "#50E3C2",
-        error: "#FF4F4F",
+        success: "var(--success)",
+        error: "var(--error)",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

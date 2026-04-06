@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.0] — 2026-04-04
+
+### Added
+
+#### Light / Dark Mode
+- Full light and dark theme support via CSS custom properties — zero Tailwind color hardcoding
+- Dark mode is the default; light mode uses a clean warm-white palette
+- Theme persists to `localStorage` and respects `prefers-color-scheme` on first visit
+- Inline `<script>` in `layout.tsx` applies the saved theme class before React hydrates, preventing any flash of wrong theme
+- Quirky animated pill toggle (moon left / sun right) in the top-right of the nav bar on both the landing page and dashboard
+- Toggle glows yellow on hover as a visual call-out so it's easy to find
+
+---
+
 ## [1.1.0] — 2026-04-04
 
 ### Added

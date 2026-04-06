@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Dark mode (default) ── */
+:root {
+  --bg-primary: #121413;
+  --bg-secondary: #1A1D1C;
+  --bg-tertiary: #2C302E;
+  --border-primary: #363A38;
+  --text-primary: #F5F5F5;
+  --text-secondary: #A8A8A8;
+  --text-muted: #707070;
+  --accent-primary: #F8D448;
+  --accent-dark: #E4C040;
+  --success: #50E3C2;
+  --error: #FF4F4F;
+}
+
+/* ── Light mode ── */
+.light {
+  --bg-primary: #F4F5F4;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #EAECE9;
+  --border-primary: #D4D7D5;
+  --text-primary: #111815;
+  --text-secondary: #3D4440;
+  --text-muted: #7A8580;
+  --accent-primary: #D4A800;
+  --accent-dark: #B89200;
+  --success: #0F9B82;
+  --error: #D93232;
+}
+
 @layer base {
   body {
     @apply bg-bg-primary text-text-primary;

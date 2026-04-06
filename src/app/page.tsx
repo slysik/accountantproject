@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
-import { LuChartBar, LuUpload, LuTag, LuDownload, LuShield, LuArrowRight, LuCheck } from 'react-icons/lu';
+import { LuChartBar, LuUpload, LuTag, LuDownload, LuShield, LuArrowRight, LuCheck, LuSun, LuMoon } from 'react-icons/lu';
+import { useTheme } from '@/lib/theme';
 
 const features = [
   {
@@ -42,6 +45,8 @@ const steps = [
 ];
 
 export default function LandingPage() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary">
 
@@ -64,6 +69,19 @@ export default function LandingPage() {
           >
             Try it free
           </Link>
+          <button
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="relative flex h-8 w-16 items-center rounded-full border-2 border-accent-primary bg-bg-tertiary p-1 transition-all hover:scale-105 hover:shadow-[0_0_12px_var(--accent-primary)] focus:outline-none"
+          >
+            <span
+              className={`absolute h-5 w-5 rounded-full bg-accent-primary shadow transition-all duration-300 ${
+                theme === 'light' ? 'translate-x-8' : 'translate-x-0'
+              }`}
+            />
+            <LuMoon className="absolute left-1.5 h-3 w-3 text-text-muted" />
+            <LuSun className="absolute right-1.5 h-3 w-3 text-text-muted" />
+          </button>
         </div>
       </header>
 

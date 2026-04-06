@@ -3,7 +3,8 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { LuChartBar, LuChevronRight, LuWand, LuMenu, LuShield } from 'react-icons/lu';
+import { useTheme } from '@/lib/theme';
+import { LuChartBar, LuChevronRight, LuWand, LuMenu, LuShield, LuSun, LuMoon } from 'react-icons/lu';
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'January',
@@ -72,6 +73,7 @@ interface TopNavProps {
 
 export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border-primary bg-bg-secondary px-4 md:px-6">
@@ -113,6 +115,22 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
         >
           <LuShield className="h-4 w-4" />
         </Link>
+
+        {/* ☀️ / 🌙 Theme toggle — quirky pill button */}
+        <button
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          className="relative flex h-8 w-16 items-center rounded-full border-2 border-accent-primary bg-bg-tertiary p-1 transition-all hover:scale-105 hover:shadow-[0_0_12px_var(--accent-primary)] focus:outline-none"
+        >
+          {/* sliding pill */}
+          <span
+            className={`absolute h-5 w-5 rounded-full bg-accent-primary shadow transition-all duration-300 ${
+              theme === 'light' ? 'translate-x-8' : 'translate-x-0'
+            }`}
+          />
+          <LuMoon className="absolute left-1.5 h-3 w-3 text-text-muted" />
+          <LuSun className="absolute right-1.5 h-3 w-3 text-text-muted" />
+        </button>
         {user?.email && (
           <span className="text-xs text-text-muted hidden lg:inline">
             {user.email}
