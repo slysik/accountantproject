@@ -4,7 +4,8 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
-import { LuChartBar, LuChevronRight, LuWand, LuMenu, LuShield, LuSun, LuMoon } from 'react-icons/lu';
+import { useSubscription } from '@/lib/useSubscription';
+import { LuChartBar, LuChevronRight, LuWand, LuMenu, LuShield, LuSun, LuMoon, LuClock } from 'react-icons/lu';
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'January',
@@ -74,6 +75,7 @@ interface TopNavProps {
 export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { sub } = useSubscription(user?.id);
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border-primary bg-bg-secondary px-4 md:px-6">
@@ -101,6 +103,15 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
 
       {/* Right: User info + Actions */}
       <div className="flex items-center gap-3">
+        {sub?.plan === 'trial' && (
+          <Link
+            href="/subscribe"
+            className="hidden items-center gap-1 rounded-lg border border-accent-primary/40 bg-accent-primary/10 px-2.5 py-1 text-xs font-medium text-accent-primary transition-colors hover:bg-accent-primary/20 sm:flex"
+          >
+            <LuClock className="h-3 w-3" />
+            Trial
+          </Link>
+        )}
         <Link
           href="/dashboard/wizard"
           className="flex items-center gap-1.5 rounded-lg bg-accent-primary px-3 py-1.5 text-xs font-semibold text-bg-primary transition-colors hover:bg-accent-dark"

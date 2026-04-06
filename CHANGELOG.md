@@ -5,6 +5,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.0] — 2026-04-04
+
+### Added
+
+#### Free Trial + Subscription Plans
+- **30-day free trial** automatically started for every new account — no credit card required
+- **3 paid plans** enforced after trial expiration:
+  - **Lite** ($10/mo) — 1 user, up to 500 transactions, unlimited years
+  - **Business** ($25/mo) — up to 4 users, unlimited transactions, 5 years of data
+  - **Elite** ($100/mo) — up to 20 users, unlimited transactions, unlimited years
+- `subscriptions` table in Supabase with RLS (see `migrations/002_add_subscriptions.sql`)
+- `src/lib/subscription.ts` — `getSubscription`, `createTrialSubscription`, `selectPlan`, `isAccessAllowed`, `trialDaysRemaining`
+- `src/lib/useSubscription.ts` — React hook for reading subscription in components
+- `/pricing` — public pricing page with plan cards, feature lists, and FAQ
+- `/subscribe` — authenticated plan-selection page shown when trial expires; includes trial-days-remaining banner or expired warning
+- `AuthGuard` updated: auto-creates trial subscription for new users; redirects to `/subscribe` when trial or plan is expired
+- "Trial" pill badge in TopNav (dashboard header) for users still in trial — links to `/subscribe`
+- "Pricing" nav link added to the landing page header
+
+---
+
 ## [1.2.0] — 2026-04-04
 
 ### Added
