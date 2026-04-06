@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { LuWand, LuFileText, LuTrendingUp } from 'react-icons/lu';
+import ExpenseChat from '@/components/ExpenseChat';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -64,6 +65,8 @@ export default function DashboardPage() {
           </p>
         </div>
       </div>
+
+      <ExpenseChat />
     </div>
   );
 }

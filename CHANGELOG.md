@@ -5,6 +5,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.0] — 2026-04-04
+
+### Added
+
+#### Landing Page
+- New public landing page at `/` replacing the old redirect to `/dashboard`
+- Hero section with headline, CTA buttons, and feature description
+- 6-feature grid (CSV import, IRS categorization, charts, export, receipts, security)
+- "How it works" 4-step section
+- Benefits checklist and second CTA
+- Consistent nav with Sign In + Try it free buttons
+
+#### Expense Chatbot
+- Floating bot button (bottom-right) available on all dashboard pages
+- Clicking opens a chat panel — asks questions about the user's expenses in plain English
+- Context-aware: on a month page, only that month's expenses are loaded; on the main dashboard, all expenses are included
+- Powered by Claude (`claude-sonnet-4-6`) via a secure `/api/chat` route
+- API route authenticates the user via Supabase session cookie — no data leaks to other users
+- Suggested starter questions shown on first open
+- Streaming-style feel with a "Thinking..." indicator
+
+---
+
+## [1.0.0] — 2026-04-04
+
+### Added (2FA + password reset, combined into 1.0)
+
+See v0.8.0 and v0.9.0 entries below.
+
+---
+
 ## [0.9.0] — 2026-04-04
 
 ### Added

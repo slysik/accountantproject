@@ -18,6 +18,7 @@ import SummaryCards from '@/components/SummaryCards';
 import MonthlyChart from '@/components/MonthlyChart';
 import ExportMenu from '@/components/ExportMenu';
 import { SkeletonCard, SkeletonSection } from '@/components/Skeleton';
+import ExpenseChat from '@/components/ExpenseChat';
 import type { CategorizedExpense, Receipt } from '@/types';
 
 const MONTH_NAMES: Record<string, string> = {
@@ -245,6 +246,9 @@ export default function MonthPage() {
           </section>
         )}
       </div>
+
+      {/* Expense chatbot */}
+      <ExpenseChat year={year} month={month} />
     </div>
   );
 }
