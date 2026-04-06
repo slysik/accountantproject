@@ -120,7 +120,7 @@ export default function SecuritySettingsPage() {
             <h2 className="text-sm font-semibold text-text-primary">Two-Factor Authentication (2FA)</h2>
           </div>
           <p className="mb-5 text-xs text-text-muted">
-            2FA adds a second layer of security. When signing in you'll need to enter a code
+            2FA adds a second layer of security. When signing in you&apos;ll need to enter a code
             from your authenticator app (e.g. Google Authenticator, Authy) in addition to your password.
           </p>
 
@@ -177,7 +177,7 @@ export default function SecuritySettingsPage() {
           <h2 className="mb-1 text-sm font-semibold text-text-primary">Step 1 — Scan QR Code</h2>
           <p className="mb-5 text-xs text-text-muted">
             Open Google Authenticator, Authy, or any TOTP app and scan the QR code below.
-            Can't scan? Enter the secret key manually.
+            Can&apos;t scan? Enter the secret key manually.
           </p>
 
           <div className="mb-5 flex flex-col items-center gap-4">
@@ -200,7 +200,7 @@ export default function SecuritySettingsPage() {
               onClick={() => { setStep('enroll-verify'); setError(''); }}
               className="flex-1 rounded-lg bg-accent-primary px-4 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
             >
-              I've scanned it → Next
+              I&apos;ve scanned it → Next
             </button>
             <button
               onClick={() => { setStep('manage'); setEnrollData(null); setError(''); }}
@@ -217,7 +217,7 @@ export default function SecuritySettingsPage() {
         <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
           <h2 className="mb-1 text-sm font-semibold text-text-primary">Step 2 — Confirm the Code</h2>
           <p className="mb-5 text-xs text-text-muted">
-            Enter the 6-digit code shown in your authenticator app to confirm it's set up correctly.
+            Enter the 6-digit code shown in your authenticator app to confirm it&apos;s set up correctly.
           </p>
 
           <form onSubmit={handleVerifyEnrollment} className="flex flex-col gap-4">
