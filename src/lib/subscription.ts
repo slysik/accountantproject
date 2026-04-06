@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export type Plan = 'trial' | 'lite' | 'business' | 'elite';
+export type Plan = 'trial' | 'personal' | 'lite' | 'business' | 'elite';
 
 export interface Subscription {
   id: string;
@@ -22,6 +22,22 @@ export interface PlanDetails {
 }
 
 export const PLANS: Record<Exclude<Plan, 'trial'>, PlanDetails> = {
+  personal: {
+    name: 'Personal',
+    price: 1,
+    maxUsers: 1,
+    maxTransactions: 500,
+    maxYears: null,
+    features: [
+      'Single user',
+      'Up to 500 transactions',
+      'Unlimited years',
+      'CSV import & export',
+      'IRS Schedule C categories',
+      'Receipt attachments',
+      'Excel & QBO export',
+    ],
+  },
   lite: {
     name: 'Lite',
     price: 10,
@@ -164,7 +180,7 @@ export async function addAccountMember(ownerUserId: string, email: string): Prom
   const sub = await getSubscription(ownerUserId);
   const maxUsers = maxUsersForSubscription(sub);
 
-  if (!sub || sub.plan === 'trial') {
+  if (!sub || sub.plan === 'trial' || sub.plan === 'personal' || sub.plan === 'lite') {
     throw new Error('Your current plan does not include team members.');
   }
 

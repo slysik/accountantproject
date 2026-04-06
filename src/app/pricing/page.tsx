@@ -8,6 +8,11 @@ import PublicFooter from '@/components/PublicFooter';
 
 const plans = [
   {
+    key: 'personal' as const,
+    badge: 'New',
+    highlight: false,
+  },
+  {
     key: 'lite' as const,
     badge: null,
     highlight: false,
@@ -81,7 +86,7 @@ export default function PricingPage() {
 
       {/* Plan cards */}
       <section className="mx-auto max-w-5xl px-6 pb-24">
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {plans.map(({ key, badge, highlight }) => {
             const plan = PLANS[key];
             return (
@@ -167,7 +172,7 @@ export default function PricingPage() {
               },
               {
                 q: 'What counts as a transaction?',
-                a: 'Each imported expense row counts as one transaction. Lite plan caps at 500 total.',
+                a: 'Each imported expense row counts as one transaction. Personal includes 500 transactions and Lite includes 500 transactions per month.',
               },
               {
                 q: 'Is there a contract or commitment?',

@@ -14,7 +14,7 @@ import {
   type Plan,
 } from '@/lib/subscription';
 
-const PLAN_ORDER: Exclude<Plan, 'trial'>[] = ['lite', 'business', 'elite'];
+const PLAN_ORDER: Exclude<Plan, 'trial'>[] = ['personal', 'lite', 'business', 'elite'];
 
 export default function SubscribePage() {
   const { user, signOut } = useAuth();
@@ -119,10 +119,10 @@ export default function SubscribePage() {
         )}
 
         {/* Plan cards */}
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {PLAN_ORDER.map((key, idx) => {
             const plan = PLANS[key];
-            const isPopular = idx === 1;
+            const isPopular = key === 'business';
             return (
               <div
                 key={key}

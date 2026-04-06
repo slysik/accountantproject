@@ -104,7 +104,7 @@ export default function TeamSettingsPage() {
         </div>
 
         {/* Plan-limit notice */}
-        {(sub?.plan === 'trial' || sub?.plan === 'lite') && (
+        {(sub?.plan === 'trial' || sub?.plan === 'personal' || sub?.plan === 'lite') && (
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-accent-primary/30 bg-accent-primary/10 px-3 py-2.5 text-xs text-text-secondary">
             <LuInfo className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-accent-primary" />
             Team members are available on Business ($25/mo) and Elite ($100/mo) plans.
@@ -193,12 +193,12 @@ export default function TeamSettingsPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="colleague@example.com"
-            disabled={!canAddMore || sub?.plan === 'trial'}
+            disabled={!canAddMore || sub?.plan === 'trial' || sub?.plan === 'personal' || sub?.plan === 'lite'}
             className="flex-1 rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary disabled:opacity-50"
           />
           <button
             type="submit"
-            disabled={adding || !email.trim() || !canAddMore || sub?.plan === 'trial'}
+            disabled={adding || !email.trim() || !canAddMore || sub?.plan === 'trial' || sub?.plan === 'personal' || sub?.plan === 'lite'}
             className="flex items-center gap-1.5 rounded-lg bg-accent-primary px-4 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:opacity-50"
           >
             <LuPlus className="h-4 w-4" />
