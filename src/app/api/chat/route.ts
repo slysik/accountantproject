@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-const anthropicApiKey = process.env.claude_key ?? process.env.ANTHROPIC_API_KEY;
-
-const anthropic = new Anthropic({
-  apiKey: anthropicApiKey!,
-});
+const openAiApiKey = process.env.OPENAI_API_KEY ?? process.env.openai_key;
+const openAiModel = process.env.OPENAI_MODEL ?? 'gpt-4.1-mini';
 
 export async function POST(req: NextRequest) {
   try {
-    if (!anthropicApiKey) {
-      return NextResponse.json({ error: 'Chat API key is not configured' }, { status: 500 });
+    if (!openAiApiKey) {
+      return NextResponse.json({ error: 'OpenAI chat API key is not configured' }, { status: 500 });
     }
 
     // Authenticate the user via Supabase session cookie
@@ -85,17 +81,42 @@ Answer questions about these expenses accurately. You can:
 
 Be concise and specific. Use dollar amounts. If asked something outside of this expense data, politely say you can only help with their expense data.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: messages.map((m: { role: string; content: string }) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      })),
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${openAiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: openAiModel,
+        store: false,
+        instructions: systemPrompt,
+        max_output_tokens: 1024,
+        input: messages.map((m: { role: string; content: string }) => ({
+          role: m.role,
+          content: [
+            {
+              type: 'input_text',
+              text: m.content,
+            },
+          ],
+        })),
+      }),
     });
 
-    const reply = response.content[0].type === 'text' ? response.content[0].text : '';
+    const payload = await response.json();
+
+    if (!response.ok) {
+      console.error('OpenAI chat API error:', payload);
+      const message =
+        payload?.error?.message ??
+        'Failed to get response from OpenAI';
+
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+
+    const reply = typeof payload?.output_text === 'string' ? payload.output_text.trim() : '';
+
     return NextResponse.json({ reply });
   } catch (err) {
     console.error('Chat API error:', err);
