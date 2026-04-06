@@ -32,6 +32,19 @@ export default function LoginPage() {
         router.push('/dashboard');
       } else {
         const result = await signUpWithEmail(email, password);
+        try {
+          await fetch('/api/notify-signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              provider: 'email/password',
+            }),
+          });
+        } catch (notifyErr) {
+          console.warn('Failed to notify admin about signup:', notifyErr);
+        }
+
         if (result.sessionCreated) {
           router.push('/dashboard');
         } else {

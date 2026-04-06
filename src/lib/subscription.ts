@@ -161,7 +161,9 @@ export function trialDaysRemaining(sub: Subscription): number {
 export function maxUsersForSubscription(sub: Subscription | null): number {
   if (!sub) return 1;
   if (sub.plan === 'trial') return 1;
-  if (sub.allowed_active_users !== null) return sub.allowed_active_users;
+  if (typeof sub.allowed_active_users === 'number' && Number.isFinite(sub.allowed_active_users)) {
+    return sub.allowed_active_users;
+  }
   return PLANS[sub.plan].maxUsers;
 }
 
