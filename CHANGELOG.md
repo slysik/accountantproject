@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.0] — 2026-04-04
+
+### Added
+
+#### Two-Factor Authentication (2FA) — forced for all users
+- **TOTP (Authenticator App)**: users can enroll Google Authenticator, Authy, or any TOTP app via QR code on the Security Settings page (`/settings/security`)
+- **Email OTP fallback**: if no authenticator app is enrolled, users can request a one-time code sent to their email
+- After signing in, if the user has a verified TOTP factor, `AuthGuard` detects the unverified MFA state and redirects to `/mfa/verify` before granting dashboard access
+- `/mfa/verify` page: tabbed interface for Authenticator vs Email OTP, sign-out escape hatch
+- `/settings/security` page: enroll TOTP (QR code + manual secret), verify enrollment, remove factor
+- Shield icon in `TopNav` links directly to security settings
+- `auth.tsx`: added `mfaRequired` state, `listMFAFactors`, `enrollTOTP`, `verifyTOTPEnrollment`, `challengeAndVerifyMFA`, `unenrollMFA`, `sendEmailOTP` to `AuthContext`
+- `AuthGuard` updated to redirect to `/mfa/verify` when `mfaRequired` is true
+
+---
+
 ## [0.8.0] — 2026-04-04
 
 ### Added

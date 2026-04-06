@@ -1,18 +1,25 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, mfaRequired } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return;
+    if (!user) {
       router.push('/login');
+      return;
     }
-  }, [user, loading, router]);
+    // If MFA is required and we're not already on the verify page, redirect there
+    if (mfaRequired && pathname !== '/mfa/verify') {
+      router.push('/mfa/verify');
+    }
+  }, [user, loading, mfaRequired, pathname, router]);
 
   if (loading) {
     return (
@@ -25,7 +32,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
+  if (!user || mfaRequired) {
     return null;
   }
 

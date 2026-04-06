@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { LuChartBar, LuChevronRight, LuWand, LuMenu } from 'react-icons/lu';
+import { LuChartBar, LuChevronRight, LuWand, LuMenu, LuShield } from 'react-icons/lu';
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'January',
@@ -105,6 +105,13 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
         >
           <LuWand className="h-3.5 w-3.5" />
           Start Wizard
+        </Link>
+        <Link
+          href="/settings/security"
+          className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+          title="Security Settings"
+        >
+          <LuShield className="h-4 w-4" />
         </Link>
         {user?.email && (
           <span className="text-xs text-text-muted hidden lg:inline">
