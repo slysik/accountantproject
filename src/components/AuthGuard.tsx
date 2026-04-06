@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import { ensureSampleCompanyForFirstLogin } from '@/lib/database';
 import {
   getSubscription,
   createTrialSubscription,
@@ -38,6 +39,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const checkSub = async () => {
       try {
         let sub = await getSubscription(user.id);
+        let shouldSeedSampleData = false;
 
         // Team members can inherit access from the account owner without creating
         // their own subscription row first.
@@ -53,6 +55,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         // New user — create trial
         if (!sub) {
           sub = await createTrialSubscription(user.id);
+          shouldSeedSampleData = true;
+        }
+
+        if (shouldSeedSampleData) {
+          try {
+            await ensureSampleCompanyForFirstLogin(user.id);
+          } catch (seedError) {
+            console.error('Failed to seed first-login sample company:', seedError);
+          }
         }
 
         if (isAccessAllowed(sub)) {

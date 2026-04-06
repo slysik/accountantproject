@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { parseDateString, toDateString, getYear, getYearMonth } from './date-utils';
 import { DEFAULT_COMPANY_NAME } from './company';
+import { buildSampleExpenses, SAMPLE_COMPANY_NAME } from './sample-data';
 import type { CategorizedExpense, CompanyNode, FolderNode, MonthNode, Receipt } from '@/types';
 
 const MONTH_NAMES = [
@@ -359,6 +360,29 @@ export async function createCompany(userId: string, companyName: string): Promis
     );
 
   if (error) throw error;
+}
+
+export async function ensureSampleCompanyForFirstLogin(userId: string): Promise<boolean> {
+  const [
+    { data: companies, error: companiesError },
+    { data: folders, error: foldersError },
+    { data: expenses, error: expensesError },
+  ] = await Promise.all([
+    supabase.from('companies').select('name').eq('user_id', userId).limit(1),
+    supabase.from('folders').select('year').eq('user_id', userId).limit(1),
+    supabase.from('expenses').select('id').eq('user_id', userId).limit(1),
+  ]);
+
+  if (companiesError) throw companiesError;
+  if (foldersError) throw foldersError;
+  if (expensesError) throw expensesError;
+
+  if ((companies?.length ?? 0) > 0 || (folders?.length ?? 0) > 0 || (expenses?.length ?? 0) > 0) {
+    return false;
+  }
+
+  await bulkCreateExpenses(userId, SAMPLE_COMPANY_NAME, buildSampleExpenses());
+  return true;
 }
 
 export async function renameCompany(
