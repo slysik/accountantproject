@@ -23,10 +23,9 @@ function planExpiry(sub: Subscription): string {
     const d = new Date(sub.trial_ends_at);
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   }
-  // Paid plans: show plan_starts_at as "active since"
-  if (sub.plan_starts_at) {
-    const d = new Date(sub.plan_starts_at);
-    return 'Active since ' + d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  if (sub.plan_expires_at) {
+    const d = new Date(sub.plan_expires_at);
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   }
   return '—';
 }
@@ -103,7 +102,7 @@ export default function AccountSettingsPage() {
             <div className="flex items-center justify-between rounded-lg bg-bg-tertiary px-4 py-3">
               <div>
                 <p className="text-xs text-text-muted">
-                  {sub.plan === 'trial' ? 'Trial expires' : 'Plan status'}
+                  {sub.plan === 'trial' ? 'Trial expires' : 'Plan expires'}
                 </p>
                 <p className="mt-0.5 text-sm text-text-primary">{planExpiry(sub)}</p>
               </div>

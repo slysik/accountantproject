@@ -9,6 +9,8 @@ export interface Subscription {
   status: 'active' | 'cancelled';
   trial_ends_at: string;
   plan_starts_at: string | null;
+  plan_expires_at: string | null;
+  allowed_active_users: number | null;
   created_at: string;
 }
 
@@ -112,6 +114,8 @@ export async function createTrialSubscription(userId: string): Promise<Subscript
       plan: 'trial',
       status: 'active',
       trial_ends_at: trialEndsAt.toISOString(),
+      plan_expires_at: trialEndsAt.toISOString(),
+      allowed_active_users: 1,
     })
     .select()
     .single();
@@ -121,12 +125,18 @@ export async function createTrialSubscription(userId: string): Promise<Subscript
 }
 
 export async function selectPlan(userId: string, plan: Exclude<Plan, 'trial'>): Promise<void> {
+  const planStartsAt = new Date();
+  const planExpiresAt = new Date(planStartsAt);
+  planExpiresAt.setDate(planExpiresAt.getDate() + 30);
+
   const { error } = await supabase
     .from('subscriptions')
     .update({
       plan,
       status: 'active',
-      plan_starts_at: new Date().toISOString(),
+      plan_starts_at: planStartsAt.toISOString(),
+      plan_expires_at: planExpiresAt.toISOString(),
+      allowed_active_users: PLANS[plan].maxUsers,
     })
     .eq('user_id', userId);
   if (error) throw error;
@@ -151,6 +161,7 @@ export function trialDaysRemaining(sub: Subscription): number {
 export function maxUsersForSubscription(sub: Subscription | null): number {
   if (!sub) return 1;
   if (sub.plan === 'trial') return 1;
+  if (sub.allowed_active_users !== null) return sub.allowed_active_users;
   return PLANS[sub.plan].maxUsers;
 }
 
