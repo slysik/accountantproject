@@ -131,3 +131,82 @@ export function trialDaysRemaining(sub: Subscription): number {
   const diff = new Date(sub.trial_ends_at).getTime() - Date.now();
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
+
+export function maxUsersForSubscription(sub: Subscription | null): number {
+  if (!sub) return 1;
+  if (sub.plan === 'trial') return 1;
+  return PLANS[sub.plan].maxUsers;
+}
+
+// ── Team / account members ────────────────────────────────────────────────
+
+export interface AccountMember {
+  id: string;
+  owner_user_id: string;
+  member_email: string;
+  member_user_id: string | null;
+  created_at: string;
+}
+
+/** Returns members the current user (as owner) has added. */
+export async function getAccountMembers(ownerUserId: string): Promise<AccountMember[]> {
+  const { data, error } = await supabase
+    .from('account_members')
+    .select('*')
+    .eq('owner_user_id', ownerUserId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as AccountMember[];
+}
+
+/** Adds a member by email. Attempts to resolve their user_id if they exist. */
+export async function addAccountMember(ownerUserId: string, email: string): Promise<AccountMember> {
+  const sub = await getSubscription(ownerUserId);
+  const maxUsers = maxUsersForSubscription(sub);
+
+  if (!sub || sub.plan === 'trial') {
+    throw new Error('Your current plan does not include team members.');
+  }
+
+  const members = await getAccountMembers(ownerUserId);
+  if (members.length + 1 >= maxUsers) {
+    throw new Error(`You have reached the ${maxUsers}-user limit for your plan.`);
+  }
+
+  const { data, error } = await supabase
+    .from('account_members')
+    .insert({ owner_user_id: ownerUserId, member_email: email.toLowerCase().trim() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as AccountMember;
+}
+
+/** Removes a member by their record id. */
+export async function removeAccountMember(memberId: string): Promise<void> {
+  const { error } = await supabase
+    .from('account_members')
+    .delete()
+    .eq('id', memberId);
+  if (error) throw error;
+}
+
+/**
+ * Checks if the current user is a member of another active account.
+ * Used by AuthGuard to grant access to invited users who have no subscription of their own.
+ */
+export async function findOwnerSubscription(memberEmail: string): Promise<Subscription | null> {
+  // Find the membership record where the member's email matches
+  const { data: membership, error } = await supabase
+    .from('account_members')
+    .select('owner_user_id')
+    .eq('member_email', memberEmail.toLowerCase())
+    .maybeSingle();
+
+  if (error) return null;
+
+  if (!membership) return null;
+
+  // Fetch the owner's subscription
+  return getSubscription(membership.owner_user_id);
+}

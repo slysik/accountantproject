@@ -7,9 +7,10 @@ import {
   getSubscription,
   createTrialSubscription,
   isAccessAllowed,
+  findOwnerSubscription,
 } from '@/lib/subscription';
 
-// Pages that are accessible even when the trial/subscription has expired
+// Pages accessible even when trial/subscription has expired
 const SUBSCRIPTION_EXEMPT = ['/subscribe', '/settings/security', '/mfa/verify'];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -29,29 +30,60 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       router.push('/mfa/verify');
       return;
     }
-    // Check subscription (skip for exempt pages)
     if (mfaRequired) {
       setSubLoading(false);
       return;
     }
+
     const checkSub = async () => {
       try {
         let sub = await getSubscription(user.id);
+
+        // Team members can inherit access from the account owner without creating
+        // their own subscription row first.
+        if (!sub && user.email) {
+          const ownerSub = await findOwnerSubscription(user.email);
+          if (ownerSub && isAccessAllowed(ownerSub)) {
+            setSubBlocked(false);
+            setSubLoading(false);
+            return;
+          }
+        }
+
+        // New user — create trial
         if (!sub) {
           sub = await createTrialSubscription(user.id);
         }
-        const allowed = isAccessAllowed(sub);
-        setSubBlocked(!allowed);
-        if (!allowed && !SUBSCRIPTION_EXEMPT.some((p) => pathname.startsWith(p))) {
+
+        if (isAccessAllowed(sub)) {
+          setSubBlocked(false);
+          setSubLoading(false);
+          return;
+        }
+
+        // Own subscription expired — check if they're a member of another active account
+        if (user.email) {
+          const ownerSub = await findOwnerSubscription(user.email);
+          if (ownerSub && isAccessAllowed(ownerSub)) {
+            setSubBlocked(false);
+            setSubLoading(false);
+            return;
+          }
+        }
+
+        // Truly blocked
+        setSubBlocked(true);
+        if (!SUBSCRIPTION_EXEMPT.some((p) => pathname.startsWith(p))) {
           router.push('/subscribe');
         }
       } catch {
-        // If subscription check fails, allow access (fail open)
+        // Fail open — don't lock out users if subscription check errors
         setSubBlocked(false);
       } finally {
         setSubLoading(false);
       }
     };
+
     checkSub();
   }, [user, loading, mfaRequired, pathname, router]);
 
@@ -66,11 +98,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || mfaRequired) {
-    return null;
-  }
+  if (!user || mfaRequired) return null;
 
-  // If subscription is blocked but we're on an exempt page, still render
   if (subBlocked && !SUBSCRIPTION_EXEMPT.some((p) => pathname.startsWith(p))) {
     return null;
   }
