@@ -37,21 +37,25 @@ export default function SummaryCards({ expenses }: SummaryCardsProps) {
       icon: LuDollarSign,
       label: 'Total Expenses',
       value: formatCurrency(stats.total),
+      hint: stats.count > 0 ? `${formatCurrency(stats.total / stats.count)} avg transaction` : 'No transactions yet',
     },
     {
       icon: LuReceipt,
       label: 'Transactions',
       value: stats.count.toLocaleString(),
+      hint: `${stats.months} active month${stats.months === 1 ? '' : 's'}`,
     },
     {
       icon: LuCalendar,
       label: 'Months',
       value: String(stats.months),
+      hint: stats.months > 0 ? 'Months with recorded activity' : 'Waiting for imports',
     },
     {
       icon: LuTag,
       label: 'Top Category',
       value: stats.topCategory,
+      hint: 'Largest share of spend',
     },
   ];
 
@@ -60,15 +64,23 @@ export default function SummaryCards({ expenses }: SummaryCardsProps) {
       {cards.map(card => (
         <div
           key={card.label}
-          className="rounded-xl border border-border-primary bg-bg-secondary p-4 transition-colors hover:bg-bg-tertiary/50"
+          className="group overflow-hidden rounded-[24px] border border-border-primary/80 bg-bg-secondary/85 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.14)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-primary/40"
         >
-          <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-bg-tertiary">
-            <card.icon className="h-4 w-4 text-accent-primary" />
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent-primary/12 ring-1 ring-accent-primary/20">
+              <card.icon className="h-4 w-4 text-accent-primary" />
+            </div>
+            <span className="rounded-full border border-border-primary/70 bg-bg-primary/60 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-text-muted">
+              Live
+            </span>
           </div>
-          <p className="text-lg font-bold text-text-primary leading-tight truncate">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+            {card.label}
+          </p>
+          <p className="mt-2 font-display text-2xl font-bold leading-tight text-text-primary">
             {card.value}
           </p>
-          <p className="mt-0.5 text-xs text-text-muted">{card.label}</p>
+          <p className="mt-2 text-xs text-text-secondary">{card.hint}</p>
         </div>
       ))}
     </div>

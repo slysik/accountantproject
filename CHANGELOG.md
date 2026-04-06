@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.4] — 2026-04-06
+
+### Changed
+
+#### Visual Polish
+- Refined the authenticated dashboard experience with a more cohesive visual system across the main dashboard, year view, month view, top navigation, and sidebar
+- Introduced stronger typography hierarchy, elevated panel styling, richer background atmosphere, and more consistent spacing so the product feels more premium and intentional
+
+#### Analytics Presentation
+- Upgraded summary cards, category breakdown panels, and chart framing to improve scanability and perceived quality
+- Year and month pages now use stronger hero sections and better section framing to make analytics feel more dashboard-like and less like stacked utility cards
+
+#### Navigation Experience
+- Refined the left navigation with improved section treatment, cleaner active states, better indentation rhythm, and a more polished release badge treatment
+- Updated the top navigation styling so breadcrumbs, plan badge, wizard CTA, and account actions better match the new visual language
+
 ## [1.5.3] — 2026-04-06
 
 ### Changed

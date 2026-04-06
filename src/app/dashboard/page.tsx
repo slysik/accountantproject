@@ -111,7 +111,7 @@ function InsightPanel({ expenses, isSample }: { expenses: CategorizedExpense[]; 
   }, [expenses]);
 
   return (
-    <section className="rounded-2xl border border-border-primary bg-bg-secondary p-6">
+    <section className="shell-panel p-6">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <LuSparkles className="h-4 w-4 text-accent-primary" />
@@ -154,35 +154,70 @@ export default function DashboardPage() {
   const shownExpenses = hasData ? expenses : sampleExpenses;
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-text-primary">
+    <div className="mx-auto max-w-7xl">
+      <section className="hero-surface mb-8">
+        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.22),_transparent_36%),linear-gradient(135deg,var(--bg-secondary),var(--bg-primary))] px-6 py-7 md:px-8 md:py-8">
+          <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="section-kicker mb-3">Control Center</p>
+              <h1 className="font-display text-4xl font-bold text-text-primary md:text-5xl">
             Welcome back, {displayName}
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-text-muted">
-            {hasData
-              ? 'Here is your live expense analysis across categories and year-over-year spending trends.'
-              : 'Here is how your analysis dashboard will look once expenses start flowing in. These visuals are powered by sample data for now.'}
-          </p>
+              </h1>
+              <p className="mt-3 max-w-3xl text-sm text-text-secondary md:text-base">
+                {hasData
+                  ? 'Your live finance pulse across categories, trends, and year-over-year movement.'
+                  : 'A guided preview of the analysis experience, powered by sample data until your real books land.'}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/dashboard/wizard"
+                className="inline-flex items-center gap-2 rounded-full bg-accent-primary px-5 py-3 text-sm font-semibold text-bg-primary shadow-[0_18px_40px_rgba(37,99,235,0.28)] transition-colors hover:bg-accent-dark"
+              >
+                <LuWand className="h-4 w-4" />
+                Start Wizard
+              </Link>
+              <Link
+                href="/pricing"
+                className="action-pill"
+              >
+                <LuArrowUpRight className="h-4 w-4" />
+                View Pricing
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="metric-card">
+              <p className="metric-label">Live reporting</p>
+              <p className="font-display text-2xl font-bold text-text-primary">
+                {hasData ? 'Active' : 'Preview'}
+              </p>
+              <p className="mt-2 text-xs text-text-secondary">
+                {hasData ? 'Your analysis reflects current categorized expenses.' : 'Charts stay meaningful even before first import.'}
+              </p>
+            </div>
+            <div className="metric-card">
+              <p className="metric-label">Coverage</p>
+              <p className="font-display text-2xl font-bold text-text-primary">
+                {hasData ? `${new Set(expenses.map((item) => item.month)).size} months` : '2 sample years'}
+              </p>
+              <p className="mt-2 text-xs text-text-secondary">
+                {hasData ? 'Cross-year visibility for planning and cleanup.' : 'See trends, categories, and annual pacing instantly.'}
+              </p>
+            </div>
+            <div className="metric-card">
+              <p className="metric-label">Next best move</p>
+              <p className="font-display text-2xl font-bold text-text-primary">
+                {hasData ? 'Review trends' : 'Import data'}
+              </p>
+              <p className="mt-2 text-xs text-text-secondary">
+                {hasData ? 'Use the year and month views to drill into spend shifts.' : 'The wizard can load sample or production-ready CSVs.'}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/dashboard/wizard"
-            className="inline-flex items-center gap-2 rounded-xl bg-accent-primary px-4 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
-          >
-            <LuWand className="h-4 w-4" />
-            Start Wizard
-          </Link>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-2 rounded-xl border border-border-primary px-4 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-secondary"
-          >
-            <LuArrowUpRight className="h-4 w-4" />
-            View Pricing
-          </Link>
-        </div>
-      </div>
+      </section>
 
       {loading ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -195,22 +230,22 @@ export default function DashboardPage() {
           <SummaryCards expenses={shownExpenses} />
 
           {!hasData && (
-            <div className="mt-6 rounded-2xl border border-accent-primary/25 bg-accent-primary/10 p-5">
+            <div className="mt-6 shell-panel p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-bg-primary/70">
+                  <div className="mt-0.5 flex h-11 w-11 items-center justify-center rounded-2xl bg-accent-primary/12 ring-1 ring-accent-primary/18">
                     <LuDatabase className="h-5 w-5 text-accent-primary" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-semibold text-text-primary">No expense data yet</h2>
-                    <p className="mt-1 text-xs text-text-secondary">
+                    <h2 className="font-display text-lg font-bold text-text-primary">No expense data yet</h2>
+                    <p className="mt-1 text-sm text-text-secondary">
                       You&apos;re viewing sample analytics. Import a CSV to replace these visuals with your real books.
                     </p>
                   </div>
                 </div>
                 <Link
                   href="/dashboard/wizard"
-                  className="inline-flex items-center gap-2 rounded-lg bg-bg-primary px-4 py-2 text-xs font-semibold text-text-primary transition-colors hover:bg-bg-secondary"
+                  className="inline-flex items-center gap-2 rounded-full bg-bg-primary px-4 py-2 text-xs font-semibold text-text-primary transition-colors hover:bg-bg-tertiary"
                 >
                   <LuFileText className="h-3.5 w-3.5 text-accent-primary" />
                   Import Sample or CSV
@@ -220,7 +255,7 @@ export default function DashboardPage() {
           )}
 
           <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-            <section className="rounded-2xl border border-border-primary bg-bg-secondary p-6">
+            <section className="shell-panel p-6">
               <div className="mb-4 flex items-center gap-2">
                 <LuChartLine className="h-4 w-4 text-accent-primary" />
                 <h2 className="text-sm font-semibold text-text-primary">Spend Trend</h2>
@@ -232,7 +267,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
-            <section className="rounded-2xl border border-border-primary bg-bg-secondary p-6">
+            <section className="shell-panel p-6">
               <div className="mb-4 flex items-center gap-2">
                 <LuTrendingUp className="h-4 w-4 text-accent-primary" />
                 <h2 className="text-sm font-semibold text-text-primary">Year-over-Year</h2>
@@ -240,7 +275,7 @@ export default function DashboardPage() {
               <YearBars expenses={shownExpenses} />
             </section>
 
-            <section className="rounded-2xl border border-border-primary bg-bg-secondary p-6">
+            <section className="shell-panel p-6">
               <div className="mb-4 flex items-center gap-2">
                 <LuFileText className="h-4 w-4 text-accent-primary" />
                 <h2 className="text-sm font-semibold text-text-primary">Expense by Category</h2>

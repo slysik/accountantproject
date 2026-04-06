@@ -51,17 +51,20 @@ export default function CategoryBreakdown({ expenses }: CategoryBreakdownProps) 
   return (
     <div className="space-y-3">
       {categoryTotals.map(cat => (
-        <div key={cat.id} className="group">
-          <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="text-text-primary font-medium">{cat.name}</span>
-            <div className="flex items-center gap-3">
-              <span className="text-text-primary font-mono">{formatCurrency(cat.total)}</span>
-              <span className="w-12 text-right text-text-muted">{cat.percentage.toFixed(1)}%</span>
+        <div key={cat.id} className="group rounded-2xl border border-border-primary/60 bg-bg-tertiary/50 p-4 transition-all duration-200 hover:border-accent-primary/35 hover:bg-bg-tertiary/70">
+          <div className="mb-2 flex items-start justify-between gap-3">
+            <div>
+              <span className="text-sm font-semibold text-text-primary">{cat.name}</span>
+              <p className="mt-1 text-xs text-text-muted">{cat.count} transaction{cat.count === 1 ? '' : 's'}</p>
+            </div>
+            <div className="text-right">
+              <span className="block text-sm font-semibold text-text-primary">{formatCurrency(cat.total)}</span>
+              <span className="text-[11px] uppercase tracking-[0.14em] text-text-muted">{cat.percentage.toFixed(1)}%</span>
             </div>
           </div>
-          <div className="h-2 w-full rounded-full bg-bg-tertiary overflow-hidden">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-bg-primary/70">
             <div
-              className="h-full rounded-full bg-accent-primary transition-all duration-500 group-hover:bg-accent-dark"
+              className="h-full rounded-full bg-[linear-gradient(90deg,var(--accent-primary),var(--success))] transition-all duration-500"
               style={{ width: `${(cat.total / maxTotal) * 100}%` }}
             />
           </div>

@@ -102,7 +102,7 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
       : 'Account';
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border-primary bg-bg-secondary px-4 md:px-6">
+    <header className="flex h-16 items-center justify-between border-b border-border-primary/80 bg-bg-secondary/75 px-4 backdrop-blur-xl md:px-6">
       {/* Left: Hamburger (mobile) + Logo / App Name */}
       <div className="flex items-center gap-2">
         {onMobileMenuToggle && (
@@ -114,14 +114,16 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
             <LuMenu className="h-5 w-5" />
           </button>
         )}
-        <LuChartBar className="h-5 w-5 text-accent-primary" />
-        <span className="text-sm font-semibold text-text-primary hidden md:inline">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent-primary/12 ring-1 ring-accent-primary/20">
+          <LuChartBar className="h-5 w-5 text-accent-primary" />
+        </div>
+        <span className="font-display text-sm font-bold text-text-primary hidden md:inline">
           Accountant&apos;s Best Friend
         </span>
       </div>
 
       {/* Center: Breadcrumbs */}
-      <div className="flex-1 flex justify-center">
+      <div className="flex flex-1 justify-center px-4">
         <Breadcrumbs />
       </div>
 
@@ -129,7 +131,7 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
       <div className="flex items-center gap-3">
         <Link
           href={sub?.plan === 'trial' ? '/subscribe' : '/settings/account'}
-          className="hidden items-center gap-1 rounded-lg border border-accent-primary/40 bg-accent-primary/10 px-2.5 py-1 text-xs font-medium text-accent-primary transition-colors hover:bg-accent-primary/20 sm:flex"
+          className="hidden items-center gap-1 rounded-full border border-accent-primary/35 bg-accent-primary/10 px-3 py-1.5 text-xs font-semibold text-accent-primary transition-colors hover:bg-accent-primary/18 sm:flex"
           title="Account type"
         >
           <LuClock className="h-3 w-3" />
@@ -137,7 +139,7 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
         </Link>
         <Link
           href="/dashboard/wizard"
-          className="flex items-center gap-1.5 rounded-lg bg-accent-primary px-3 py-1.5 text-xs font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
+          className="flex items-center gap-1.5 rounded-full bg-accent-primary px-3.5 py-2 text-xs font-semibold text-bg-primary shadow-[0_12px_30px_rgba(37,99,235,0.28)] transition-colors hover:bg-accent-dark"
         >
           <LuWand className="h-3.5 w-3.5" />
           Start Wizard
@@ -172,7 +174,7 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
         )}
         <button
           onClick={() => signOut()}
-          className="rounded-lg border border-border-primary px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+          className="rounded-full border border-border-primary/80 px-3.5 py-2 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
         >
           Sign Out
         </button>

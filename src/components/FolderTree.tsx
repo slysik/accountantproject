@@ -209,9 +209,9 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   if (loading) return <SkeletonFolderTree />;
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       {!collapsed && (
-        <div className="mb-2">
+        <div className="mb-3">
           {showAddCompany ? (
             <div className="flex items-center gap-1 px-2">
               <input
@@ -246,7 +246,7 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
           ) : (
             <button
               onClick={() => setShowAddCompany(true)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+              className="flex w-full items-center gap-2 rounded-2xl border border-dashed border-border-primary/80 bg-bg-primary/35 px-3 py-2 text-xs font-semibold text-text-muted transition-all hover:border-accent-primary/40 hover:bg-bg-tertiary/70 hover:text-text-secondary"
             >
               <LuPlus className="h-3.5 w-3.5" />
               Add Company
@@ -267,7 +267,7 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
 
         return (
           <div key={company.companyName}>
-            <div className="group flex items-center">
+            <div className="group flex items-center gap-1">
               {editingCompany === company.companyName && !collapsed ? (
                 <div className="flex flex-1 items-center gap-1 px-2 py-1">
                   <input
@@ -308,7 +308,7 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
               ) : (
                 <button
                   onClick={() => toggleCompany(company.companyName)}
-                  className="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+                  className="flex flex-1 items-center gap-2 rounded-2xl border border-transparent px-3 py-2 text-sm font-medium text-text-secondary transition-all hover:border-border-primary/70 hover:bg-bg-tertiary/70 hover:text-text-primary"
                   title={collapsed ? company.companyName : undefined}
                 >
                   {collapsed ? (
@@ -329,7 +329,7 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
               {!collapsed && editingCompany !== company.companyName && (
                 <button
                   onClick={() => handleStartRenameCompany(company.companyName)}
-                  className="opacity-0 rounded p-1 text-text-muted transition-all hover:bg-bg-tertiary hover:text-text-primary group-hover:opacity-100"
+                  className="opacity-0 rounded-xl p-2 text-text-muted transition-all hover:bg-bg-tertiary hover:text-text-primary group-hover:opacity-100"
                   title={`Rename ${company.companyName}`}
                 >
                   <LuPencil className="h-3.5 w-3.5" />
@@ -338,7 +338,7 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
             </div>
 
             {!collapsed && companyExpanded && (
-              <div className="ml-4 mt-1 flex flex-col gap-1">
+              <div className="ml-4 mt-1 flex flex-col gap-1.5 border-l border-border-primary/50 pl-3">
                 {addingYearCompany === company.companyName ? (
                   <div className="flex items-center gap-1 px-2">
                     <input
@@ -372,7 +372,7 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
                 ) : (
                   <button
                     onClick={() => setAddingYearCompany(company.companyName)}
-                    className="flex items-center gap-2 rounded-md px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+                    className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
                   >
                     <LuPlus className="h-3 w-3" />
                     Add Year
@@ -417,13 +417,13 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
                           </button>
                         </div>
                       ) : (
-                        <div className="group flex items-center">
+                        <div className="group flex items-center gap-1">
                           <button
                             onClick={() => {
                               toggleYear(company.companyName, folder.year);
                               router.push(`/dashboard/${companySlug}/${folder.year}`);
                             }}
-                            className="flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+                            className="flex flex-1 items-center gap-2 rounded-2xl border border-transparent px-3 py-2 text-sm font-medium text-text-secondary transition-all hover:border-border-primary/70 hover:bg-bg-tertiary/70 hover:text-text-primary"
                           >
                             {yearExpanded ? (
                               <LuChevronDown className="h-3.5 w-3.5 text-text-muted" />
@@ -439,7 +439,7 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
                           </button>
                           <button
                             onClick={() => setDeleteTarget({ type: 'year', companyName: company.companyName, year: folder.year })}
-                            className="opacity-0 rounded p-1 text-text-muted transition-all hover:bg-bg-tertiary hover:text-error group-hover:opacity-100"
+                            className="opacity-0 rounded-xl p-2 text-text-muted transition-all hover:bg-bg-tertiary hover:text-error group-hover:opacity-100"
                             title={`Delete ${folder.year}`}
                           >
                             <LuTrash2 className="h-3.5 w-3.5" />
@@ -448,7 +448,7 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
                       )}
 
                       {yearExpanded && (
-                        <div className="ml-5 mt-0.5 flex flex-col gap-0.5">
+                        <div className="ml-4 mt-1 flex flex-col gap-1 border-l border-border-primary/40 pl-3">
                           {folder.months.map((month) => {
                             const isPendingMonthDelete =
                               deleteTarget?.type === 'month' &&
@@ -482,10 +482,10 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
                                   <div className="group flex items-center">
                                     <button
                                       onClick={() => router.push(`/dashboard/${companySlug}/${folder.year}/${month.month}`)}
-                                      className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1 text-xs transition-colors hover:bg-bg-tertiary ${
+                                      className={`flex flex-1 items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-all ${
                                         isActiveMonth(company.companyName, folder.year, month.month)
-                                          ? 'bg-accent-primary/10 text-accent-primary'
-                                          : 'text-text-muted hover:text-text-secondary'
+                                          ? 'border-accent-primary/30 bg-accent-primary/10 text-accent-primary shadow-[0_10px_24px_rgba(37,99,235,0.12)]'
+                                          : 'border-transparent text-text-muted hover:border-border-primary/70 hover:bg-bg-tertiary hover:text-text-secondary'
                                       }`}
                                     >
                                       <LuCalendar className="h-3.5 w-3.5" />
@@ -505,7 +505,7 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
                                           month: month.month,
                                         })
                                       }
-                                      className="opacity-0 rounded p-1 text-text-muted transition-all hover:bg-bg-tertiary hover:text-error group-hover:opacity-100"
+                                      className="opacity-0 rounded-xl p-1.5 text-text-muted transition-all hover:bg-bg-tertiary hover:text-error group-hover:opacity-100"
                                       title={`Delete ${month.name}`}
                                     >
                                       <LuTrash2 className="h-3 w-3" />

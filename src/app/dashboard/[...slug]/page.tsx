@@ -69,9 +69,9 @@ function DashboardPanel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-border-primary bg-bg-secondary p-5">
+    <section className="shell-panel p-5">
       <div className="mb-4 flex items-center gap-2">
-        <span className="text-accent-primary">{icon}</span>
+        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent-primary/12 text-accent-primary ring-1 ring-accent-primary/20">{icon}</span>
         <h2 className="text-sm font-semibold text-text-primary">{title}</h2>
       </div>
       {children}
@@ -294,9 +294,14 @@ export default function DashboardSlugPage() {
 
   if (isCompanyView) {
     return (
-      <div className="mx-auto max-w-4xl">
-        <h1 className="mb-2 text-2xl font-bold text-text-primary">{companyName}</h1>
-        <p className="mb-6 text-sm text-text-muted">Choose a year folder to view expenses for this company.</p>
+      <div className="mx-auto max-w-5xl">
+        <section className="hero-surface mb-6">
+          <div className="bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.22),_transparent_34%),linear-gradient(135deg,var(--bg-secondary),var(--bg-primary))] px-6 py-7">
+            <p className="section-kicker mb-3">Company Workspace</p>
+            <h1 className="font-display text-4xl font-bold text-text-primary">{companyName}</h1>
+            <p className="mt-3 max-w-2xl text-sm text-text-secondary">Choose a year folder to review trends, imports, and exported reports for this company.</p>
+          </div>
+        </section>
         {loading ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
@@ -309,10 +314,13 @@ export default function DashboardSlugPage() {
               <button
                 key={companyYear}
                 onClick={() => router.push(`/dashboard/${encodeCompanySlug(companyName)}/${companyYear}`)}
-                className="rounded-xl border border-border-primary bg-bg-secondary p-4 text-left transition-colors hover:border-accent-primary/50 hover:bg-bg-tertiary"
+                className="shell-panel p-5 text-left transition-all hover:-translate-y-0.5 hover:border-accent-primary/40"
               >
-                <div className="mb-2 text-sm font-semibold text-text-primary">{companyYear}</div>
-                <div className="text-xs text-text-muted">Open year folder</div>
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-accent-primary/12 ring-1 ring-accent-primary/18">
+                  <LuFolderOpen className="h-5 w-5 text-accent-primary" />
+                </div>
+                <div className="font-display text-2xl font-bold text-text-primary">{companyYear}</div>
+                <div className="mt-1 text-xs text-text-muted">Open year workspace</div>
               </button>
             ))}
           </div>
@@ -323,15 +331,15 @@ export default function DashboardSlugPage() {
 
   if (isYearView && year) {
     return (
-      <div className="mx-auto max-w-5xl">
-        <section className="mb-6 overflow-hidden rounded-3xl border border-border-primary bg-bg-secondary">
+      <div className="mx-auto max-w-6xl">
+        <section className="hero-surface mb-6">
           <div className="bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.18),_transparent_45%),linear-gradient(135deg,var(--bg-secondary),var(--bg-primary))] px-6 py-7">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="mb-2 text-xs uppercase tracking-[0.22em] text-accent-primary">Year View</p>
-                <h1 className="text-3xl font-bold text-text-primary">{year}</h1>
-                <p className="mt-2 text-sm text-text-muted">
-                  {companyName} yearly rollup with a clean month-by-month spend map.
+                <h1 className="font-display text-4xl font-bold text-text-primary md:text-5xl">{year}</h1>
+                <p className="mt-3 max-w-2xl text-sm text-text-secondary">
+                  {companyName} yearly command view with high-signal analytics, pacing, and a guided path into each month.
                 </p>
               </div>
               <div className="hidden rounded-2xl border border-border-primary/70 bg-bg-primary/60 p-4 md:block">
@@ -373,7 +381,7 @@ export default function DashboardSlugPage() {
         </section>
 
         {!loading && missingMonths.length > 0 && (
-          <section className="mb-6 rounded-2xl border border-border-primary bg-bg-secondary p-5">
+          <section className="shell-panel mb-6 p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="mb-2 flex items-center gap-2">
@@ -593,15 +601,15 @@ export default function DashboardSlugPage() {
   const hasExpenses = expenses.length > 0;
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <section className="mb-6 overflow-hidden rounded-3xl border border-border-primary bg-bg-secondary">
+    <div className="mx-auto max-w-6xl">
+      <section className="hero-surface mb-6">
         <div className="bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.2),_transparent_42%),linear-gradient(135deg,var(--bg-secondary),var(--bg-primary))] px-6 py-7">
           <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="mb-2 text-xs uppercase tracking-[0.22em] text-accent-primary">Month View</p>
-              <h1 className="text-3xl font-bold text-text-primary">{monthName} {year}</h1>
-              <p className="mt-2 text-sm text-text-muted">
-                {companyName} monthly activity, categories, uploads, and exports in one place.
+              <h1 className="font-display text-4xl font-bold text-text-primary md:text-5xl">{monthName} {year}</h1>
+              <p className="mt-3 max-w-2xl text-sm text-text-secondary">
+                {companyName} monthly operating view with imports, category cleanup, exports, and expense-level detail.
               </p>
             </div>
             <div className="flex items-center justify-end">
@@ -676,7 +684,7 @@ export default function DashboardSlugPage() {
       <div className="flex flex-col gap-6">
         {hasExpenses && <SummaryCards expenses={expenses} />}
 
-        <section className="rounded-2xl border border-border-primary bg-bg-secondary p-6">
+        <section className="shell-panel p-6">
           <div className="mb-4">
             <h2 className="text-sm font-semibold text-text-primary">Import & Refresh</h2>
             <p className="mt-1 text-xs text-text-muted">
@@ -687,7 +695,7 @@ export default function DashboardSlugPage() {
         </section>
 
         {hasExpenses && (
-          <section className="rounded-2xl border border-border-primary bg-bg-secondary p-6">
+          <section className="shell-panel p-6">
             <div className="mb-4 flex items-center gap-2">
               <LuChartLine className="h-4 w-4 text-accent-primary" />
               <h2 className="text-sm font-semibold text-text-primary">Monthly Spending</h2>
@@ -697,7 +705,7 @@ export default function DashboardSlugPage() {
         )}
 
         {hasExpenses && (
-          <section className="rounded-2xl border border-border-primary bg-bg-secondary p-6">
+          <section className="shell-panel p-6">
             <div className="mb-4 flex items-center gap-2">
               <LuChartPie className="h-4 w-4 text-accent-primary" />
               <h2 className="text-sm font-semibold text-text-primary">Category Breakdown</h2>
@@ -707,7 +715,7 @@ export default function DashboardSlugPage() {
         )}
 
         {hasExpenses && (
-          <section className="rounded-2xl border border-border-primary bg-bg-secondary p-6">
+          <section className="shell-panel p-6">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <LuTable className="h-4 w-4 text-accent-primary" />
@@ -736,7 +744,7 @@ export default function DashboardSlugPage() {
         )}
 
         {!loading && !hasExpenses && (
-          <section className="rounded-2xl border border-border-primary bg-bg-secondary px-6 py-16">
+          <section className="shell-panel px-6 py-16">
             <div className="flex flex-col items-center gap-3 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bg-tertiary">
                 <LuInbox className="h-7 w-7 text-text-muted" />

@@ -71,8 +71,18 @@ export default function MonthlyChart({ expenses }: MonthlyChartProps) {
   const areaPath = `${linePath} L ${points[points.length - 1].x} ${paddingTop + chartHeight} L ${points[0].x} ${paddingTop + chartHeight} Z`;
 
   return (
-    <div className="w-full">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+    <div className="w-full overflow-hidden rounded-[24px] border border-border-primary/60 bg-bg-tertiary/40 p-3">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="chartStroke" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="var(--accent-primary)" />
+            <stop offset="100%" stopColor="var(--success)" />
+          </linearGradient>
+          <linearGradient id="chartFill" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="var(--accent-primary)" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="var(--accent-primary)" stopOpacity="0.03" />
+          </linearGradient>
+        </defs>
         {/* Grid lines */}
         {gridLines.map((gl, i) => (
           <g key={i}>
@@ -81,17 +91,18 @@ export default function MonthlyChart({ expenses }: MonthlyChartProps) {
               y1={gl.y}
               x2={width - paddingRight}
               y2={gl.y}
-              stroke="#363A38"
-              strokeWidth={0.5}
+              stroke="var(--border-primary)"
+              strokeOpacity={i === 0 ? 0.65 : 0.32}
+              strokeWidth={0.75}
               strokeDasharray={i === 0 ? 'none' : '4 4'}
             />
             <text
               x={paddingLeft - 8}
               y={gl.y + 4}
               textAnchor="end"
-              fill="#707070"
+              fill="var(--text-muted)"
               fontSize={10}
-              fontFamily="monospace"
+              fontFamily="var(--font-sans), sans-serif"
             >
               {formatCurrency(gl.value)}
             </text>
@@ -99,23 +110,25 @@ export default function MonthlyChart({ expenses }: MonthlyChartProps) {
         ))}
 
         {/* Filled area under line */}
-        <path d={areaPath} fill="#F8D448" opacity={0.08} />
+        <path d={areaPath} fill="url(#chartFill)" />
 
         {/* Line */}
-        <path d={linePath} fill="none" stroke="#F8D448" strokeWidth={2} strokeLinejoin="round" />
+        <path d={linePath} fill="none" stroke="url(#chartStroke)" strokeWidth={3} strokeLinejoin="round" strokeLinecap="round" />
 
         {/* Data points and X-axis labels */}
         {points.map((p, i) => (
           <g key={i}>
             {/* Dot */}
-            <circle cx={p.x} cy={p.y} r={4} fill="#121413" stroke="#F8D448" strokeWidth={2} />
+            <circle cx={p.x} cy={p.y} r={5} fill="var(--bg-secondary)" stroke="var(--accent-primary)" strokeWidth={2.5} />
+            <circle cx={p.x} cy={p.y} r={2} fill="var(--accent-primary)" />
             {/* X label */}
             <text
               x={p.x}
               y={height - 10}
               textAnchor="middle"
-              fill="#A8A8A8"
+              fill="var(--text-secondary)"
               fontSize={11}
+              fontFamily="var(--font-sans), sans-serif"
             >
               {p.label}
             </text>
