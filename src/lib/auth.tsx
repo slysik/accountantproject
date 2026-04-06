@@ -77,7 +77,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // app appear to log into the previously authenticated user.
     await supabase.auth.signOut({ scope: 'local' });
 
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
+    });
     if (error) throw error;
 
     return {

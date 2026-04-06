@@ -20,6 +20,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 #### Authentication / Account Experience
 - Sign-up now clears stale sessions before creating a new account so new users are not dropped into someone else’s session
+- Email signup confirmations now redirect back to the live website login page instead of falling back to `localhost:3000`
 - Users on inherited team access now correctly see the effective account plan badge in the top-right dashboard nav
 - Light mode is now the default for first-time visitors, while saved theme preference still takes precedence
 
