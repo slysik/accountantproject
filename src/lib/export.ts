@@ -6,11 +6,31 @@ import { toDateString } from './date-utils';
 
 type SheetData = (string | number)[][];
 
+interface MonthlyMetricRow {
+  month: string;
+  total: number;
+  count: number;
+}
+
+interface YearlyMetricRow {
+  year: string;
+  total: number;
+  count: number;
+  average: number;
+  topMonth: MonthlyMetricRow | null;
+}
+
+interface YearlyMetrics {
+  years: YearlyMetricRow[];
+  months: MonthlyMetricRow[];
+}
+
 /** Generate and download an Excel report with multiple sheets. */
 export function generateExcelReport(
   expenses: CategorizedExpense[],
   aggregation: AggregationResult,
-  summary: ExpenseSummary
+  summary: ExpenseSummary,
+  options?: { includeYearlySummary?: boolean }
 ): string {
   const wb = XLSX.utils.book_new();
 
@@ -38,6 +58,13 @@ export function generateExcelReport(
   styleSheet(categoryDetailWs, categoryDetailData);
   XLSX.utils.book_append_sheet(wb, categoryDetailWs, "By Category");
 
+  if (options?.includeYearlySummary) {
+    const yearlySummaryData = createYearlySummarySheet(expenses);
+    const yearlySummaryWs = XLSX.utils.aoa_to_sheet(yearlySummaryData);
+    styleSheet(yearlySummaryWs, yearlySummaryData);
+    XLSX.utils.book_append_sheet(wb, yearlySummaryWs, "Yearly Summary");
+  }
+
   // Generate filename with date range
   const months = summary.uniqueMonths;
   const dateRange = months.length > 0
@@ -50,6 +77,83 @@ export function generateExcelReport(
   XLSX.writeFile(wb, filename);
 
   return filename;
+}
+
+function buildYearlyMetrics(expenses: CategorizedExpense[]): YearlyMetrics {
+  const byYear = new Map<string, { total: number; count: number; months: Map<string, MonthlyMetricRow> }>();
+  const byMonth = new Map<string, MonthlyMetricRow>();
+
+  for (const expense of expenses) {
+    const year = expense.year ?? expense.month.slice(0, 4);
+    const month = expense.month;
+
+    const yearBucket = byYear.get(year) ?? { total: 0, count: 0, months: new Map<string, MonthlyMetricRow>() };
+    yearBucket.total += expense.amount;
+    yearBucket.count += 1;
+
+    const yearMonthBucket = yearBucket.months.get(month) ?? { month, total: 0, count: 0 };
+    yearMonthBucket.total += expense.amount;
+    yearMonthBucket.count += 1;
+    yearBucket.months.set(month, yearMonthBucket);
+    byYear.set(year, yearBucket);
+
+    const monthBucket = byMonth.get(month) ?? { month, total: 0, count: 0 };
+    monthBucket.total += expense.amount;
+    monthBucket.count += 1;
+    byMonth.set(month, monthBucket);
+  }
+
+  const years = Array.from(byYear.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([year, bucket]) => {
+      const topMonth = Array.from(bucket.months.values()).sort((a, b) => b.total - a.total)[0] ?? null;
+      return {
+        year,
+        total: bucket.total,
+        count: bucket.count,
+        average: bucket.count > 0 ? bucket.total / bucket.count : 0,
+        topMonth,
+      };
+    });
+
+  const months = Array.from(byMonth.values()).sort((a, b) => a.month.localeCompare(b.month));
+
+  return { years, months };
+}
+
+function createYearlySummarySheet(expenses: CategorizedExpense[]): SheetData {
+  const metrics = buildYearlyMetrics(expenses);
+  const data: SheetData = [];
+
+  data.push(["YEARLY SUMMARY"]);
+  data.push(["Generated:", new Date().toLocaleDateString()]);
+  data.push([]);
+
+  data.push(["YEAR OVERVIEW"]);
+  data.push(["Year", "Total Spend", "Transactions", "Average Transaction", "Top Month", "Top Month Total"]);
+  metrics.years.forEach((row) => {
+    data.push([
+      row.year,
+      formatCurrency(row.total),
+      row.count,
+      formatCurrency(row.average),
+      row.topMonth ? formatMonth(row.topMonth.month) : 'N/A',
+      row.topMonth ? formatCurrency(row.topMonth.total) : '-',
+    ]);
+  });
+
+  data.push([]);
+  data.push(["MONTHLY TOTALS"]);
+  data.push(["Month", "Total Spend", "Transactions"]);
+  metrics.months.forEach((row) => {
+    data.push([
+      formatMonth(row.month),
+      formatCurrency(row.total),
+      row.count,
+    ]);
+  });
+
+  return data;
 }
 
 /** Create summary sheet data array. */
@@ -224,7 +328,7 @@ function styleSheet(ws: XLSX.WorkSheet, data: SheetData): void {
 }
 
 /** Generate a CSV string from categorized expenses. */
-export function generateCSV(expenses: CategorizedExpense[]): string {
+export function generateCSV(expenses: CategorizedExpense[], options?: { includeYearlySummary?: boolean }): string {
   const header = ["Date", "Description", "Amount", "Category"];
   const rows = expenses.map(e => [
     toDateString(e.date instanceof Date ? e.date : new Date(e.date)),
@@ -232,7 +336,70 @@ export function generateCSV(expenses: CategorizedExpense[]): string {
     String(e.amount),
     getCategoryName(e.category)
   ].join(','));
-  return [header.join(','), ...rows].join('\n');
+
+  if (!options?.includeYearlySummary) {
+    return [header.join(','), ...rows].join('\n');
+  }
+
+  const metrics = buildYearlyMetrics(expenses);
+  const summaryRows = [
+    ['YEARLY SUMMARY'],
+    ['Generated', new Date().toLocaleDateString()],
+    [],
+    ['YEAR OVERVIEW'],
+    ['Year', 'Total Spend', 'Transactions', 'Average Transaction', 'Top Month', 'Top Month Total'],
+    ...metrics.years.map((row) => [
+      row.year,
+      formatCurrency(row.total),
+      String(row.count),
+      formatCurrency(row.average),
+      row.topMonth ? formatMonth(row.topMonth.month) : 'N/A',
+      row.topMonth ? formatCurrency(row.topMonth.total) : '-',
+    ]),
+    [],
+    ['MONTHLY TOTALS'],
+    ['Month', 'Total Spend', 'Transactions'],
+    ...metrics.months.map((row) => [
+      formatMonth(row.month),
+      formatCurrency(row.total),
+      String(row.count),
+    ]),
+    [],
+    ['TRANSACTIONS'],
+    header,
+  ]
+    .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','));
+
+  return [...summaryRows, ...rows].join('\n');
+}
+
+export function generateYearlySummaryCSV(expenses: CategorizedExpense[]): string {
+  const metrics = buildYearlyMetrics(expenses);
+
+  const sections = [
+    ['YEAR OVERVIEW'],
+    ['Year', 'Total Spend', 'Transactions', 'Average Transaction', 'Top Month', 'Top Month Total'],
+    ...metrics.years.map((row) => [
+      row.year,
+      formatCurrency(row.total),
+      String(row.count),
+      formatCurrency(row.average),
+      row.topMonth ? formatMonth(row.topMonth.month) : 'N/A',
+      row.topMonth ? formatCurrency(row.topMonth.total) : '-',
+    ]),
+    [],
+    ['MONTHLY TOTALS'],
+    ['Month', 'Total Spend', 'Transactions'],
+    ...metrics.months.map((row) => [
+      formatMonth(row.month),
+      formatCurrency(row.total),
+      String(row.count),
+    ]),
+  ];
+
+  return sections
+    .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+    .join('\n');
 }
 
 // NOTE: QBO export is handled by qbo-export.ts which correctly uses

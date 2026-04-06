@@ -1,8 +1,11 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { supabase } from './supabase';
 import type { User } from '@supabase/supabase-js';
+
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+const IDLE_WARNING_MS = 4 * 60 * 1000;
 
 interface MFAFactor {
   id: string;
@@ -39,6 +42,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [mfaRequired, setMfaRequired] = useState(false);
+  const [showIdleWarning, setShowIdleWarning] = useState(false);
+  const [warningCountdown, setWarningCountdown] = useState(Math.floor((IDLE_TIMEOUT_MS - IDLE_WARNING_MS) / 1000));
+  const idleTimerRef = useRef<number | null>(null);
+  const warningTimerRef = useRef<number | null>(null);
+  const countdownTimerRef = useRef<number | null>(null);
+  const warningVisibleRef = useRef(false);
+  const continueSessionRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    warningVisibleRef.current = showIdleWarning;
+  }, [showIdleWarning]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -57,6 +71,93 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (loading || !user) {
+      if (idleTimerRef.current) {
+        window.clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+      if (warningTimerRef.current) {
+        window.clearTimeout(warningTimerRef.current);
+        warningTimerRef.current = null;
+      }
+      if (countdownTimerRef.current) {
+        window.clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+      setShowIdleWarning(false);
+      return;
+    }
+
+    const clearTimers = () => {
+      if (idleTimerRef.current) {
+        window.clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+      if (warningTimerRef.current) {
+        window.clearTimeout(warningTimerRef.current);
+        warningTimerRef.current = null;
+      }
+      if (countdownTimerRef.current) {
+        window.clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+    };
+
+    const handleIdleSignOut = async () => {
+      try {
+        await supabase.auth.signOut();
+      } finally {
+        window.location.href = '/';
+      }
+    };
+
+    const continueSession = () => {
+      clearTimers();
+      setShowIdleWarning(false);
+      setWarningCountdown(Math.floor((IDLE_TIMEOUT_MS - IDLE_WARNING_MS) / 1000));
+
+      warningTimerRef.current = window.setTimeout(() => {
+        setShowIdleWarning(true);
+        setWarningCountdown(Math.floor((IDLE_TIMEOUT_MS - IDLE_WARNING_MS) / 1000));
+
+        countdownTimerRef.current = window.setInterval(() => {
+          setWarningCountdown((current) => (current > 0 ? current - 1 : 0));
+        }, 1000);
+      }, IDLE_WARNING_MS);
+
+      idleTimerRef.current = window.setTimeout(handleIdleSignOut, IDLE_TIMEOUT_MS);
+    };
+
+    const resetIdleTimer = () => {
+      if (warningVisibleRef.current) return;
+      continueSession();
+    };
+
+    continueSessionRef.current = continueSession;
+
+    const activityEvents: Array<keyof WindowEventMap> = [
+      'mousemove',
+      'mousedown',
+      'keydown',
+      'scroll',
+      'touchstart',
+      'click',
+    ];
+
+    resetIdleTimer();
+    activityEvents.forEach((eventName) => {
+      window.addEventListener(eventName, resetIdleTimer, { passive: true });
+    });
+
+    return () => {
+      clearTimers();
+      activityEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, resetIdleTimer);
+      });
+    };
+  }, [loading, user]);
 
   const checkMFARequired = async (currentUser: User | null) => {
     if (!currentUser) { setMfaRequired(false); return; }
@@ -186,6 +287,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      {showIdleWarning && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border-primary bg-bg-secondary p-6 shadow-2xl">
+            <h2 className="text-lg font-semibold text-text-primary">Session expiring soon</h2>
+            <p className="mt-2 text-sm text-text-muted">
+              You&apos;ll be signed out after 5 minutes of inactivity. Click below to keep working.
+            </p>
+            <div className="mt-4 rounded-xl bg-bg-tertiary px-4 py-3">
+              <p className="text-sm text-text-primary">
+                Automatic sign-out in <span className="font-semibold">{warningCountdown}</span> seconds.
+              </p>
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => continueSessionRef.current()}
+                className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
+              >
+                Stay signed in
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await supabase.auth.signOut();
+                  } finally {
+                    window.location.href = '/';
+                  }
+                }}
+                className="rounded-xl border border-border-primary px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
+              >
+                Sign out now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AuthContext.Provider>
   );
 }

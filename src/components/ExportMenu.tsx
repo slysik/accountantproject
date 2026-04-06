@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { LuDownload, LuFileSpreadsheet, LuFileText, LuBookOpen } from 'react-icons/lu';
-import { generateExcelReport, generateCSV } from '@/lib/export';
+import { generateExcelReport, generateCSV, generateYearlySummaryCSV } from '@/lib/export';
 import { generateQBOFile } from '@/lib/qbo-export';
 import { aggregateByMonthAndCategory, getSummary } from '@/lib/expense-processor';
 import type { CategorizedExpense } from '@/types';
@@ -14,62 +14,68 @@ interface ExportMenuProps {
 export default function ExportMenu({ expenses }: ExportMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [includeYearlySummary, setIncludeYearlySummary] = useState(false);
+
+  const downloadTextFile = useCallback((content: string, filename: string, type: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, []);
 
   const handleExportExcel = useCallback(() => {
     setExporting('excel');
     try {
       const aggregation = aggregateByMonthAndCategory(expenses);
       const summary = getSummary(expenses);
-      generateExcelReport(expenses, aggregation, summary);
+      generateExcelReport(expenses, aggregation, summary, { includeYearlySummary });
     } finally {
       setExporting(null);
       setIsOpen(false);
     }
-  }, [expenses]);
+  }, [expenses, includeYearlySummary]);
 
   const handleExportCSV = useCallback(() => {
     setExporting('csv');
     try {
-      const csvContent = generateCSV(expenses);
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-
       const months = Array.from(new Set(expenses.map(e => e.month))).sort();
       const dateRange = months.length > 0
         ? `${months[0]}_to_${months[months.length - 1]}`
         : new Date().toISOString().split('T')[0];
-      a.download = `expenses_${dateRange}.csv`;
-
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadTextFile(
+        generateCSV(expenses, { includeYearlySummary }),
+        `expenses_${dateRange}.csv`,
+        'text/csv;charset=utf-8;'
+      );
     } finally {
       setExporting(null);
       setIsOpen(false);
     }
-  }, [expenses]);
+  }, [downloadTextFile, expenses, includeYearlySummary]);
 
   const handleExportQBO = useCallback(() => {
     setExporting('qbo');
     try {
       const { content, filename } = generateQBOFile(expenses);
-      const blob = new Blob([content], { type: 'application/x-ofx' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadTextFile(content, filename, 'application/x-ofx');
+      if (includeYearlySummary) {
+        const summaryFilename = filename.replace(/\.qbo$/i, '_yearly_summary.csv');
+        downloadTextFile(
+          generateYearlySummaryCSV(expenses),
+          summaryFilename,
+          'text/csv;charset=utf-8;'
+        );
+      }
     } finally {
       setExporting(null);
       setIsOpen(false);
     }
-  }, [expenses]);
+  }, [downloadTextFile, expenses, includeYearlySummary]);
 
   if (expenses.length === 0) return null;
 
@@ -90,6 +96,17 @@ export default function ExportMenu({ expenses }: ExportMenuProps) {
 
           {/* Dropdown */}
           <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-border-primary bg-bg-secondary shadow-lg shadow-black/40">
+            <div className="border-b border-border-primary px-3 py-2">
+              <label className="flex items-start gap-2 text-[11px] text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={includeYearlySummary}
+                  onChange={(e) => setIncludeYearlySummary(e.target.checked)}
+                  className="mt-0.5 rounded border-border-primary bg-bg-tertiary text-accent-primary focus:ring-accent-primary"
+                />
+                <span>Include yearly summary with month-by-month and annual totals</span>
+              </label>
+            </div>
             <div className="p-1">
               <button
                 onClick={handleExportExcel}
@@ -99,7 +116,7 @@ export default function ExportMenu({ expenses }: ExportMenuProps) {
                 <LuFileSpreadsheet className="h-4 w-4 text-success" />
                 <div className="text-left">
                   <div className="font-medium">Export Excel</div>
-                  <div className="text-text-muted">.xlsx with sheets</div>
+                  <div className="text-text-muted">.xlsx with sheets{includeYearlySummary ? ' + yearly summary' : ''}</div>
                 </div>
               </button>
 
@@ -111,7 +128,7 @@ export default function ExportMenu({ expenses }: ExportMenuProps) {
                 <LuFileText className="h-4 w-4 text-accent-primary" />
                 <div className="text-left">
                   <div className="font-medium">Export CSV</div>
-                  <div className="text-text-muted">Comma-separated</div>
+                  <div className="text-text-muted">Comma-separated{includeYearlySummary ? ' + summary section' : ''}</div>
                 </div>
               </button>
 
@@ -123,7 +140,7 @@ export default function ExportMenu({ expenses }: ExportMenuProps) {
                 <LuBookOpen className="h-4 w-4 text-accent-primary" />
                 <div className="text-left">
                   <div className="font-medium">Export QBO</div>
-                  <div className="text-text-muted">QuickBooks format</div>
+                  <div className="text-text-muted">QuickBooks{includeYearlySummary ? ' + summary CSV' : ''}</div>
                 </div>
               </button>
             </div>

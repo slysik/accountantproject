@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { LuFileSpreadsheet, LuFileText, LuBookOpen, LuCheck, LuSave } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
-import { generateExcelReport, generateCSV } from '@/lib/export';
+import { generateExcelReport, generateCSV, generateYearlySummaryCSV } from '@/lib/export';
 import { generateQBOFile } from '@/lib/qbo-export';
 import { aggregateByMonthAndCategory, getSummary } from '@/lib/expense-processor';
 import { bulkCreateExpenses } from '@/lib/database';
@@ -20,34 +20,10 @@ export default function StepExport({ companyName, expenses, year }: StepExportPr
   const [saving, setSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState(0);
   const [saved, setSaved] = useState(false);
+  const [includeYearlySummary, setIncludeYearlySummary] = useState(false);
 
-  const handleExportExcel = useCallback(() => {
-    const aggregation = aggregateByMonthAndCategory(expenses);
-    const summary = getSummary(expenses);
-    generateExcelReport(expenses, aggregation, summary);
-  }, [expenses]);
-
-  const handleExportCSV = useCallback(() => {
-    const csvContent = generateCSV(expenses);
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const months = Array.from(new Set(expenses.map((e) => e.month))).sort();
-    const dateRange =
-      months.length > 0
-        ? `${months[0]}_to_${months[months.length - 1]}`
-        : new Date().toISOString().split('T')[0];
-    a.download = `expenses_${dateRange}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [expenses]);
-
-  const handleExportQBO = useCallback(() => {
-    const { content, filename } = generateQBOFile(expenses);
-    const blob = new Blob([content], { type: 'application/x-ofx' });
+  const downloadTextFile = useCallback((content: string, filename: string, type: string) => {
+    const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -56,7 +32,38 @@ export default function StepExport({ companyName, expenses, year }: StepExportPr
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [expenses]);
+  }, []);
+
+  const handleExportExcel = useCallback(() => {
+    const aggregation = aggregateByMonthAndCategory(expenses);
+    const summary = getSummary(expenses);
+    generateExcelReport(expenses, aggregation, summary, { includeYearlySummary });
+  }, [expenses, includeYearlySummary]);
+
+  const handleExportCSV = useCallback(() => {
+    const months = Array.from(new Set(expenses.map((e) => e.month))).sort();
+    const dateRange =
+      months.length > 0
+        ? `${months[0]}_to_${months[months.length - 1]}`
+        : new Date().toISOString().split('T')[0];
+    downloadTextFile(
+      generateCSV(expenses, { includeYearlySummary }),
+      `expenses_${dateRange}.csv`,
+      'text/csv;charset=utf-8;'
+    );
+  }, [downloadTextFile, expenses, includeYearlySummary]);
+
+  const handleExportQBO = useCallback(() => {
+    const { content, filename } = generateQBOFile(expenses);
+    downloadTextFile(content, filename, 'application/x-ofx');
+    if (includeYearlySummary) {
+      downloadTextFile(
+        generateYearlySummaryCSV(expenses),
+        filename.replace(/\.qbo$/i, '_yearly_summary.csv'),
+        'text/csv;charset=utf-8;'
+      );
+    }
+  }, [downloadTextFile, expenses, includeYearlySummary]);
 
   const handleSaveToDatabase = useCallback(async () => {
     if (!user) return;
@@ -80,6 +87,16 @@ export default function StepExport({ companyName, expenses, year }: StepExportPr
         Export & Save
       </h2>
 
+      <label className="mb-4 flex items-start gap-2 rounded-lg border border-border-primary bg-bg-tertiary/30 p-3 text-[11px] text-text-secondary">
+        <input
+          type="checkbox"
+          checked={includeYearlySummary}
+          onChange={(e) => setIncludeYearlySummary(e.target.checked)}
+          className="mt-0.5 rounded border-border-primary bg-bg-tertiary text-accent-primary focus:ring-accent-primary"
+        />
+        <span>Include a comprehensive yearly summary with month-by-month totals and annual rollups in your exports.</span>
+      </label>
+
       {/* Export option cards */}
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <button
@@ -90,7 +107,7 @@ export default function StepExport({ companyName, expenses, year }: StepExportPr
           <span className="text-xs font-semibold text-text-primary">
             Excel Report
           </span>
-          <span className="text-[11px] text-text-muted">.xlsx with sheets</span>
+          <span className="text-[11px] text-text-muted">.xlsx with sheets{includeYearlySummary ? ' + yearly summary' : ''}</span>
         </button>
 
         <button
@@ -101,7 +118,7 @@ export default function StepExport({ companyName, expenses, year }: StepExportPr
           <span className="text-xs font-semibold text-text-primary">
             CSV Export
           </span>
-          <span className="text-[11px] text-text-muted">Comma-separated</span>
+          <span className="text-[11px] text-text-muted">Comma-separated{includeYearlySummary ? ' + summary section' : ''}</span>
         </button>
 
         <button
@@ -112,7 +129,7 @@ export default function StepExport({ companyName, expenses, year }: StepExportPr
           <span className="text-xs font-semibold text-text-primary">
             QBO Export
           </span>
-          <span className="text-[11px] text-text-muted">QuickBooks format</span>
+          <span className="text-[11px] text-text-muted">QuickBooks{includeYearlySummary ? ' + summary CSV' : ''}</span>
         </button>
       </div>
 

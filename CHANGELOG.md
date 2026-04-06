@@ -5,6 +5,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.3] — 2026-04-06
+
+### Changed
+
+#### Year View Analytics
+- Year pages now open with six high-value dashboards including snapshot KPIs, spend trend, category mix, top spending months, largest transactions, and yearly insights
+- Year pages still retain the month folder grid underneath the dashboards for quick navigation into monthly detail
+
+#### Exports
+- Added an optional yearly-summary mode to exports
+- Excel exports can now include a dedicated `Yearly Summary` sheet with annual rollups and month-by-month totals
+- CSV exports can now prepend a comprehensive yearly summary section ahead of transaction rows
+- QBO exports can now download a companion yearly-summary CSV so QuickBooks files remain clean while still providing reporting metrics
+
+#### Session Handling
+- Replaced the abrupt 5-minute idle sign-out with a warning flow
+- Users now see a 60-second session-expiring modal after 4 minutes of inactivity, with `Stay signed in` and `Sign out now` options
+
+#### Year / Month Navigation
+- Added an `Add Missing Month` action on year pages so users can open any zero-activity month directly and start importing data there
+
+## [1.5.2] — 2026-04-06
+
+### Changed
+
+#### First-Login Experience
+- Brand-new accounts now get a real `Sample Company` created automatically on first login
+- The seeded sample company includes demo expenses that match the sample dashboard reports, so first-time users can explore realistic folders and analytics immediately
+- Sample dashboard fallback visuals now reuse the same shared dataset as the seeded demo company to keep reports and example data fully aligned
+
+#### Theme Defaults
+- Dark mode is now the default again for first-time visitors
+- Saved theme preference still overrides the default, and the pre-hydration theme script now avoids a flash of the wrong theme on first load
+
 ## [1.5.1] — 2026-04-05
 
 ### Changed

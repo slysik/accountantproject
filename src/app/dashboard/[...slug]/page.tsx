@@ -6,6 +6,7 @@ import {
   LuCalendar,
   LuChartLine,
   LuChartPie,
+  LuCirclePlus,
   LuFolderOpen,
   LuInbox,
   LuReceipt,
@@ -17,6 +18,7 @@ import { useAuth } from '@/lib/auth';
 import { DEFAULT_COMPANY_NAME, decodeCompanySlug, encodeCompanySlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import {
   getExpenses,
+  getAllExpenses,
   getReceiptsByExpenseIds,
   getUserFolders,
   softDeleteExpense,
@@ -48,6 +50,35 @@ const MONTH_NAMES: Record<string, string> = {
   '12': 'December',
 };
 
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+});
+
+function formatCurrency(value: number): string {
+  return currencyFormatter.format(value);
+}
+
+function DashboardPanel({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-border-primary bg-bg-secondary p-5">
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-accent-primary">{icon}</span>
+        <h2 className="text-sm font-semibold text-text-primary">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export default function DashboardSlugPage() {
   const params = useParams();
   const router = useRouter();
@@ -57,10 +88,12 @@ export default function DashboardSlugPage() {
   const [loading, setLoading] = useState(true);
   const [years, setYears] = useState<string[]>([]);
   const [months, setMonths] = useState<MonthNode[]>([]);
+  const [yearExpenses, setYearExpenses] = useState<CategorizedExpense[]>([]);
   const [expenses, setExpenses] = useState<CategorizedExpense[]>([]);
   const [receiptsByExpenseId, setReceiptsByExpenseId] = useState<Record<string, Receipt[]>>({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingMonth, setDeletingMonth] = useState(false);
+  const [selectedMissingMonth, setSelectedMissingMonth] = useState('');
 
   const companySlug = slug[0];
   const year = slug[1];
@@ -95,11 +128,14 @@ export default function DashboardSlugPage() {
   useEffect(() => {
     if (!user || !isYearView || !year) return;
     setLoading(true);
-    getUserFolders(user.id)
-      .then((companies) => {
+    Promise.all([getUserFolders(user.id), getAllExpenses(user.id)])
+      .then(([companies, allExpenses]) => {
         const company = companies.find((item) => item.companyName === companyName);
         const yearFolder = company?.years.find((folder) => folder.year === year);
         setMonths(yearFolder?.months ?? []);
+        setYearExpenses(
+          allExpenses.filter((expense) => expense.companyName === companyName && expense.year === year)
+        );
       })
       .catch((err) => console.error('Failed to load year data:', err))
       .finally(() => setLoading(false));
@@ -179,6 +215,71 @@ export default function DashboardSlugPage() {
       maxMonthTotal: Math.max(...months.map((item) => item.total), 1),
     };
   }, [isYearView, months]);
+
+  const yearAnalytics = useMemo(() => {
+    if (!isYearView) return null;
+
+    const sortedExpenses = [...yearExpenses].sort((a, b) => b.amount - a.amount);
+    const topTransactions = sortedExpenses.slice(0, 5);
+
+    const topMonths = [...months]
+      .filter((item) => item.expenseCount > 0)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+
+    const quarterTotals: Array<{ label: string; total: number; count: number }> = [
+      { label: 'Q1', total: 0, count: 0 },
+      { label: 'Q2', total: 0, count: 0 },
+      { label: 'Q3', total: 0, count: 0 },
+      { label: 'Q4', total: 0, count: 0 },
+    ];
+
+    for (const expense of yearExpenses) {
+      const monthIndex = Number(expense.month.split('-')[1] ?? '1') - 1;
+      const quarterIndex = Math.max(0, Math.min(3, Math.floor(monthIndex / 3)));
+      quarterTotals[quarterIndex].total += expense.amount;
+      quarterTotals[quarterIndex].count += 1;
+    }
+
+    const activeMonths = months.filter((item) => item.expenseCount > 0);
+    const averagePerActiveMonth =
+      activeMonths.length > 0
+        ? activeMonths.reduce((sum, item) => sum + item.total, 0) / activeMonths.length
+        : 0;
+
+    const categoryTotals = new Map<string, { total: number; count: number }>();
+    for (const expense of yearExpenses) {
+      const current = categoryTotals.get(expense.category) ?? { total: 0, count: 0 };
+      current.total += expense.amount;
+      current.count += 1;
+      categoryTotals.set(expense.category, current);
+    }
+
+    const topCategory = Array.from(categoryTotals.entries())
+      .map(([category, data]) => ({ category, ...data }))
+      .sort((a, b) => b.total - a.total)[0] ?? null;
+
+    return {
+      topTransactions,
+      topMonths,
+      quarterTotals,
+      averagePerActiveMonth,
+      topCategory,
+    };
+  }, [isYearView, months, yearExpenses]);
+
+  const missingMonths = useMemo(
+    () => months.filter((item) => item.expenseCount === 0),
+    [months]
+  );
+
+  useEffect(() => {
+    if (!isYearView) return;
+    setSelectedMissingMonth((current) => {
+      if (current && missingMonths.some((item) => item.month === current)) return current;
+      return missingMonths[0]?.month ?? '';
+    });
+  }, [isYearView, missingMonths]);
 
   const monthSummary = useMemo(() => {
     if (!isMonthView) return null;
@@ -271,6 +372,47 @@ export default function DashboardSlugPage() {
           </div>
         </section>
 
+        {!loading && missingMonths.length > 0 && (
+          <section className="mb-6 rounded-2xl border border-border-primary bg-bg-secondary p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <LuCirclePlus className="h-4 w-4 text-accent-primary" />
+                  <h2 className="text-sm font-semibold text-text-primary">Add Missing Month</h2>
+                </div>
+                <p className="text-sm text-text-muted">
+                  Open an empty month workspace for {companyName} and start importing transactions right away.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <select
+                  value={selectedMissingMonth}
+                  onChange={(e) => setSelectedMissingMonth(e.target.value)}
+                  className="rounded-xl border border-border-primary bg-bg-tertiary px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/40"
+                >
+                  {missingMonths.map((monthNode) => (
+                    <option key={monthNode.month} value={monthNode.month}>
+                      {monthNode.name} {year}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={() => {
+                    if (!selectedMissingMonth) return;
+                    router.push(`/dashboard/${encodeCompanySlug(companyName)}/${year}/${selectedMissingMonth}`);
+                  }}
+                  disabled={!selectedMissingMonth}
+                  className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Open Month
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
         {loading ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
@@ -288,51 +430,156 @@ export default function DashboardSlugPage() {
             </div>
           </section>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {months.map((monthNode) => (
-              <button
-                key={monthNode.month}
-                onClick={() => router.push(`/dashboard/${encodeCompanySlug(companyName)}/${year}/${monthNode.month}`)}
-                className="group overflow-hidden rounded-2xl border border-border-primary bg-bg-secondary text-left transition-all hover:-translate-y-0.5 hover:border-accent-primary/50 hover:shadow-[0_18px_50px_rgba(37,99,235,0.08)]"
-              >
-                <div className="border-b border-border-primary bg-[linear-gradient(135deg,var(--bg-secondary),var(--bg-tertiary))] px-5 py-4">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-bg-primary/70">
-                    <LuCalendar className="h-4 w-4 text-accent-primary" />
-                  </div>
-                  <div className="flex items-end justify-between gap-3">
-                    <div>
-                      <p className="text-lg font-semibold text-text-primary">{monthNode.name}</p>
-                      <p className="mt-1 text-xs text-text-muted">{year}</p>
+          <>
+            <div className="mb-6 grid gap-6 xl:grid-cols-2">
+              <DashboardPanel title="Year Snapshot" icon={<LuInbox className="h-4 w-4" />}>
+                <SummaryCards expenses={yearExpenses} />
+              </DashboardPanel>
+
+              <DashboardPanel title="Spend Trend" icon={<LuChartLine className="h-4 w-4" />}>
+                <MonthlyChart expenses={yearExpenses} />
+              </DashboardPanel>
+
+              <DashboardPanel title="Expense by Category" icon={<LuChartPie className="h-4 w-4" />}>
+                {yearExpenses.length > 0 ? (
+                  <CategoryBreakdown expenses={yearExpenses} />
+                ) : (
+                  <p className="text-sm text-text-muted">Add transactions to see which categories drive the year.</p>
+                )}
+              </DashboardPanel>
+
+              <DashboardPanel title="Top Spending Months" icon={<LuCalendar className="h-4 w-4" />}>
+                <div className="space-y-3">
+                  {(yearAnalytics?.topMonths ?? []).map((monthNode, index) => (
+                    <div key={monthNode.month} className="rounded-xl bg-bg-tertiary p-4">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-text-primary">
+                            {index + 1}. {monthNode.name}
+                          </p>
+                          <p className="text-xs text-text-muted">
+                            {monthNode.expenseCount} transaction{monthNode.expenseCount !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-text-primary">{formatCurrency(monthNode.total)}</p>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-bg-primary/70">
+                        <div
+                          className="h-full rounded-full bg-accent-primary"
+                          style={{ width: `${((monthNode.total || 0) / (yearSummary?.maxMonthTotal || 1)) * 100}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="rounded-full bg-bg-primary/70 px-2.5 py-1 text-[11px] font-medium text-text-secondary">
-                      {monthNode.expenseCount} item{monthNode.expenseCount !== 1 ? 's' : ''}
-                    </div>
-                  </div>
+                  ))}
+                  {(yearAnalytics?.topMonths.length ?? 0) === 0 && (
+                    <p className="text-sm text-text-muted">No monthly activity yet for this year.</p>
+                  )}
                 </div>
-                <div className="px-5 py-4">
-                  <div className="mb-3 flex items-end justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Total Spend</p>
-                      <p className="mt-1 text-xl font-bold text-text-primary">
-                        ${monthNode.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
+              </DashboardPanel>
+
+              <DashboardPanel title="Largest Transactions" icon={<LuReceipt className="h-4 w-4" />}>
+                <div className="space-y-3">
+                  {(yearAnalytics?.topTransactions ?? []).map((expense) => (
+                    <div key={expense.id} className="rounded-xl bg-bg-tertiary p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-text-primary">{expense.description}</p>
+                          <p className="mt-1 text-xs text-text-muted">
+                            {MONTH_NAMES[expense.month.split('-')[1] ?? ''] ?? expense.month} {year}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-text-primary">{formatCurrency(expense.amount)}</p>
+                      </div>
                     </div>
-                    <span className="text-xs font-medium text-accent-primary transition-transform group-hover:translate-x-0.5">
-                      Open month
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-bg-tertiary">
-                    <div
-                      className="h-full rounded-full bg-accent-primary transition-all duration-500"
-                      style={{
-                        width: `${((monthNode.total || 0) / (yearSummary?.maxMonthTotal || 1)) * 100}%`,
-                      }}
-                    />
-                  </div>
+                  ))}
+                  {(yearAnalytics?.topTransactions.length ?? 0) === 0 && (
+                    <p className="text-sm text-text-muted">No transactions yet for this year.</p>
+                  )}
                 </div>
-              </button>
-            ))}
-          </div>
+              </DashboardPanel>
+
+              <DashboardPanel title="Year Insights" icon={<LuTrendingUp className="h-4 w-4" />}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl bg-bg-tertiary p-4">
+                    <p className="mb-1 text-xs uppercase tracking-[0.16em] text-text-muted">Avg Active Month</p>
+                    <p className="text-lg font-semibold text-text-primary">
+                      {formatCurrency(yearAnalytics?.averagePerActiveMonth ?? 0)}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-bg-tertiary p-4">
+                    <p className="mb-1 text-xs uppercase tracking-[0.16em] text-text-muted">Top Category</p>
+                    <p className="text-sm font-semibold text-text-primary">
+                      {yearAnalytics?.topCategory ? yearAnalytics.topCategory.category : 'No category data yet'}
+                    </p>
+                    <p className="mt-1 text-xs text-text-muted">
+                      {yearAnalytics?.topCategory ? formatCurrency(yearAnalytics.topCategory.total) : 'No spend yet'}
+                    </p>
+                  </div>
+                  {(yearAnalytics?.quarterTotals ?? []).map((quarter) => (
+                    <div key={quarter.label} className="rounded-xl bg-bg-tertiary p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-text-primary">{quarter.label}</p>
+                        <p className="text-xs text-text-muted">{quarter.count} txns</p>
+                      </div>
+                      <p className="mt-2 text-base font-semibold text-text-primary">{formatCurrency(quarter.total)}</p>
+                    </div>
+                  ))}
+                </div>
+              </DashboardPanel>
+            </div>
+
+            <section className="mb-4">
+              <div className="mb-3 flex items-center gap-2">
+                <LuFolderOpen className="h-4 w-4 text-accent-primary" />
+                <h2 className="text-sm font-semibold text-text-primary">Monthly Folders</h2>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {months.map((monthNode) => (
+                  <button
+                    key={monthNode.month}
+                    onClick={() => router.push(`/dashboard/${encodeCompanySlug(companyName)}/${year}/${monthNode.month}`)}
+                    className="group overflow-hidden rounded-2xl border border-border-primary bg-bg-secondary text-left transition-all hover:-translate-y-0.5 hover:border-accent-primary/50 hover:shadow-[0_18px_50px_rgba(37,99,235,0.08)]"
+                  >
+                    <div className="border-b border-border-primary bg-[linear-gradient(135deg,var(--bg-secondary),var(--bg-tertiary))] px-5 py-4">
+                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-bg-primary/70">
+                        <LuCalendar className="h-4 w-4 text-accent-primary" />
+                      </div>
+                      <div className="flex items-end justify-between gap-3">
+                        <div>
+                          <p className="text-lg font-semibold text-text-primary">{monthNode.name}</p>
+                          <p className="mt-1 text-xs text-text-muted">{year}</p>
+                        </div>
+                        <div className="rounded-full bg-bg-primary/70 px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+                          {monthNode.expenseCount} item{monthNode.expenseCount !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="px-5 py-4">
+                      <div className="mb-3 flex items-end justify-between gap-4">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Total Spend</p>
+                          <p className="mt-1 text-xl font-bold text-text-primary">
+                            {formatCurrency(monthNode.total)}
+                          </p>
+                        </div>
+                        <span className="text-xs font-medium text-accent-primary transition-transform group-hover:translate-x-0.5">
+                          Open month
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-bg-tertiary">
+                        <div
+                          className="h-full rounded-full bg-accent-primary transition-all duration-500"
+                          style={{
+                            width: `${((monthNode.total || 0) / (yearSummary?.maxMonthTotal || 1)) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          </>
         )}
       </div>
     );
