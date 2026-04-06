@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const smtp2goApiKey = process.env.SMTP2GO_API_KEY ?? process.env.smtp2go_api_key;
 const signupNotifyTo = process.env.SIGNUP_NOTIFY_TO ?? 'vsawhney@amvean.com';
-const signupNotifyFrom = process.env.SIGNUP_NOTIFY_FROM ?? 'vsawhney@amvean.com';
+const signupNotifyFrom = process.env.SIGNUP_NOTIFY_FROM ?? 'it-team@amvean.com';
 
 export async function POST(req: NextRequest) {
   try {

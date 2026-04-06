@@ -29,6 +29,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Chat-based deletes move matching expenses to Trash in Supabase instead of permanently removing them
 - Authenticated app version display was moved into the left navigation sidebar for easier visibility
 - Signing out now returns users to the public home page instead of leaving them inside the authenticated shell
+- Added a server-side signup notification route that can email `vsawhney@amvean.com` through SMTP2GO when a new user account is created
 
 #### Pricing / Subscription Model
 - Added a new `Personal` plan tier priced at **$5/month** for a single user with up to 500 transactions
@@ -36,6 +37,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added DB plan validation via `migrations/005_update_subscription_plan_constraint.sql`
 - Added subscription metadata fields for `plan_expires_at` and `allowed_active_users` via `migrations/006_add_subscription_metadata.sql`
 - Account settings now show the stored subscription expiration date and allowed active-user count
+- Added updated team-seat policy logic via `migrations/007_update_account_member_seat_policy.sql` so Business and Elite seat enforcement can use stored active-user allowances
 
 #### Imports / Sample Data
 - "Try Sample Data" now rewrites sample transactions into the currently selected year before import
