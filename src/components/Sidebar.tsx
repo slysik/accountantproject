@@ -1,14 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import {
-  LuChartBar,
   LuChevronLeft,
   LuChevronRight,
   LuTrash2,
 } from 'react-icons/lu';
 import FolderTree from './FolderTree';
 import { APP_VERSION } from '@/lib/version';
+import { useTheme } from '@/lib/theme';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -16,6 +17,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
+  const { theme } = useTheme();
   return (
     <aside
       className={`relative flex h-full flex-col overflow-hidden border-r border-border-primary/80 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-secondary)_92%,transparent),color-mix(in_srgb,var(--bg-primary)_92%,transparent))] shadow-[24px_0_60px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-all duration-300 ${
@@ -25,12 +27,25 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_transparent_68%)]" />
 
       {/* Top: Toggle Button */}
-      <div className={`relative flex items-center border-b border-border-primary/80 p-3 ${collapsed ? 'justify-center' : 'justify-between'}`}>
+      <div className={`relative flex items-center border-b border-border-primary/80 p-3 ${collapsed ? 'flex-col gap-2 justify-center' : 'justify-between'}`}>
+        {collapsed && (
+          <Image
+            src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
+            alt="Accountant's Best Friend"
+            width={34}
+            height={34}
+            className="rounded-lg"
+          />
+        )}
         {!collapsed && (
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent-primary/12 ring-1 ring-accent-primary/25">
-              <LuChartBar className="h-5 w-5 text-accent-primary" />
-            </div>
+            <Image
+              src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
+              alt="Accountant's Best Friend"
+              width={40}
+              height={40}
+              className="rounded-xl flex-shrink-0"
+            />
             <div>
               <p className="font-display text-sm font-bold text-text-primary">Navigator</p>
               <p className="text-[11px] text-text-muted">Companies and folders</p>

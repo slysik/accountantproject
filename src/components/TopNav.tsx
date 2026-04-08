@@ -6,7 +6,8 @@ import { useAuth } from '@/lib/auth';
 import { decodeCompanySlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import { useTheme } from '@/lib/theme';
 import { useSubscription } from '@/lib/useSubscription';
-import { LuChartBar, LuChevronRight, LuWand, LuMenu, LuShield, LuSun, LuMoon, LuClock } from 'react-icons/lu';
+import Image from 'next/image';
+import { LuChevronRight, LuWand, LuMenu, LuShield, LuSun, LuMoon, LuClock } from 'react-icons/lu';
 import { PLANS } from '@/lib/subscription';
 
 const MONTH_NAMES: Record<string, string> = {
@@ -114,12 +115,13 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
             <LuMenu className="h-5 w-5" />
           </button>
         )}
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent-primary/12 ring-1 ring-accent-primary/20">
-          <LuChartBar className="h-5 w-5 text-accent-primary" />
-        </div>
-        <span className="font-display text-sm font-bold text-text-primary hidden md:inline">
-          Accountant&apos;s Best Friend
-        </span>
+        <Image
+          src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
+          alt="Accountant's Best Friend"
+          width={40}
+          height={40}
+          className="rounded-xl"
+        />
       </div>
 
       {/* Center: Breadcrumbs */}
