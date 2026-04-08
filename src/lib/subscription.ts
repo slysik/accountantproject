@@ -235,33 +235,58 @@ export async function removeAccountMember(memberId: string): Promise<void> {
   if (error) throw error;
 }
 
+async function listOwnerAccountUserIds(memberEmail: string): Promise<string[]> {
+  const normalizedEmail = memberEmail.toLowerCase().trim();
+
+  const { data, error } = await supabase
+    .from('account_members')
+    .select('owner_user_id, created_at')
+    .eq('member_email', normalizedEmail)
+    .order('created_at', { ascending: false });
+
+  if (error || !data) return [];
+
+  const seen = new Set<string>();
+  const ownerIds: string[] = [];
+
+  for (const row of data) {
+    const ownerUserId = row.owner_user_id as string | null;
+    if (!ownerUserId || seen.has(ownerUserId)) continue;
+    seen.add(ownerUserId);
+    ownerIds.push(ownerUserId);
+  }
+
+  return ownerIds;
+}
+
 /**
  * Checks if the current user is a member of another active account.
  * Used by AuthGuard to grant access to invited users who have no subscription of their own.
  */
 export async function findOwnerSubscription(memberEmail: string): Promise<Subscription | null> {
-  // Find the membership record where the member's email matches
-  const { data: membership, error } = await supabase
-    .from('account_members')
-    .select('owner_user_id')
-    .eq('member_email', memberEmail.toLowerCase())
-    .maybeSingle();
+  const ownerUserIds = await listOwnerAccountUserIds(memberEmail);
+  if (ownerUserIds.length === 0) return null;
 
-  if (error) return null;
+  let fallback: Subscription | null = null;
 
-  if (!membership) return null;
+  for (const ownerUserId of ownerUserIds) {
+    const sub = await getSubscription(ownerUserId);
+    if (!sub) continue;
+    if (sub.status === 'active') return sub;
+    if (!fallback) fallback = sub;
+  }
 
-  // Fetch the owner's subscription
-  return getSubscription(membership.owner_user_id);
+  return fallback;
 }
 
 export async function findOwnerAccountUserId(memberEmail: string): Promise<string | null> {
-  const { data: membership, error } = await supabase
-    .from('account_members')
-    .select('owner_user_id')
-    .eq('member_email', memberEmail.toLowerCase())
-    .maybeSingle();
+  const ownerUserIds = await listOwnerAccountUserIds(memberEmail);
+  if (ownerUserIds.length === 0) return null;
 
-  if (error || !membership) return null;
-  return membership.owner_user_id as string;
+  for (const ownerUserId of ownerUserIds) {
+    const sub = await getSubscription(ownerUserId);
+    if (sub?.status === 'active') return ownerUserId;
+  }
+
+  return ownerUserIds[0] ?? null;
 }
