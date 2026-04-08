@@ -28,6 +28,15 @@ export interface CompanyNode {
   years: FolderNode[];
 }
 
+export interface TrashCompanyItem {
+  id: string;
+  name: string;
+  deletedAt: Date | null;
+  yearCount: number;
+  subfolderCount: number;
+  expenseCount: number;
+}
+
 export interface FolderNode {
   year: string;
   months: MonthNode[];

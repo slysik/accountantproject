@@ -10,7 +10,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Quick summary of what's new in each release, written for users.
 
 ### v2.2.3 — Public Site Refresh & Team Account Fixes (2026-04-07)
-The public homepage is now a full features-and-capabilities landing page with workflow diagrams and clearer product positioning. Sign out has been moved into the lower-left sidebar as a more visible exit control, the Privacy Policy was simplified by removing the child privacy section, and team-account access has been corrected so invited users can load the owner account's companies and folders once the matching database policy migration is applied.
+The public homepage is now a full features-and-capabilities landing page with workflow diagrams and clearer product positioning. Sign out has been moved into the lower-left sidebar as a more visible exit control, the Privacy Policy was simplified by removing the child privacy section, team-account access has been corrected so invited users can load the owner account's companies and folders once the matching database policy migration is applied, and companies can now be moved to Trash and restored later with their folder structure intact.
 
 ### v2.2.2 — Navigation Cleanup & Header Polish (2026-04-07)
 The dashboard navigation is cleaner and less confusing. The old collapsible menu behavior has been fully removed, the sidebar logo was rebalanced so company folders stay visible, and the top navigation now shows **Current Plan** more clearly while keeping **Sign Out** pinned to the far left.
@@ -73,6 +73,11 @@ Migrated from a vanilla JS proof-of-concept to a full Next.js 14 application bac
 #### Team Account Data Access
 - Added owner-account resolution so invited/team users load companies, folders, expenses, and trash from the correct account context
 - Added migration `011_allow_team_member_account_data_access.sql` to extend RLS policies for shared account access
+
+#### Company Trash
+- Added company-level trash support so whole companies can be moved to Trash and restored later
+- Preserved year folders and customer subfolders when restoring a deleted company
+- Added migration `012_add_company_trash_support.sql` for company soft-delete tracking
 
 #### Privacy Policy
 - Removed the child privacy clause from the Privacy Policy and renumbered the remaining sections

@@ -1,25 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import { LuTrash2, LuUndo2 } from 'react-icons/lu';
+import { LuBuilding2, LuTrash2, LuUndo2 } from 'react-icons/lu';
 import { getCategoryName } from '@/lib/categories';
 import { formatCurrency, formatDate } from '@/lib/expense-processor';
-import type { CategorizedExpense } from '@/types';
+import type { CategorizedExpense, TrashCompanyItem } from '@/types';
 
 interface TrashBinProps {
+  companies: TrashCompanyItem[];
   items: CategorizedExpense[];
+  onRestoreCompany: (company: TrashCompanyItem) => void;
+  onPermanentDeleteCompany: (company: TrashCompanyItem) => void;
   onRestore: (expense: CategorizedExpense) => void;
   onPermanentDelete: (expense: CategorizedExpense) => void;
   onEmptyTrash: () => void;
 }
 
 export default function TrashBin({
+  companies,
   items,
+  onRestoreCompany,
+  onPermanentDeleteCompany,
   onRestore,
   onPermanentDelete,
   onEmptyTrash,
 }: TrashBinProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteCompanyId, setConfirmDeleteCompanyId] = useState<string | null>(null);
   const [confirmEmptyTrash, setConfirmEmptyTrash] = useState(false);
 
   // Sort by deletedAt descending (most recent first)
@@ -34,13 +41,13 @@ export default function TrashBin({
       {/* Empty Trash button */}
       <div className="mb-4 flex items-center justify-between">
         <p className="text-xs text-text-muted">
-          {items.length} deleted expense{items.length !== 1 ? 's' : ''}
+          {companies.length} deleted compan{companies.length === 1 ? 'y' : 'ies'} and {items.length} deleted expense{items.length !== 1 ? 's' : ''}
         </p>
 
         {confirmEmptyTrash ? (
           <div className="flex items-center gap-2">
             <span className="text-xs text-warning">
-              Delete all {items.length} items permanently?
+              Delete all trash items permanently?
             </span>
             <button
               onClick={() => {
@@ -68,6 +75,72 @@ export default function TrashBin({
           </button>
         )}
       </div>
+
+      {companies.length > 0 && (
+        <div className="mb-6 rounded-lg border border-border-primary">
+          <div className="border-b border-border-primary bg-bg-tertiary/50 px-4 py-3">
+            <p className="text-xs font-medium text-text-muted">Deleted Companies</p>
+          </div>
+          <div className="divide-y divide-border-primary/50">
+            {companies.map((company) => (
+              <div key={company.id} className="flex items-center justify-between gap-4 px-4 py-3">
+                <div className="min-w-0 flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-bg-tertiary text-accent-primary">
+                    <LuBuilding2 className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-text-primary">{company.name}</p>
+                    <p className="mt-1 text-xs text-text-muted">
+                      {company.yearCount} year{company.yearCount !== 1 ? 's' : ''}, {company.subfolderCount} subfolder{company.subfolderCount !== 1 ? 's' : ''}, {company.expenseCount} expense{company.expenseCount !== 1 ? 's' : ''}
+                    </p>
+                    <p className="mt-1 text-[11px] text-text-muted">
+                      Deleted {company.deletedAt ? formatDate(company.deletedAt) : '-'}
+                    </p>
+                  </div>
+                </div>
+
+                {confirmDeleteCompanyId === company.id ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-warning whitespace-nowrap">Cannot be undone</span>
+                    <button
+                      onClick={() => {
+                        onPermanentDeleteCompany(company);
+                        setConfirmDeleteCompanyId(null);
+                      }}
+                      className="rounded px-2 py-1 text-[10px] font-medium bg-error text-white transition-colors hover:bg-error/80"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteCompanyId(null)}
+                      className="rounded px-2 py-1 text-[10px] font-medium border border-border-primary text-text-secondary transition-colors hover:bg-bg-tertiary"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => onRestoreCompany(company)}
+                      className="rounded p-1.5 text-text-muted transition-colors hover:bg-accent-primary/10 hover:text-accent-primary"
+                      title="Restore company"
+                    >
+                      <LuUndo2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteCompanyId(company.id)}
+                      className="rounded p-1.5 text-text-muted transition-colors hover:bg-error/10 hover:text-error"
+                      title="Delete company forever"
+                    >
+                      <LuTrash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-x-auto rounded-lg border border-border-primary">

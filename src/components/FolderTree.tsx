@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { createCompany, createCustomerSubfolder, createYearFolders, getUserFolders, renameCompany, softDeleteMonth, softDeleteYear } from '@/lib/database';
+import { createCompany, createCustomerSubfolder, createYearFolders, getUserFolders, renameCompany, softDeleteCompany, softDeleteMonth, softDeleteYear } from '@/lib/database';
 import { decodeCompanySlug, encodeCompanySlug, encodeFolderSlug } from '@/lib/company';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { CompanyNode } from '@/types';
@@ -24,6 +24,7 @@ import {
 import { SkeletonFolderTree } from './Skeleton';
 
 type DeleteTarget =
+  | { type: 'company'; companyName: string }
   | { type: 'year'; companyName: string; year: string }
   | { type: 'month'; companyName: string; year: string; month: string };
 
@@ -206,7 +207,12 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
     if (!effectiveUserId || !deleteTarget) return;
     setDeleting(true);
     try {
-      if (deleteTarget.type === 'year') {
+      if (deleteTarget.type === 'company') {
+        await softDeleteCompany(effectiveUserId, deleteTarget.companyName);
+        if (pathname.startsWith(`/dashboard/${encodeCompanySlug(deleteTarget.companyName)}`)) {
+          router.push('/dashboard');
+        }
+      } else if (deleteTarget.type === 'year') {
         await softDeleteYear(effectiveUserId, deleteTarget.companyName, deleteTarget.year);
         if (pathname.startsWith(`/dashboard/${encodeCompanySlug(deleteTarget.companyName)}/${deleteTarget.year}`)) {
           router.push(`/dashboard/${encodeCompanySlug(deleteTarget.companyName)}`);
@@ -293,7 +299,25 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
         return (
           <div key={company.companyName}>
             <div className="group flex items-center gap-1">
-              {editingCompany === company.companyName && !collapsed ? (
+              {deleteTarget?.type === 'company' && deleteTarget.companyName === company.companyName && !collapsed ? (
+                <div className="flex flex-1 items-center gap-1 rounded-md border border-error/30 bg-error/5 px-2 py-1.5 text-xs">
+                  <span className="flex-1 truncate text-error">Move {company.companyName} to trash?</span>
+                  <button
+                    onClick={handleConfirmDelete}
+                    disabled={deleting}
+                    className="rounded bg-error/20 px-1.5 py-0.5 text-[10px] font-semibold text-error transition-colors hover:bg-error/30 disabled:opacity-50"
+                  >
+                    {deleting ? '...' : 'Yes'}
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(null)}
+                    disabled={deleting}
+                    className="rounded px-1.5 py-0.5 text-[10px] font-medium text-text-muted transition-colors hover:bg-bg-tertiary"
+                  >
+                    No
+                  </button>
+                </div>
+              ) : editingCompany === company.companyName && !collapsed ? (
                 <div className="flex flex-1 items-center gap-1 px-2 py-1">
                   <input
                     type="text"
@@ -352,13 +376,22 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
                 </button>
               )}
               {!collapsed && editingCompany !== company.companyName && (
-                <button
-                  onClick={() => handleStartRenameCompany(company.companyName)}
-                  className="opacity-0 rounded-xl p-2 text-text-muted transition-all hover:bg-bg-tertiary hover:text-text-primary group-hover:opacity-100"
-                  title={`Rename ${company.companyName}`}
-                >
-                  <LuPencil className="h-3.5 w-3.5" />
-                </button>
+                <>
+                  <button
+                    onClick={() => handleStartRenameCompany(company.companyName)}
+                    className="opacity-0 rounded-xl p-2 text-text-muted transition-all hover:bg-bg-tertiary hover:text-text-primary group-hover:opacity-100"
+                    title={`Rename ${company.companyName}`}
+                  >
+                    <LuPencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget({ type: 'company', companyName: company.companyName })}
+                    className="opacity-0 rounded-xl p-2 text-text-muted transition-all hover:bg-bg-tertiary hover:text-error group-hover:opacity-100"
+                    title={`Delete ${company.companyName}`}
+                  >
+                    <LuTrash2 className="h-3.5 w-3.5" />
+                  </button>
+                </>
               )}
             </div>
 

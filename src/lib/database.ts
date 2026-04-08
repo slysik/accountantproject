@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { parseDateString, toDateString, getYear, getYearMonth } from './date-utils';
 import { DEFAULT_COMPANY_NAME } from './company';
 import { buildSampleExpenses, SAMPLE_COMPANY_NAME } from './sample-data';
-import type { CategorizedExpense, CompanyNode, FolderNode, MonthNode, Receipt, SubfolderNode } from '@/types';
+import type { CategorizedExpense, CompanyNode, FolderNode, MonthNode, Receipt, SubfolderNode, TrashCompanyItem } from '@/types';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -212,6 +212,16 @@ export async function getExpenses(
   year: string,
   month: string
 ): Promise<CategorizedExpense[]> {
+  const { data: companyRow, error: companyError } = await supabase
+    .from('companies')
+    .select('deleted_at')
+    .eq('user_id', userId)
+    .eq('name', companyName)
+    .maybeSingle();
+
+  if (companyError) throw companyError;
+  if (companyRow?.deleted_at) return [];
+
   const monthKey = month.includes('-') ? month : `${year}-${month}`;
 
   const { data, error } = await supabase
@@ -319,6 +329,16 @@ export async function permanentDeleteExpense(
  * Fetches all soft-deleted expenses for a user.
  */
 export async function getTrash(userId: string): Promise<CategorizedExpense[]> {
+  const { data: activeCompanies, error: companiesError } = await supabase
+    .from('companies')
+    .select('name')
+    .eq('user_id', userId)
+    .is('deleted_at', null);
+
+  if (companiesError) throw companiesError;
+
+  const activeCompanyNames = new Set((activeCompanies ?? []).map((row) => row.name as string));
+
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
@@ -327,13 +347,25 @@ export async function getTrash(userId: string): Promise<CategorizedExpense[]> {
     .order('deleted_at', { ascending: false });
 
   if (error) throw error;
-  return (data ?? []).map(rowToExpense);
+  return (data ?? [])
+    .filter((row) => activeCompanyNames.has(((row.company_name as string) ?? DEFAULT_COMPANY_NAME)))
+    .map(rowToExpense);
 }
 
 /**
  * Fetches all non-deleted expenses across the user's account.
  */
 export async function getAllExpenses(userId: string): Promise<CategorizedExpense[]> {
+  const { data: activeCompanies, error: companiesError } = await supabase
+    .from('companies')
+    .select('name')
+    .eq('user_id', userId)
+    .is('deleted_at', null);
+
+  if (companiesError) throw companiesError;
+
+  const activeCompanyNames = new Set((activeCompanies ?? []).map((row) => row.name as string));
+
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
@@ -342,7 +374,9 @@ export async function getAllExpenses(userId: string): Promise<CategorizedExpense
     .order('date', { ascending: false });
 
   if (error) throw error;
-  return (data ?? []).map(rowToExpense);
+  return (data ?? [])
+    .filter((row) => activeCompanyNames.has(((row.company_name as string) ?? DEFAULT_COMPANY_NAME)))
+    .map(rowToExpense);
 }
 
 /**
@@ -355,7 +389,7 @@ export async function createCompany(userId: string, companyName: string): Promis
   const { error } = await supabase
     .from('companies')
     .upsert(
-      { user_id: userId, name: normalized },
+      { user_id: userId, name: normalized, deleted_at: null },
       { onConflict: 'user_id,name' }
     );
 
@@ -483,9 +517,13 @@ export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
     .from('companies')
     .select('name')
     .eq('user_id', userId)
+    .is('deleted_at', null)
     .order('name', { ascending: true });
 
   if (companiesError) throw companiesError;
+
+  const activeCompanyNames = new Set((companyRows ?? []).map((row) => row.name as string));
+  if (activeCompanyNames.size === 0) return [];
 
   const { data: folderRows, error: foldersError } = await supabase
     .from('folders')
@@ -515,15 +553,19 @@ export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
 
   if (expensesError) throw expensesError;
 
-  const companyNames = new Set<string>();
-  for (const company of companyRows ?? []) companyNames.add(company.name as string);
-  for (const folder of folderRows ?? []) companyNames.add((folder.company_name as string) ?? DEFAULT_COMPANY_NAME);
-  for (const expense of expenseRows ?? []) companyNames.add((expense.company_name as string) ?? DEFAULT_COMPANY_NAME);
-  if (companyNames.size === 0) return [];
+  const folderRowsForActiveCompanies = (folderRows ?? []).filter((row) =>
+    activeCompanyNames.has(((row.company_name as string) ?? DEFAULT_COMPANY_NAME))
+  );
+  const subfolderRowsForActiveCompanies = (subfolderRows ?? []).filter((row) =>
+    activeCompanyNames.has(((row.company_name as string) ?? DEFAULT_COMPANY_NAME))
+  );
+  const expenseRowsForActiveCompanies = (expenseRows ?? []).filter((row) =>
+    activeCompanyNames.has(((row.company_name as string) ?? DEFAULT_COMPANY_NAME))
+  );
 
   // Build a lookup: company -> year -> month -> { count, total }
   const stats: Record<string, Record<string, Record<string, { count: number; total: number }>>> = {};
-  for (const row of expenseRows ?? []) {
+  for (const row of expenseRowsForActiveCompanies) {
     const companyName = (row.company_name as string) ?? DEFAULT_COMPANY_NAME;
     const y = row.year as string;
     const monthStr = (row.month as string).split('-')[1] ?? '';
@@ -534,10 +576,10 @@ export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
     stats[companyName][y][monthStr].total += Number(row.amount);
   }
 
-  return Array.from(companyNames)
+  return Array.from(activeCompanyNames)
     .sort((a, b) => a.localeCompare(b))
     .map((companyName) => {
-      const years = (folderRows ?? [])
+      const years = folderRowsForActiveCompanies
         .filter((row) => ((row.company_name as string) ?? DEFAULT_COMPANY_NAME) === companyName)
         .map((row) => row.year as string);
 
@@ -545,7 +587,7 @@ export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
 
       const yearNodes: FolderNode[] = uniqueYears.map((year) => {
         const yearStats = stats[companyName]?.[year] ?? {};
-        const subfolders: SubfolderNode[] = (subfolderRows ?? [])
+        const subfolders: SubfolderNode[] = subfolderRowsForActiveCompanies
           .filter(
             (row) =>
               ((row.company_name as string) ?? DEFAULT_COMPANY_NAME) === companyName &&
@@ -799,6 +841,122 @@ export async function getDeletedExpensesByYear(
 
   if (error) throw error;
   return (data ?? []).map(rowToExpense);
+}
+
+export async function getDeletedCompanies(userId: string): Promise<TrashCompanyItem[]> {
+  const { data: deletedCompanies, error: deletedCompaniesError } = await supabase
+    .from('companies')
+    .select('id, name, deleted_at')
+    .eq('user_id', userId)
+    .not('deleted_at', 'is', null)
+    .order('deleted_at', { ascending: false });
+
+  if (deletedCompaniesError) throw deletedCompaniesError;
+  if (!deletedCompanies || deletedCompanies.length === 0) return [];
+
+  const deletedCompanyNames = deletedCompanies.map((row) => row.name as string);
+
+  const [
+    { data: folderRows, error: foldersError },
+    { data: subfolderRows, error: subfoldersError },
+    { data: expenseRows, error: expensesError },
+  ] = await Promise.all([
+    supabase
+      .from('folders')
+      .select('company_name, year')
+      .eq('user_id', userId)
+      .in('company_name', deletedCompanyNames),
+    supabase
+      .from('customer_subfolders')
+      .select('company_name')
+      .eq('user_id', userId)
+      .in('company_name', deletedCompanyNames),
+    supabase
+      .from('expenses')
+      .select('company_name, id')
+      .eq('user_id', userId)
+      .in('company_name', deletedCompanyNames),
+  ]);
+
+  if (foldersError) throw foldersError;
+  if (subfoldersError) throw subfoldersError;
+  if (expensesError) throw expensesError;
+
+  return deletedCompanies.map((row) => {
+    const companyName = row.name as string;
+    return {
+      id: row.id as string,
+      name: companyName,
+      deletedAt: row.deleted_at ? new Date(row.deleted_at as string) : null,
+      yearCount: new Set(
+        (folderRows ?? [])
+          .filter((folder) => (folder.company_name as string) === companyName)
+          .map((folder) => folder.year as string)
+      ).size,
+      subfolderCount: (subfolderRows ?? []).filter((subfolder) => (subfolder.company_name as string) === companyName).length,
+      expenseCount: (expenseRows ?? []).filter((expense) => (expense.company_name as string) === companyName).length,
+    };
+  });
+}
+
+export async function softDeleteCompany(userId: string, companyName: string): Promise<void> {
+  const { error } = await supabase
+    .from('companies')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('name', companyName)
+    .is('deleted_at', null);
+
+  if (error) throw error;
+}
+
+export async function restoreCompany(userId: string, companyName: string): Promise<void> {
+  const { error } = await supabase
+    .from('companies')
+    .update({ deleted_at: null })
+    .eq('user_id', userId)
+    .eq('name', companyName)
+    .not('deleted_at', 'is', null);
+
+  if (error) throw error;
+}
+
+export async function permanentDeleteCompany(userId: string, companyName: string): Promise<void> {
+  const { data: expenseIds, error: expenseIdsError } = await supabase
+    .from('expenses')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('company_name', companyName);
+
+  if (expenseIdsError) throw expenseIdsError;
+
+  for (const expense of expenseIds ?? []) {
+    await permanentDeleteExpense(userId, '', '', expense.id as string);
+  }
+
+  const { error: subfolderError } = await supabase
+    .from('customer_subfolders')
+    .delete()
+    .eq('user_id', userId)
+    .eq('company_name', companyName);
+
+  if (subfolderError) throw subfolderError;
+
+  const { error: folderError } = await supabase
+    .from('folders')
+    .delete()
+    .eq('user_id', userId)
+    .eq('company_name', companyName);
+
+  if (folderError) throw folderError;
+
+  const { error: companyError } = await supabase
+    .from('companies')
+    .delete()
+    .eq('user_id', userId)
+    .eq('name', companyName);
+
+  if (companyError) throw companyError;
 }
 
 /**
