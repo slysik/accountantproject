@@ -601,45 +601,6 @@ export default function DashboardSlugPage() {
             </div>
 
             <section className="mb-4">
-              <div className="mb-6">
-                <div className="mb-3 flex items-center gap-2">
-                  <LuFolderOpen className="h-4 w-4 text-accent-primary" />
-                  <h2 className="text-sm font-semibold text-text-primary">Subfolders</h2>
-                </div>
-                {subfolders.length === 0 ? (
-                  <div className="rounded-2xl border border-border-primary bg-bg-secondary/70 px-5 py-4">
-                    <p className="text-sm text-text-muted">
-                      Use the sidebar&apos;s <span className="font-medium text-text-secondary">Add Subfolder</span> action to create customer folders for this year.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {subfolders.map((subfolder) => (
-                      <button
-                        key={subfolder.id}
-                        onClick={() =>
-                          router.push(`/dashboard/${encodeCompanySlug(companyName)}/${year}/subfolder/${encodeFolderSlug(subfolder.name)}`)
-                        }
-                        className="group overflow-hidden rounded-2xl border border-border-primary bg-bg-secondary text-left transition-all hover:-translate-y-0.5 hover:border-accent-primary/50 hover:shadow-[0_18px_50px_rgba(37,99,235,0.08)]"
-                      >
-                        <div className="border-b border-border-primary bg-[linear-gradient(135deg,var(--bg-secondary),var(--bg-tertiary))] px-5 py-4">
-                          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-bg-primary/70">
-                            <LuFolderOpen className="h-4 w-4 text-accent-primary" />
-                          </div>
-                          <p className="text-lg font-semibold text-text-primary">{subfolder.name}</p>
-                          <p className="mt-1 text-xs text-text-muted">Customer subfolder</p>
-                        </div>
-                        <div className="px-5 py-4">
-                          <span className="text-xs font-medium text-accent-primary transition-transform group-hover:translate-x-0.5">
-                            Open subfolder
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               <div className="mb-3 flex items-center gap-2">
                 <LuFolderOpen className="h-4 w-4 text-accent-primary" />
                 <h2 className="text-sm font-semibold text-text-primary">Monthly Folders</h2>

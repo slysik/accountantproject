@@ -104,28 +104,27 @@ export default function Sidebar() {
           <button
             onClick={() => signOut()}
             title="Sign out"
-            className="group flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-all hover:border-accent-primary/50 hover:bg-accent-primary/10"
+            className="group flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition-all hover:border-accent-primary/50 hover:bg-accent-primary/10"
             style={{ borderColor: 'var(--border-primary)' }}
           >
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-accent-primary text-bg-primary shadow-sm transition-transform group-hover:scale-105">
-              <LuLogOut className="h-5 w-5" />
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-accent-primary text-bg-primary shadow-sm transition-transform group-hover:scale-105">
+              <LuLogOut className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-text-primary">Sign Out</p>
-              <p className="text-[11px] text-text-muted">Exit your account securely</p>
+              <p className="text-xs font-semibold text-text-primary">Sign Out</p>
             </div>
           </button>
 
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-text-muted">
+          <p className="mt-3 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
             Current Plan
           </p>
-          <p className="mt-1 text-[14px] font-bold leading-tight text-text-primary">
+          <p className="mt-1 text-[12px] font-semibold leading-tight text-text-primary">
             {planLabel}
           </p>
           <p className="mt-3 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
             Version
           </p>
-          <p className="mt-1 text-[14px] font-bold leading-tight text-text-primary">
+          <p className="mt-1 text-[12px] font-semibold leading-tight text-text-primary">
             v{APP_VERSION}
           </p>
         </div>
