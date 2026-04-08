@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.2.2 — Navigation Cleanup & Header Polish (2026-04-07)
+The dashboard navigation is cleaner and less confusing. The old collapsible menu behavior has been fully removed, the sidebar logo was rebalanced so company folders stay visible, and the top navigation now shows **Current Plan** more clearly while keeping **Sign Out** pinned to the far left.
+
 ### v2.2.1 — Admin Controls & Customer Organization (2026-04-07)
 The app now includes a master admin area for monitoring active customer accounts, mapped to the existing `vic@alpina.net` site user. Account Settings now store richer business and contact details, year folders can contain customer-specific subfolders, the chatbot is now branded as **Alladin** with a genie-style mark, and the dashboard sidebar stays consistently open without a collapse toggle.
 
@@ -47,6 +50,20 @@ Attach receipts (images, PDFs, Office docs) to any expense from a gallery modal 
 
 ### v0.2.0 — Full App Rebuild (2026-03-24)
 Migrated from a vanilla JS proof-of-concept to a full Next.js 14 application backed by Supabase. Added authentication, cloud storage, a 4-step import wizard, and exports to Excel, CSV, and QuickBooks (QBO/OFX).
+
+---
+
+## [2.2.2] — 2026-04-07
+
+### Changed
+
+#### Navigation / Sidebar
+- Removed the last remaining collapsible/mobile menu trigger from the dashboard shell and top navigation
+- Rebalanced the enlarged sidebar logo area so company folders remain visible instead of being pushed down the panel
+
+#### Top Navigation
+- Updated the plan badge text to read `Current Plan: ...`
+- Kept the `Sign Out` action pinned to the far left side of the top nav and always visible
 
 ---
 

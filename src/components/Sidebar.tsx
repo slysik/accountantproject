@@ -16,20 +16,20 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="relative flex h-full w-[240px] flex-col border-r"
+      className="relative flex h-full w-[280px] flex-col border-r"
       style={{ borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
     >
       <div
-        className="flex h-14 flex-shrink-0 items-center border-b px-3"
+        className="flex h-28 flex-shrink-0 items-center justify-center border-b px-4 py-3"
         style={{ borderColor: 'var(--border-primary)' }}
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-col items-center gap-3">
           <Image
             src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
             alt="Accountant's Best Friend"
-            width={200}
-            height={200}
-            className="h-8 w-8 rounded-md object-contain flex-shrink-0"
+            width={800}
+            height={800}
+            className="h-20 w-20 rounded-xl object-contain flex-shrink-0"
             unoptimized
           />
           <span className="text-sm font-semibold text-text-primary truncate">ABF</span>

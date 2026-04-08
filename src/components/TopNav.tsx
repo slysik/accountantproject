@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { decodeCompanySlug, decodeFolderSlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import { useTheme } from '@/lib/theme';
 import { useSubscription } from '@/lib/useSubscription';
-import { LuChevronRight, LuWand, LuMenu, LuSun, LuMoon, LuLogOut } from 'react-icons/lu';
+import { LuChevronRight, LuWand, LuSun, LuMoon, LuLogOut } from 'react-icons/lu';
 import { PLANS } from '@/lib/subscription';
 
 const MONTH_NAMES: Record<string, string> = {
@@ -86,11 +86,7 @@ function Breadcrumbs() {
   );
 }
 
-interface TopNavProps {
-  onMobileMenuToggle?: () => void;
-}
-
-export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
+export default function TopNav() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { sub } = useSubscription(user?.id, user?.email);
@@ -106,8 +102,8 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
       className="flex h-14 flex-shrink-0 items-center justify-between border-b px-4"
       style={{ borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
     >
-      {/* Left: sign out + mobile toggle + breadcrumbs */}
-      <div className="flex items-center gap-3">
+      {/* Left: sign out + breadcrumbs */}
+      <div className="flex min-w-0 items-center gap-3">
         <button
           onClick={() => signOut()}
           title="Sign out"
@@ -115,17 +111,11 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
           style={{ borderColor: 'var(--border-primary)' }}
         >
           <LuLogOut className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Sign Out</span>
+          <span>Sign Out</span>
         </button>
-        {onMobileMenuToggle && (
-          <button
-            onClick={onMobileMenuToggle}
-            className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary md:hidden"
-          >
-            <LuMenu className="h-4 w-4" />
-          </button>
-        )}
-        <Breadcrumbs />
+        <div className="min-w-0">
+          <Breadcrumbs />
+        </div>
       </div>
 
       {/* Right: actions */}
@@ -136,7 +126,7 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
           className="hidden rounded-md border px-2 py-1 text-[11px] font-medium text-text-muted transition-colors hover:text-text-secondary sm:block"
           style={{ borderColor: 'var(--border-primary)' }}
         >
-          {planLabel}
+          Current Plan: {planLabel}
         </Link>
 
         {/* Import wizard */}
