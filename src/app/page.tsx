@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { LuChartBar, LuUpload, LuTag, LuDownload, LuShield, LuArrowRight, LuCheck, LuSun, LuMoon } from 'react-icons/lu';
+import Image from 'next/image';
+import { LuUpload, LuTag, LuDownload, LuShield, LuArrowRight, LuCheck, LuSun, LuMoon, LuChartBar } from 'react-icons/lu';
 import { useTheme } from '@/lib/theme';
 import PublicFooter from '@/components/PublicFooter';
 
@@ -54,8 +55,14 @@ export default function LandingPage() {
       {/* Nav */}
       <header className="flex items-center justify-between border-b border-border-primary bg-bg-secondary px-6 py-4">
         <div className="flex items-center gap-2">
-          <LuChartBar className="h-6 w-6 text-accent-primary" />
-          <span className="text-base font-semibold">Accountant&apos;s Best Friend</span>
+          <Image
+            src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
+            alt="Accountant's Best Friend"
+            width={40}
+            height={40}
+            className="rounded-xl"
+            unoptimized
+          />
         </div>
         <div className="flex items-center gap-3">
           <Link
