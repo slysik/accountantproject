@@ -2,27 +2,18 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/lib/auth';
 import { decodeCompanySlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import { useTheme } from '@/lib/theme';
 import { useSubscription } from '@/lib/useSubscription';
-import Image from 'next/image';
-import { LuChevronRight, LuWand, LuMenu, LuShield, LuSun, LuMoon, LuClock } from 'react-icons/lu';
+import { LuChevronRight, LuWand, LuMenu, LuSun, LuMoon, LuLogOut } from 'react-icons/lu';
 import { PLANS } from '@/lib/subscription';
 
 const MONTH_NAMES: Record<string, string> = {
-  '01': 'January',
-  '02': 'February',
-  '03': 'March',
-  '04': 'April',
-  '05': 'May',
-  '06': 'June',
-  '07': 'July',
-  '08': 'August',
-  '09': 'September',
-  '10': 'October',
-  '11': 'November',
-  '12': 'December',
+  '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr',
+  '05': 'May', '06': 'Jun', '07': 'Jul', '08': 'Aug',
+  '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dec',
 };
 
 function Breadcrumbs() {
@@ -36,49 +27,43 @@ function Breadcrumbs() {
 
   if (segments[1] === 'wizard' || segments[1] === 'trash') {
     crumbs.push({
-      label: segments[1] === 'wizard' ? 'Wizard' : 'Trash',
+      label: segments[1] === 'wizard' ? 'Import Wizard' : 'Trash',
       href: `/dashboard/${segments[1]}`,
     });
   } else if (segments.length >= 2) {
-    const companySlug = segments[1];
     crumbs.push({
-      label: decodeCompanySlug(companySlug),
-      href: `/dashboard/${companySlug}`,
+      label: decodeCompanySlug(segments[1]),
+      href: `/dashboard/${segments[1]}`,
     });
   }
 
   if (segments.length >= 3 && segments[1] !== 'wizard' && segments[1] !== 'trash') {
-    const companySlug = segments[1];
     const year = segments[2];
     if (isYearSegment(year)) {
-      crumbs.push({ label: year, href: `/dashboard/${companySlug}/${year}` });
+      crumbs.push({ label: year, href: `/dashboard/${segments[1]}/${year}` });
     }
   }
 
   if (segments.length >= 4 && segments[1] !== 'wizard' && segments[1] !== 'trash') {
-    const companySlug = segments[1];
     const year = segments[2];
     const month = segments[3];
     if (isYearSegment(year) && isMonthSegment(month)) {
-      const monthName = MONTH_NAMES[month] ?? month;
-      crumbs.push({ label: monthName, href: `/dashboard/${companySlug}/${year}/${month}` });
+      crumbs.push({
+        label: MONTH_NAMES[month] ?? month,
+        href: `/dashboard/${segments[1]}/${year}/${month}`,
+      });
     }
   }
 
   return (
-    <nav className="flex items-center gap-1.5 text-sm">
+    <nav className="flex items-center gap-1 text-sm">
       {crumbs.map((crumb, index) => (
-        <span key={crumb.href} className="flex items-center gap-1.5">
-          {index > 0 && (
-            <LuChevronRight className="h-3.5 w-3.5 text-text-muted" />
-          )}
+        <span key={crumb.href} className="flex items-center gap-1">
+          {index > 0 && <LuChevronRight className="h-3 w-3 text-text-muted" />}
           {index === crumbs.length - 1 ? (
-            <span className="text-text-primary font-medium">{crumb.label}</span>
+            <span className="text-xs font-medium text-text-primary">{crumb.label}</span>
           ) : (
-            <Link
-              href={crumb.href}
-              className="text-text-muted hover:text-text-secondary transition-colors"
-            >
+            <Link href={crumb.href} className="text-xs text-text-muted transition-colors hover:text-text-secondary">
               {crumb.label}
             </Link>
           )}
@@ -96,6 +81,7 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { sub } = useSubscription(user?.id, user?.email);
+
   const planLabel = sub?.plan === 'trial'
     ? 'Trial'
     : sub?.plan
@@ -103,83 +89,62 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
       : 'Account';
 
   return (
-    <header className="flex h-24 items-center justify-between border-b border-border-primary/80 bg-bg-secondary/75 px-4 backdrop-blur-xl md:px-6">
-      {/* Left: Hamburger (mobile) + Logo / App Name */}
-      <div className="flex items-center gap-2">
+    <header
+      className="flex h-14 flex-shrink-0 items-center justify-between border-b px-4"
+      style={{ borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
+    >
+      {/* Left: mobile toggle + breadcrumbs */}
+      <div className="flex items-center gap-3">
         {onMobileMenuToggle && (
           <button
             onClick={onMobileMenuToggle}
             className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary md:hidden"
-            aria-label="Toggle sidebar"
           >
-            <LuMenu className="h-5 w-5" />
+            <LuMenu className="h-4 w-4" />
           </button>
         )}
-        <Image
-          src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
-          alt="Accountant's Best Friend"
-          width={200}
-          height={200}
-          className="h-20 w-20 rounded-xl object-cover"
-          unoptimized
-        />
-      </div>
-
-      {/* Center: Breadcrumbs */}
-      <div className="flex flex-1 justify-center px-4">
         <Breadcrumbs />
       </div>
 
-      {/* Right: User info + Actions */}
-      <div className="flex items-center gap-3">
+      {/* Right: actions */}
+      <div className="flex items-center gap-2">
+        {/* Plan badge */}
         <Link
           href={sub?.plan === 'trial' ? '/subscribe' : '/settings/account'}
-          className="hidden items-center gap-1 rounded-full border border-accent-primary/35 bg-accent-primary/10 px-3 py-1.5 text-xs font-semibold text-accent-primary transition-colors hover:bg-accent-primary/18 sm:flex"
-          title="Account type"
+          className="hidden rounded-md border px-2 py-1 text-[11px] font-medium text-text-muted transition-colors hover:text-text-secondary sm:block"
+          style={{ borderColor: 'var(--border-primary)' }}
         >
-          <LuClock className="h-3 w-3" />
           {planLabel}
         </Link>
+
+        {/* Import wizard */}
         <Link
           href="/dashboard/wizard"
-          className="flex items-center gap-1.5 rounded-full bg-accent-primary px-3.5 py-2 text-xs font-semibold text-bg-primary shadow-[0_12px_30px_rgba(37,99,235,0.28)] transition-colors hover:bg-accent-dark"
+          className="flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-dark"
         >
           <LuWand className="h-3.5 w-3.5" />
-          Start Wizard
-        </Link>
-        <Link
-          href="/settings/security"
-          className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
-          title="Security Settings"
-        >
-          <LuShield className="h-4 w-4" />
+          <span className="hidden sm:inline">Import</span>
         </Link>
 
-        {/* ☀️ / 🌙 Theme toggle — quirky pill button */}
+        {/* Theme toggle */}
         <button
           onClick={toggleTheme}
-          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          className="relative flex h-8 w-16 items-center rounded-full border-2 border-accent-primary bg-bg-tertiary p-1 transition-all hover:scale-105 hover:shadow-[0_0_12px_var(--accent-primary)] focus:outline-none"
+          title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
         >
-          {/* sliding pill */}
-          <span
-            className={`absolute h-5 w-5 rounded-full bg-accent-primary shadow transition-all duration-300 ${
-              theme === 'light' ? 'translate-x-8' : 'translate-x-0'
-            }`}
-          />
-          <LuMoon className="absolute left-1.5 h-3 w-3 text-text-muted" />
-          <LuSun className="absolute right-1.5 h-3 w-3 text-text-muted" />
+          {theme === 'dark' ? <LuSun className="h-4 w-4" /> : <LuMoon className="h-4 w-4" />}
         </button>
+
+        {/* User + sign out */}
         {user?.email && (
-          <span className="text-xs text-text-muted hidden lg:inline">
-            {user.email}
-          </span>
+          <span className="hidden text-[11px] text-text-muted lg:block">{user.email}</span>
         )}
         <button
           onClick={() => signOut()}
-          className="rounded-full border border-border-primary/80 px-3.5 py-2 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+          title="Sign out"
+          className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
         >
-          Sign Out
+          <LuLogOut className="h-4 w-4" />
         </button>
       </div>
     </header>

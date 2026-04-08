@@ -4,34 +4,34 @@
 
 /* ── Dark mode (default) ── */
 :root {
-  --bg-primary: #0F1117;
-  --bg-secondary: #161B27;
-  --bg-tertiary: #1E2638;
-  --bg-elevated: rgba(22, 27, 39, 0.82);
-  --border-primary: #2A3349;
-  --text-primary: #F0F4FF;
-  --text-secondary: #A3AEC4;
-  --text-muted: #64748B;
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-tertiary: #1a1a1a;
+  --bg-elevated: #161616;
+  --border-primary: #2a2a2a;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --text-muted: #555555;
   --accent-primary: #3B82F6;
   --accent-dark: #2563EB;
-  --success: #22D3A8;
-  --error: #FF4F4F;
+  --success: #22c55e;
+  --error: #ef4444;
 }
 
 /* ── Light mode ── */
 .light {
-  --bg-primary: #F1F5FB;
-  --bg-secondary: #FFFFFF;
-  --bg-tertiary: #E4EAF5;
-  --bg-elevated: rgba(255, 255, 255, 0.85);
-  --border-primary: #C9D4E8;
-  --text-primary: #0F172A;
-  --text-secondary: #334155;
-  --text-muted: #64748B;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9f9f9;
+  --bg-tertiary: #f0f0f0;
+  --bg-elevated: #ffffff;
+  --border-primary: #e5e5e5;
+  --text-primary: #0a0a0a;
+  --text-secondary: #525252;
+  --text-muted: #a3a3a3;
   --accent-primary: #2563EB;
   --accent-dark: #1D4ED8;
-  --success: #059669;
-  --error: #DC2626;
+  --success: #16a34a;
+  --error: #dc2626;
 }
 
 @layer base {
@@ -41,32 +41,6 @@
 
   body {
     @apply bg-bg-primary text-text-primary;
-    background-image:
-      radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 28%),
-      radial-gradient(circle at 85% 12%, rgba(34, 211, 168, 0.12), transparent 24%),
-      linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0));
-    background-attachment: fixed;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
-    background-size: 24px 24px;
-    mask-image: linear-gradient(180deg, rgba(0,0,0,0.35), transparent 72%);
-    opacity: 0.35;
-    z-index: 0;
-  }
-
-  .light body::before {
-    background-image:
-      linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
-    opacity: 0.4;
   }
 
   * {
@@ -75,8 +49,8 @@
   }
 
   *::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 6px;
+    height: 6px;
   }
 
   *::-webkit-scrollbar-track {
@@ -84,14 +58,12 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--border-primary) 78%, transparent);
+    background: var(--border-primary);
     border-radius: 9999px;
-    border: 2px solid transparent;
-    background-clip: content-box;
   }
 
   ::selection {
-    background: color-mix(in srgb, var(--accent-primary) 32%, transparent);
+    background: color-mix(in srgb, var(--accent-primary) 28%, transparent);
     color: var(--text-primary);
   }
 }
@@ -102,44 +74,39 @@
   }
 
   .shell-panel {
-    @apply rounded-[28px] border shadow-[0_20px_60px_rgba(0,0,0,0.16)] backdrop-blur-xl;
-    border-color: color-mix(in srgb, var(--border-primary) 80%, transparent);
-    background-color: color-mix(in srgb, var(--bg-secondary) 85%, transparent);
+    @apply rounded-xl border;
+    border-color: var(--border-primary);
+    background-color: var(--bg-secondary);
   }
 
   .muted-panel {
-    @apply rounded-2xl border backdrop-blur-md;
-    border-color: color-mix(in srgb, var(--border-primary) 70%, transparent);
-    background-color: color-mix(in srgb, var(--bg-tertiary) 65%, transparent);
+    @apply rounded-lg border;
+    border-color: var(--border-primary);
+    background-color: var(--bg-tertiary);
   }
 
   .hero-surface {
-    @apply overflow-hidden rounded-[32px] border shadow-[0_28px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl;
-    border-color: color-mix(in srgb, var(--border-primary) 80%, transparent);
-    background-color: color-mix(in srgb, var(--bg-secondary) 90%, transparent);
+    @apply overflow-hidden rounded-xl border;
+    border-color: var(--border-primary);
+    background-color: var(--bg-secondary);
   }
 
   .section-kicker {
-    @apply text-[11px] font-semibold uppercase tracking-[0.26em] text-accent-primary;
+    @apply text-[10px] font-semibold uppercase tracking-widest text-text-muted;
   }
 
   .metric-card {
-    @apply rounded-2xl border p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)];
-    border-color: color-mix(in srgb, var(--border-primary) 70%, transparent);
-    background-color: color-mix(in srgb, var(--bg-primary) 55%, transparent);
+    @apply rounded-lg border p-4;
+    border-color: var(--border-primary);
+    background-color: var(--bg-secondary);
   }
 
   .metric-label {
-    @apply mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-text-muted;
+    @apply mb-1.5 text-[11px] font-medium text-text-muted;
   }
 
   .action-pill {
-    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-text-primary;
-    border-color: color-mix(in srgb, var(--border-primary) 70%, transparent);
-    background-color: color-mix(in srgb, var(--bg-primary) 65%, transparent);
-  }
-
-  .action-pill:hover {
-    background-color: var(--bg-tertiary);
+    @apply inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary;
+    border-color: var(--border-primary);
   }
 }
