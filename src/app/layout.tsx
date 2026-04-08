@@ -1,17 +1,6 @@
 import type { Metadata } from "next";
-import { Manrope, Space_Grotesk } from "next/font/google";
 import "@/styles/globals.css";
 import Providers from "@/components/Providers";
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-display",
-});
 
 export const metadata: Metadata = {
   title: "Accountant Dashboard",
@@ -33,7 +22,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${manrope.variable} ${spaceGrotesk.variable} min-h-screen bg-bg-primary text-text-primary antialiased`}>
+      <body className="min-h-screen bg-bg-primary text-text-primary antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>
