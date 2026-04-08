@@ -513,43 +513,66 @@ export async function createCustomerSubfolder(
  * Fetches all companies, years, and month-level stats.
  */
 export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
-  const { data: companyRows, error: companiesError } = await supabase
+  const { data: companyRowsByUser, error: companiesError } = await supabase
     .from('companies')
-    .select('name')
+    .select('user_id, name')
     .eq('user_id', userId)
     .is('deleted_at', null)
     .order('name', { ascending: true });
 
   if (companiesError) throw companiesError;
 
-  const activeCompanyNames = new Set((companyRows ?? []).map((row) => row.name as string));
+  let companyRows = companyRowsByUser ?? [];
+  let useVisibleFallback = companyRows.length === 0;
+
+  if (useVisibleFallback) {
+    const { data: visibleCompanyRows, error: visibleCompaniesError } = await supabase
+      .from('companies')
+      .select('user_id, name')
+      .is('deleted_at', null)
+      .order('name', { ascending: true });
+
+    if (visibleCompaniesError) throw visibleCompaniesError;
+    companyRows = visibleCompanyRows ?? [];
+  }
+
+  const activeCompanyNames = new Set(companyRows.map((row) => row.name as string));
   if (activeCompanyNames.size === 0) return [];
 
-  const { data: folderRows, error: foldersError } = await supabase
+  const folderQuery = supabase
     .from('folders')
-    .select('company_name, year')
-    .eq('user_id', userId)
+    .select('user_id, company_name, year')
     .order('company_name', { ascending: true })
     .order('year', { ascending: true });
 
+  const { data: folderRows, error: foldersError } = useVisibleFallback
+    ? await folderQuery
+    : await folderQuery.eq('user_id', userId);
+
   if (foldersError) throw foldersError;
 
-  const { data: subfolderRows, error: subfoldersError } = await supabase
+  const subfolderQuery = supabase
     .from('customer_subfolders')
-    .select('id, company_name, year, name')
-    .eq('user_id', userId)
+    .select('id, user_id, company_name, year, name')
     .order('company_name', { ascending: true })
     .order('year', { ascending: true })
     .order('name', { ascending: true });
 
+  const { data: subfolderRows, error: subfoldersError } = useVisibleFallback
+    ? await subfolderQuery
+    : await subfolderQuery.eq('user_id', userId);
+
   if (subfoldersError) throw subfoldersError;
 
   // Get all non-deleted expenses for this user to compute stats
-  const { data: expenseRows, error: expensesError } = await supabase
+  const expensesQuery = supabase
     .from('expenses')
-    .select('company_name, year, month, amount')
-    .eq('user_id', userId)
+    .select('user_id, company_name, year, month, amount')
     .is('deleted_at', null);
+
+  const { data: expenseRows, error: expensesError } = useVisibleFallback
+    ? await expensesQuery
+    : await expensesQuery.eq('user_id', userId);
 
   if (expensesError) throw expensesError;
 
