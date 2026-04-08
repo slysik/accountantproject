@@ -10,11 +10,19 @@ export default function LoginPage() {
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendingConfirmation, setResendingConfirmation] = useState(false);
 
-  const { signInWithEmail, signUpWithEmail, signInWithGoogle, sendPasswordReset } = useAuth();
+  const {
+    signInWithEmail,
+    signUpWithEmail,
+    signInWithGoogle,
+    sendPasswordReset,
+    resendSignupConfirmation,
+  } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,28 +35,19 @@ export default function LoginPage() {
       if (mode === 'forgot') {
         await sendPasswordReset(email);
         setSuccess('Check your email for a password reset link.');
+        setPendingConfirmationEmail('');
       } else if (mode === 'signin') {
         await signInWithEmail(email, password);
-        router.push('/dashboard');
+        router.push('/mfa/setup');
       } else {
         const result = await signUpWithEmail(email, password);
-        try {
-          await fetch('/api/notify-signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email,
-              provider: 'email/password',
-            }),
-          });
-        } catch (notifyErr) {
-          console.warn('Failed to notify admin about signup:', notifyErr);
-        }
 
         if (result.sessionCreated) {
-          router.push('/dashboard');
+          setPendingConfirmationEmail('');
+          router.push('/mfa/setup');
         } else {
-          setSuccess('Account created. Check your email to confirm your address before signing in.');
+          setPendingConfirmationEmail(email);
+          setSuccess('Account created. Check your email to confirm your address, then sign in to finish two-factor setup.');
           setMode('signin');
           setPassword('');
         }
@@ -58,6 +57,24 @@ export default function LoginPage() {
       setError(supabaseError.message ?? 'An unexpected error occurred.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!pendingConfirmationEmail) return;
+
+    setError('');
+    setSuccess('');
+    setResendingConfirmation(true);
+
+    try {
+      await resendSignupConfirmation(pendingConfirmationEmail);
+      setSuccess(`Confirmation email resent to ${pendingConfirmationEmail}.`);
+    } catch (err: unknown) {
+      const supabaseError = err as { message?: string };
+      setError(supabaseError.message ?? 'Failed to resend confirmation email.');
+    } finally {
+      setResendingConfirmation(false);
     }
   };
 
@@ -168,6 +185,19 @@ export default function LoginPage() {
 
           {error && <p className="text-sm text-error">{error}</p>}
           {success && <p className="text-sm text-success">{success}</p>}
+
+          {pendingConfirmationEmail && mode === 'signin' && (
+            <button
+              type="button"
+              onClick={handleResendConfirmation}
+              disabled={resendingConfirmation || loading}
+              className="text-left text-xs font-medium text-accent-primary transition-colors hover:text-accent-dark disabled:opacity-50"
+            >
+              {resendingConfirmation
+                ? 'Resending confirmation email...'
+                : `Resend confirmation email to ${pendingConfirmationEmail}`}
+            </button>
+          )}
 
           <button
             type="submit"

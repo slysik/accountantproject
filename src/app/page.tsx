@@ -53,14 +53,14 @@ export default function LandingPage() {
     <div className="min-h-screen bg-bg-primary text-text-primary">
 
       {/* Nav */}
-      <header className="flex items-center justify-between border-b border-border-primary bg-bg-secondary px-6 py-4">
+      <header className="flex items-center justify-between border-b border-border-primary bg-bg-secondary px-6 py-4 md:py-5">
         <div className="flex items-center gap-2">
           <Image
             src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
             alt="Accountant's Best Friend"
-            width={40}
-            height={40}
-            className="rounded-xl"
+            width={1600}
+            height={1600}
+            className="h-14 w-14 rounded-xl object-contain md:h-16 md:w-16"
             unoptimized
           />
         </div>

@@ -12,10 +12,10 @@ import {
 } from '@/lib/subscription';
 
 // Pages accessible even when trial/subscription has expired
-const SUBSCRIPTION_EXEMPT = ['/subscribe', '/settings/security', '/mfa/verify'];
+const SUBSCRIPTION_EXEMPT = ['/subscribe', '/settings/security', '/mfa/verify', '/mfa/setup'];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading, mfaRequired } = useAuth();
+  const { user, loading, mfaRequired, mfaSetupRequired } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [subLoading, setSubLoading] = useState(true);
@@ -32,6 +32,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
     if (mfaRequired) {
+      setSubLoading(false);
+      return;
+    }
+    if (mfaSetupRequired && pathname !== '/mfa/setup') {
+      router.push('/mfa/setup');
+      return;
+    }
+    if (mfaSetupRequired) {
       setSubLoading(false);
       return;
     }
@@ -96,7 +104,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     };
 
     checkSub();
-  }, [user, loading, mfaRequired, pathname, router]);
+  }, [user, loading, mfaRequired, mfaSetupRequired, pathname, router]);
 
   if (loading || subLoading) {
     return (
@@ -109,7 +117,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || mfaRequired) return null;
+  if (!user || mfaRequired || mfaSetupRequired) return null;
 
   if (subBlocked && !SUBSCRIPTION_EXEMPT.some((p) => pathname.startsWith(p))) {
     return null;

@@ -18,6 +18,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   mfaRequired: boolean;
+  mfaSetupRequired: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (
     email: string,
@@ -26,6 +27,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
+  resendSignupConfirmation: (email: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
   // MFA
   listMFAFactors: () => Promise<MFAFactor[]>;
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaSetupRequired, setMfaSetupRequired] = useState(false);
   const [showIdleWarning, setShowIdleWarning] = useState(false);
   const [warningCountdown, setWarningCountdown] = useState(Math.floor((IDLE_TIMEOUT_MS - IDLE_WARNING_MS) / 1000));
   const idleTimerRef = useRef<number | null>(null);
@@ -55,18 +58,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [showIdleWarning]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
+      await refreshMFAState(session?.user ?? null);
       setLoading(false);
-      checkMFARequired(session?.user ?? null);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      setLoading(false);
-      checkMFARequired(session?.user ?? null);
+      void refreshMFAState(session?.user ?? null).finally(() => {
+        setLoading(false);
+      });
     });
 
     return () => subscription.unsubscribe();
@@ -159,13 +163,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [loading, user]);
 
-  const checkMFARequired = async (currentUser: User | null) => {
-    if (!currentUser) { setMfaRequired(false); return; }
-    const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    // nextLevel > currentLevel means MFA challenge is still needed
-    setMfaRequired(
-      !!data && data.nextLevel === 'aal2' && data.currentLevel !== 'aal2'
-    );
+  const getAuthRedirectUrl = (path: string) => {
+    const configuredBaseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL;
+    const baseUrl =
+      configuredBaseUrl && configuredBaseUrl.trim().length > 0
+        ? configuredBaseUrl.replace(/\/+$/, '')
+        : window.location.origin;
+
+    return `${baseUrl}${path}`;
+  };
+
+  const refreshMFAState = async (currentUser: User | null) => {
+    if (!currentUser) {
+      setMfaRequired(false);
+      setMfaSetupRequired(false);
+      return;
+    }
+
+    try {
+      const [{ data: aalData }, { data: factorsData, error: factorsError }] = await Promise.all([
+        supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+        supabase.auth.mfa.listFactors(),
+      ]);
+
+      if (factorsError) throw factorsError;
+
+      const verifiedTotpFactors = (factorsData?.totp ?? []).filter(
+        (factor) => factor.status === 'verified'
+      );
+
+      // nextLevel > currentLevel means MFA challenge is still needed
+      setMfaRequired(
+        verifiedTotpFactors.length > 0 &&
+        !!aalData &&
+        aalData.nextLevel === 'aal2' &&
+        aalData.currentLevel !== 'aal2'
+      );
+      setMfaSetupRequired(verifiedTotpFactors.length === 0);
+    } catch (error) {
+      console.error('Failed to refresh MFA state:', error);
+      setMfaRequired(false);
+      setMfaSetupRequired(false);
+    }
   };
 
   const signInWithEmail = async (email: string, password: string) => {
@@ -178,26 +218,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // app appear to log into the previously authenticated user.
     await supabase.auth.signOut({ scope: 'local' });
 
-    const { data, error } = await supabase.auth.signUp({
+    const response = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.error ?? 'Failed to create account');
+    }
+
+    if (payload.session?.access_token && payload.session?.refresh_token) {
+      const { error } = await supabase.auth.setSession({
+        access_token: payload.session.access_token,
+        refresh_token: payload.session.refresh_token,
+      });
+      if (error) throw error;
+    }
+
+    return {
+      sessionCreated: !!payload.sessionCreated,
+      emailConfirmationRequired: !!payload.emailConfirmationRequired,
+    };
+  };
+
+  const resendSignupConfirmation = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
       email,
-      password,
       options: {
-        emailRedirectTo: `${window.location.origin}/login`,
+        emailRedirectTo: getAuthRedirectUrl('/login'),
       },
     });
     if (error) throw error;
-
-    return {
-      sessionCreated: !!data.session,
-      emailConfirmationRequired: !data.session,
-    };
   };
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: getAuthRedirectUrl('/dashboard'),
       },
     });
     if (error) throw error;
@@ -211,7 +277,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendPasswordReset = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: getAuthRedirectUrl('/reset-password'),
     });
     if (error) throw error;
   };
@@ -240,7 +306,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyTOTPEnrollment = async (factorId: string, code: string) => {
     const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
     if (error) throw error;
-    await checkMFARequired(user);
+    await refreshMFAState(user);
   };
 
   const challengeAndVerifyMFA = async (factorId: string, code: string) => {
@@ -252,12 +318,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       code,
     });
     if (verifyErr) throw verifyErr;
-    await checkMFARequired(user);
+    await refreshMFAState(user);
   };
 
   const unenrollMFA = async (factorId: string) => {
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
     if (error) throw error;
+    await refreshMFAState(user);
   };
 
   const sendEmailOTP = async () => {
@@ -272,11 +339,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         loading,
         mfaRequired,
+        mfaSetupRequired,
         signInWithEmail,
         signUpWithEmail,
         signInWithGoogle,
         signOut,
         sendPasswordReset,
+        resendSignupConfirmation,
         updatePassword,
         listMFAFactors,
         enrollTOTP,

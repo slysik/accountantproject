@@ -25,6 +25,9 @@ export default function PublicFooter() {
             <Link href="/terms" className="transition-colors hover:text-text-primary">
               Terms of Service
             </Link>
+            <Link href="/contact" className="transition-colors hover:text-text-primary">
+              Contact
+            </Link>
             <Link href="/login" className="transition-colors hover:text-text-primary">
               Sign In
             </Link>

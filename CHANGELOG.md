@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2.0.1] — 2026-04-07
+
+### Changed
+
+#### Authentication / Security
+- Added a server-side signup route so account creation is validated and controlled on the backend instead of only in the browser
+- Added IP tracking to signup notifications so new-account emails include the source IP address
+- Added signup attempt limiting with a cap of 5 attempts per IP address within a 24-hour window
+- Added a required authenticator-app 2FA registration flow as part of account onboarding
+- Existing account sign-ins now route through the 2FA registration flow when no authenticator has been enrolled
+- Added a dedicated `/mfa/setup` flow for enrolling and confirming TOTP during account setup
+
+#### Email / Notifications
+- Fixed SMTP2GO configuration and production email wiring for signup notifications
+- Added resend support and stable production redirect handling for signup confirmation emails
+
 ## [2.0.0] — 2026-04-07
 
 ### Changed
