@@ -5,9 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { decodeCompanySlug, decodeFolderSlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import { useTheme } from '@/lib/theme';
-import { useSubscription } from '@/lib/useSubscription';
 import { LuChevronRight, LuWand, LuSun, LuMoon, LuLogOut } from 'react-icons/lu';
-import { PLANS } from '@/lib/subscription';
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr',
@@ -89,13 +87,6 @@ function Breadcrumbs() {
 export default function TopNav() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { sub } = useSubscription(user?.id, user?.email);
-
-  const planLabel = sub?.plan === 'trial'
-    ? 'Trial'
-    : sub?.plan
-      ? PLANS[sub.plan]?.name ?? sub.plan
-      : 'Account';
 
   return (
     <header
@@ -120,15 +111,6 @@ export default function TopNav() {
 
       {/* Right: actions */}
       <div className="flex items-center gap-2">
-        {/* Plan badge */}
-        <Link
-          href={sub?.plan === 'trial' ? '/subscribe' : '/settings/account'}
-          className="hidden rounded-md border px-2 py-1 text-[11px] font-medium text-text-muted transition-colors hover:text-text-secondary sm:block"
-          style={{ borderColor: 'var(--border-primary)' }}
-        >
-          Current Plan: {planLabel}
-        </Link>
-
         {/* Import wizard */}
         <Link
           href="/dashboard/wizard"

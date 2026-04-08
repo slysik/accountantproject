@@ -7,16 +7,26 @@ import FolderTree from './FolderTree';
 import { APP_VERSION } from '@/lib/version';
 import { useTheme } from '@/lib/theme';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
+import { useSubscription } from '@/lib/useSubscription';
+import { PLANS } from '@/lib/subscription';
 
 export default function Sidebar() {
   const { theme } = useTheme();
   const pathname = usePathname();
+  const { user } = useAuth();
+  const { sub } = useSubscription(user?.id, user?.email);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+  const planLabel = sub?.plan === 'trial'
+    ? 'Trial'
+    : sub?.plan
+      ? PLANS[sub.plan]?.name ?? sub.plan
+      : 'Account';
 
   return (
     <aside
-      className="relative flex h-full w-[280px] flex-col border-r"
+      className="relative flex h-full w-[260px] flex-col border-r"
       style={{ borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
     >
       <div
@@ -90,10 +100,20 @@ export default function Sidebar() {
           <span>Settings</span>
         </Link>
 
-        {/* Version */}
-        <p className="mt-3 px-2 text-[10px] text-text-muted">
-          v{APP_VERSION}
-        </p>
+        <div className="mt-4 px-2">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-text-muted">
+            Current Plan
+          </p>
+          <p className="mt-1 text-[40px] font-bold leading-none text-text-primary">
+            {planLabel}
+          </p>
+          <p className="mt-3 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
+            Version
+          </p>
+          <p className="mt-1 text-[40px] font-bold leading-none text-text-primary">
+            v{APP_VERSION}
+          </p>
+        </div>
       </div>
     </aside>
   );
