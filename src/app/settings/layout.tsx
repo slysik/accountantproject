@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import AppFooter from '@/components/AppFooter';
 import AuthGuard from '@/components/AuthGuard';
 import ExpenseChat from '@/components/ExpenseChat';
 import { useAuth } from '@/lib/auth';
 import { LuUser, LuShield, LuUsers, LuChevronLeft, LuLayoutDashboard } from 'react-icons/lu';
 import SiteLogo from '@/components/SiteLogo';
-import { APP_VERSION } from '@/lib/version';
 import { isMasterAdminEmail } from '@/lib/admin';
 
 const BASE_NAV = [
@@ -80,9 +80,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             {/* Page content */}
             <main className="min-w-0 flex-1">
               {children}
-              <div className="mt-8 text-center text-xs text-text-muted">
-                Version {APP_VERSION}
-              </div>
+              <AppFooter />
             </main>
           </div>
         </div>

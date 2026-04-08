@@ -8,6 +8,7 @@ import { getCategoryName } from '@/lib/categories';
 import { getAllExpenses } from '@/lib/database';
 import { formatCurrency } from '@/lib/expense-processor';
 import { buildSampleExpenses } from '@/lib/sample-data';
+import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import CategoryBreakdown from '@/components/CategoryBreakdown';
 import MonthlyChart from '@/components/MonthlyChart';
 import SummaryCards from '@/components/SummaryCards';
@@ -136,17 +137,18 @@ function InsightPanel({ expenses, isSample }: { expenses: CategorizedExpense[]; 
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
   const displayName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? 'User';
   const [expenses, setExpenses] = useState<CategorizedExpense[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    getAllExpenses(user.id)
+    if (!effectiveUserId) return;
+    getAllExpenses(effectiveUserId)
       .then((rows) => setExpenses(rows))
       .catch((err) => console.error('Failed to load dashboard expenses:', err))
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [effectiveUserId]);
 
   const sampleExpenses = useMemo(() => buildSampleExpenses(), []);
   const hasData = expenses.length > 0;

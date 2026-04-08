@@ -32,6 +32,7 @@ import ExportMenu from '@/components/ExportMenu';
 import MonthlyChart from '@/components/MonthlyChart';
 import SummaryCards from '@/components/SummaryCards';
 import { SkeletonCard, SkeletonSection } from '@/components/Skeleton';
+import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { CategorizedExpense, MonthNode, Receipt, SubfolderNode } from '@/types';
 
 const MONTH_NAMES: Record<string, string> = {
@@ -82,6 +83,7 @@ export default function DashboardSlugPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
   const slug = (params.slug as string[]) ?? [];
 
   const [loading, setLoading] = useState(true);
@@ -116,21 +118,21 @@ export default function DashboardSlugPage() {
   }, [companySlug, isLegacyMonthRoute, isLegacyYearRoute, router, year]);
 
   useEffect(() => {
-    if (!user || !isCompanyView) return;
+    if (!effectiveUserId || !isCompanyView) return;
     setLoading(true);
-    getUserFolders(user.id)
+    getUserFolders(effectiveUserId)
       .then((companies) => {
         const company = companies.find((item) => item.companyName === companyName);
         setYears(company?.years.map((folder) => folder.year) ?? []);
       })
       .catch((err) => console.error('Failed to load company data:', err))
       .finally(() => setLoading(false));
-  }, [companyName, isCompanyView, user]);
+  }, [companyName, effectiveUserId, isCompanyView]);
 
   useEffect(() => {
-    if (!user || (!isYearView && !isSubfolderView) || !year) return;
+    if (!effectiveUserId || (!isYearView && !isSubfolderView) || !year) return;
     setLoading(true);
-    Promise.all([getUserFolders(user.id), getAllExpenses(user.id)])
+    Promise.all([getUserFolders(effectiveUserId), getAllExpenses(effectiveUserId)])
       .then(([companies, allExpenses]) => {
         const company = companies.find((item) => item.companyName === companyName);
         const yearFolder = company?.years.find((folder) => folder.year === year);
@@ -142,18 +144,18 @@ export default function DashboardSlugPage() {
       })
       .catch((err) => console.error('Failed to load year data:', err))
       .finally(() => setLoading(false));
-  }, [companyName, isSubfolderView, isYearView, user, year]);
+  }, [companyName, effectiveUserId, isSubfolderView, isYearView, year]);
 
   const fetchExpenses = useCallback(async () => {
-    if (!user || !isMonthView || !year || !month) return;
+    if (!effectiveUserId || !isMonthView || !year || !month) return;
     setLoading(true);
     try {
-      const data = await getExpenses(user.id, companyName, year, month);
+      const data = await getExpenses(effectiveUserId, companyName, year, month);
       setExpenses(data);
 
       if (data.length > 0) {
         const ids = data.map((expense) => expense.id);
-        const receipts = await getReceiptsByExpenseIds(user.id, ids);
+        const receipts = await getReceiptsByExpenseIds(effectiveUserId, ids);
         setReceiptsByExpenseId(receipts);
       } else {
         setReceiptsByExpenseId({});
@@ -163,41 +165,41 @@ export default function DashboardSlugPage() {
     } finally {
       setLoading(false);
     }
-  }, [companyName, isMonthView, month, user, year]);
+  }, [companyName, effectiveUserId, isMonthView, month, year]);
 
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
 
   const handleCategoryChange = useCallback(async (expenseId: string, category: string) => {
-    if (!user || !year || !month) return;
-    await updateExpenseCategory(user.id, year, month, expenseId, category);
+    if (!effectiveUserId || !year || !month) return;
+    await updateExpenseCategory(effectiveUserId, year, month, expenseId, category);
     setExpenses((prev) => prev.map((expense) => (expense.id === expenseId ? { ...expense, category } : expense)));
-  }, [month, user, year]);
+  }, [effectiveUserId, month, year]);
 
   const handleDelete = useCallback(async (expenseId: string) => {
-    if (!user || !year || !month) return;
-    await softDeleteExpense(user.id, year, month, expenseId);
+    if (!effectiveUserId || !year || !month) return;
+    await softDeleteExpense(effectiveUserId, year, month, expenseId);
     setExpenses((prev) => prev.filter((expense) => expense.id !== expenseId));
     setReceiptsByExpenseId((prev) => {
       const next = { ...prev };
       delete next[expenseId];
       return next;
     });
-  }, [month, user, year]);
+  }, [effectiveUserId, month, year]);
 
   const handleDeleteMonth = useCallback(async () => {
-    if (!user || !year || !month) return;
+    if (!effectiveUserId || !year || !month) return;
     setDeletingMonth(true);
     try {
-      await softDeleteMonth(user.id, companyName, year, month);
+      await softDeleteMonth(effectiveUserId, companyName, year, month);
       router.push(`/dashboard/${encodeCompanySlug(companyName)}/${year}`);
     } catch (err) {
       console.error('Failed to delete month:', err);
       setDeletingMonth(false);
       setShowDeleteConfirm(false);
     }
-  }, [companyName, month, router, user, year]);
+  }, [companyName, effectiveUserId, month, router, year]);
 
   const handleReceiptsUpdated = useCallback((expenseId: string, receipts: Receipt[]) => {
     setReceiptsByExpenseId((prev) => ({ ...prev, [expenseId]: receipts }));

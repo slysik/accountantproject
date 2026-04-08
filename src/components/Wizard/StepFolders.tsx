@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { createYearFolders } from '@/lib/database';
 import { DEFAULT_COMPANY_NAME } from '@/lib/company';
 import { formatMonth } from '@/lib/expense-processor';
+import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { CategorizedExpense } from '@/types';
 
 interface StepFoldersProps {
@@ -15,6 +16,7 @@ interface StepFoldersProps {
 
 export default function StepFolders({ expenses, onComplete }: StepFoldersProps) {
   const { user } = useAuth();
+  const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
   const [companyName, setCompanyName] = useState(DEFAULT_COMPANY_NAME);
 
   // Detect ALL unique years from the data (sorted), plus identify the most common one
@@ -73,18 +75,18 @@ export default function StepFolders({ expenses, onComplete }: StepFoldersProps) 
   }, [expenses]);
 
   const handleCreateFolders = useCallback(async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
     setCreating(true);
     try {
       // Create folder records for EVERY year found in the data
       for (const { year } of allYears) {
-        await createYearFolders(user.id, companyName.trim(), year);
+        await createYearFolders(effectiveUserId, companyName.trim(), year);
       }
       setCreated(true);
     } finally {
       setCreating(false);
     }
-  }, [user, allYears, companyName]);
+  }, [effectiveUserId, allYears, companyName]);
 
   const handleContinue = useCallback(() => {
     onComplete(companyName.trim(), primaryYear, byMonth);

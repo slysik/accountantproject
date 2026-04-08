@@ -4,24 +4,26 @@ import { useState, useEffect, useCallback } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
 import { getTrash, restoreExpense, permanentDeleteExpense } from '@/lib/database';
+import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import TrashBin from '@/components/TrashBin';
 import type { CategorizedExpense } from '@/types';
 
 export default function TrashPage() {
   const { user } = useAuth();
+  const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
   const [items, setItems] = useState<CategorizedExpense[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchTrash = useCallback(async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
     setLoading(true);
     try {
-      const trashed = await getTrash(user.id);
+      const trashed = await getTrash(effectiveUserId);
       setItems(trashed);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [effectiveUserId]);
 
   useEffect(() => {
     fetchTrash();
@@ -45,30 +47,33 @@ export default function TrashPage() {
     async (expense: CategorizedExpense) => {
       if (!user) return;
       const { companyName, year, month } = getExpenseLocation(expense);
-      await restoreExpense(user.id, companyName, year, month, expense.id);
+      if (!effectiveUserId) return;
+      await restoreExpense(effectiveUserId, companyName, year, month, expense.id);
       await fetchTrash();
     },
-    [user, fetchTrash]
+    [effectiveUserId, user, fetchTrash]
   );
 
   const handlePermanentDelete = useCallback(
     async (expense: CategorizedExpense) => {
       if (!user) return;
       const { year, month } = getExpenseLocation(expense);
-      await permanentDeleteExpense(user.id, year, month, expense.id);
+      if (!effectiveUserId) return;
+      await permanentDeleteExpense(effectiveUserId, year, month, expense.id);
       await fetchTrash();
     },
-    [user, fetchTrash]
+    [effectiveUserId, user, fetchTrash]
   );
 
   const handleEmptyTrash = useCallback(async () => {
     if (!user) return;
+    if (!effectiveUserId) return;
     for (const expense of items) {
       const { year, month } = getExpenseLocation(expense);
-      await permanentDeleteExpense(user.id, year, month, expense.id);
+      await permanentDeleteExpense(effectiveUserId, year, month, expense.id);
     }
     await fetchTrash();
-  }, [user, items, fetchTrash]);
+  }, [effectiveUserId, user, items, fetchTrash]);
 
   return (
     <div className="mx-auto max-w-5xl">

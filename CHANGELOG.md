@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.2.3 — Public Site Refresh & Team Account Fixes (2026-04-07)
+The public homepage is now a full features-and-capabilities landing page with workflow diagrams and clearer product positioning. Sign out has been moved into the lower-left sidebar as a more visible exit control, the Privacy Policy was simplified by removing the child privacy section, and team-account access has been corrected so invited users can load the owner account's companies and folders once the matching database policy migration is applied.
+
 ### v2.2.2 — Navigation Cleanup & Header Polish (2026-04-07)
 The dashboard navigation is cleaner and less confusing. The old collapsible menu behavior has been fully removed, the sidebar logo was rebalanced so company folders stay visible, and the top navigation now shows **Current Plan** more clearly while keeping **Sign Out** pinned to the far left.
 
@@ -50,6 +53,29 @@ Attach receipts (images, PDFs, Office docs) to any expense from a gallery modal 
 
 ### v0.2.0 — Full App Rebuild (2026-03-24)
 Migrated from a vanilla JS proof-of-concept to a full Next.js 14 application backed by Supabase. Added authentication, cloud storage, a 4-step import wizard, and exports to Excel, CSV, and QuickBooks (QBO/OFX).
+
+---
+
+## [2.2.3] — 2026-04-07
+
+### Added
+
+#### Public Website
+- Replaced the public homepage with a full features-and-capabilities landing page
+- Added workflow and capability diagrams to explain imports, organization, analysis, collaboration, and secure exports
+
+### Changed
+
+#### Navigation / Sign Out
+- Moved `Sign Out` from the top nav into the bottom-left sidebar area
+- Added a larger, more visible exit-style sign-out control in the sidebar footer
+
+#### Team Account Data Access
+- Added owner-account resolution so invited/team users load companies, folders, expenses, and trash from the correct account context
+- Added migration `011_allow_team_member_account_data_access.sql` to extend RLS policies for shared account access
+
+#### Privacy Policy
+- Removed the child privacy clause from the Privacy Policy and renumbered the remaining sections
 
 ---
 
@@ -117,7 +143,7 @@ Migrated from a vanilla JS proof-of-concept to a full Next.js 14 application bac
 ### Added
 
 #### Legal Pages
-- New `/privacy` — Privacy Policy (9 sections): data collected, usage, storage & security, cookies, retention, user rights, children's privacy, changes, contact
+- New `/privacy` — Privacy Policy (8 sections): data collected, usage, storage & security, cookies, retention, user rights, changes, contact
 - New `/terms` — Terms of Service (12 sections): service description, eligibility, subscriptions & payments, acceptable use, data ownership, no tax advice disclaimer, availability, liability, termination, governing law, contact
 
 ---

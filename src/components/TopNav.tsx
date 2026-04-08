@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { decodeCompanySlug, decodeFolderSlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import { useTheme } from '@/lib/theme';
-import { LuChevronRight, LuWand, LuSun, LuMoon, LuLogOut } from 'react-icons/lu';
+import { LuChevronRight, LuWand, LuSun, LuMoon } from 'react-icons/lu';
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr',
@@ -85,7 +85,7 @@ function Breadcrumbs() {
 }
 
 export default function TopNav() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -93,17 +93,8 @@ export default function TopNav() {
       className="flex h-14 flex-shrink-0 items-center justify-between border-b px-4"
       style={{ borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
     >
-      {/* Left: sign out + breadcrumbs */}
+      {/* Left: breadcrumbs */}
       <div className="flex min-w-0 items-center gap-3">
-        <button
-          onClick={() => signOut()}
-          title="Sign out"
-          className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold text-text-primary transition-colors hover:bg-bg-tertiary"
-          style={{ borderColor: 'var(--border-primary)' }}
-        >
-          <LuLogOut className="h-3.5 w-3.5" />
-          <span>Sign Out</span>
-        </button>
         <div className="min-w-0">
           <Breadcrumbs />
         </div>

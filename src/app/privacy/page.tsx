@@ -169,16 +169,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-base font-semibold text-text-primary">7. Children&apos;s Privacy</h2>
-            <p>
-              This service is intended for adults and self-employed professionals. We do not knowingly
-              collect personal information from anyone under the age of 13. If you believe a child has
-              provided us with personal data, please contact us immediately.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="mb-3 text-base font-semibold text-text-primary">8. Changes to This Policy</h2>
+            <h2 className="mb-3 text-base font-semibold text-text-primary">7. Changes to This Policy</h2>
             <p>
               We may update this Privacy Policy from time to time. When we do, we will update the effective
               date at the top of this page. For material changes we will notify active users by email.
@@ -187,7 +178,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-base font-semibold text-text-primary">9. Contact</h2>
+            <h2 className="mb-3 text-base font-semibold text-text-primary">8. Contact</h2>
             <p>
               Questions or concerns about this policy? Reach us at{' '}
               <a href={`mailto:${CONTACT_EMAIL}`} className="text-accent-primary underline hover:text-accent-dark">

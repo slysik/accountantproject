@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { createCompany, createCustomerSubfolder, createYearFolders, getUserFolders, renameCompany, softDeleteMonth, softDeleteYear } from '@/lib/database';
 import { decodeCompanySlug, encodeCompanySlug, encodeFolderSlug } from '@/lib/company';
+import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { CompanyNode } from '@/types';
 import {
   LuBuilding2,
@@ -32,6 +33,7 @@ interface FolderTreeProps {
 
 export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   const { user } = useAuth();
+  const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -58,16 +60,16 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   const [deleting, setDeleting] = useState(false);
 
   const fetchFolders = useCallback(async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
     try {
-      const data = await getUserFolders(user.id);
+      const data = await getUserFolders(effectiveUserId);
       setCompanies(data);
     } catch (err) {
       console.error('Failed to load folders:', err);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [effectiveUserId]);
 
   useEffect(() => {
     fetchFolders();
@@ -106,11 +108,11 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   };
 
   const handleAddCompany = async () => {
-    if (!user || !newCompany.trim()) return;
+    if (!effectiveUserId || !newCompany.trim()) return;
     setAddingCompany(true);
     try {
       const companyName = newCompany.trim();
-      await createCompany(user.id, companyName);
+      await createCompany(effectiveUserId, companyName);
       await fetchFolders();
       setExpandedCompanies((prev) => new Set(prev).add(companyName));
       setShowAddCompany(false);
@@ -123,10 +125,10 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   };
 
   const handleAddYear = async (companyName: string) => {
-    if (!user || !newYear.trim()) return;
+    if (!effectiveUserId || !newYear.trim()) return;
     setAddingYear(true);
     try {
-      await createYearFolders(user.id, companyName, newYear.trim());
+      await createYearFolders(effectiveUserId, companyName, newYear.trim());
       await fetchFolders();
       setExpandedCompanies((prev) => new Set(prev).add(companyName));
       setExpandedYears((prev) => new Set(prev).add(`${companyName}::${newYear.trim()}`));
@@ -146,10 +148,10 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   };
 
   const handleAddSubfolder = async (companyName: string, year: string) => {
-    if (!user || !newSubfolder.trim()) return;
+    if (!effectiveUserId || !newSubfolder.trim()) return;
     setAddingSubfolder(true);
     try {
-      await createCustomerSubfolder(user.id, companyName, year, newSubfolder.trim());
+      await createCustomerSubfolder(effectiveUserId, companyName, year, newSubfolder.trim());
       await fetchFolders();
       setExpandedCompanies((prev) => new Set(prev).add(companyName));
       setExpandedYears((prev) => new Set(prev).add(`${companyName}::${year}`));
@@ -163,11 +165,11 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   };
 
   const handleRenameCompany = async (currentName: string) => {
-    if (!user || !editedCompanyName.trim()) return;
+    if (!effectiveUserId || !editedCompanyName.trim()) return;
     setRenamingCompany(true);
     try {
       const nextName = editedCompanyName.trim();
-      await renameCompany(user.id, currentName, nextName);
+      await renameCompany(effectiveUserId, currentName, nextName);
       await fetchFolders();
       setExpandedCompanies((prev) => {
         const next = new Set(prev);
@@ -201,16 +203,16 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   };
 
   const handleConfirmDelete = async () => {
-    if (!user || !deleteTarget) return;
+    if (!effectiveUserId || !deleteTarget) return;
     setDeleting(true);
     try {
       if (deleteTarget.type === 'year') {
-        await softDeleteYear(user.id, deleteTarget.companyName, deleteTarget.year);
+        await softDeleteYear(effectiveUserId, deleteTarget.companyName, deleteTarget.year);
         if (pathname.startsWith(`/dashboard/${encodeCompanySlug(deleteTarget.companyName)}/${deleteTarget.year}`)) {
           router.push(`/dashboard/${encodeCompanySlug(deleteTarget.companyName)}`);
         }
       } else {
-        await softDeleteMonth(user.id, deleteTarget.companyName, deleteTarget.year, deleteTarget.month);
+        await softDeleteMonth(effectiveUserId, deleteTarget.companyName, deleteTarget.year, deleteTarget.month);
         if (pathname === `/dashboard/${encodeCompanySlug(deleteTarget.companyName)}/${deleteTarget.year}/${deleteTarget.month}`) {
           router.push(`/dashboard/${encodeCompanySlug(deleteTarget.companyName)}/${deleteTarget.year}`);
         }

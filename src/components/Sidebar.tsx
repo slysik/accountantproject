@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { LuTrash2, LuSettings, LuLayoutDashboard } from 'react-icons/lu';
+import { LuTrash2, LuSettings, LuLayoutDashboard, LuLogOut } from 'react-icons/lu';
 import FolderTree from './FolderTree';
 import { APP_VERSION } from '@/lib/version';
 import { useTheme } from '@/lib/theme';
@@ -14,7 +14,7 @@ import { PLANS } from '@/lib/subscription';
 export default function Sidebar() {
   const { theme } = useTheme();
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { sub } = useSubscription(user?.id, user?.email);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
@@ -101,16 +101,31 @@ export default function Sidebar() {
         </Link>
 
         <div className="mt-4 px-2">
+          <button
+            onClick={() => signOut()}
+            title="Sign out"
+            className="group flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-all hover:border-accent-primary/50 hover:bg-accent-primary/10"
+            style={{ borderColor: 'var(--border-primary)' }}
+          >
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-accent-primary text-bg-primary shadow-sm transition-transform group-hover:scale-105">
+              <LuLogOut className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-text-primary">Sign Out</p>
+              <p className="text-[11px] text-text-muted">Exit your account securely</p>
+            </div>
+          </button>
+
           <p className="text-[10px] font-semibold uppercase tracking-widest text-text-muted">
             Current Plan
           </p>
-          <p className="mt-1 text-[40px] font-bold leading-none text-text-primary">
+          <p className="mt-1 text-[14px] font-bold leading-tight text-text-primary">
             {planLabel}
           </p>
           <p className="mt-3 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
             Version
           </p>
-          <p className="mt-1 text-[40px] font-bold leading-none text-text-primary">
+          <p className="mt-1 text-[14px] font-bold leading-tight text-text-primary">
             v{APP_VERSION}
           </p>
         </div>

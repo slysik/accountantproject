@@ -239,3 +239,14 @@ export async function findOwnerSubscription(memberEmail: string): Promise<Subscr
   // Fetch the owner's subscription
   return getSubscription(membership.owner_user_id);
 }
+
+export async function findOwnerAccountUserId(memberEmail: string): Promise<string | null> {
+  const { data: membership, error } = await supabase
+    .from('account_members')
+    .select('owner_user_id')
+    .eq('member_email', memberEmail.toLowerCase())
+    .maybeSingle();
+
+  if (error || !membership) return null;
+  return membership.owner_user_id as string;
+}
