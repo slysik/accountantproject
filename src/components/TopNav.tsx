@@ -118,9 +118,9 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
         <Image
           src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
           alt="Accountant's Best Friend"
-          width={40}
-          height={40}
-          className="rounded-xl"
+          width={120}
+          height={120}
+          className="h-12 w-12 rounded-xl object-cover"
           unoptimized
         />
       </div>

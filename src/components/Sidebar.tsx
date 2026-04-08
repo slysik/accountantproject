@@ -32,9 +32,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <Image
             src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
             alt="Accountant's Best Friend"
-            width={34}
-            height={34}
-            className="rounded-lg"
+            width={120}
+            height={120}
+            className="h-10 w-10 rounded-lg object-cover"
             unoptimized
           />
         )}
@@ -43,9 +43,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <Image
               src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
               alt="Accountant's Best Friend"
-              width={40}
-              height={40}
-              className="rounded-xl flex-shrink-0"
+              width={120}
+              height={120}
+              className="h-12 w-12 rounded-xl object-cover flex-shrink-0"
               unoptimized
             />
             <div>
