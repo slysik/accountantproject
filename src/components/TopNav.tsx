@@ -103,7 +103,7 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
       : 'Account';
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border-primary/80 bg-bg-secondary/75 px-4 backdrop-blur-xl md:px-6">
+    <header className="flex h-24 items-center justify-between border-b border-border-primary/80 bg-bg-secondary/75 px-4 backdrop-blur-xl md:px-6">
       {/* Left: Hamburger (mobile) + Logo / App Name */}
       <div className="flex items-center gap-2">
         {onMobileMenuToggle && (
@@ -118,9 +118,9 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
         <Image
           src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
           alt="Accountant's Best Friend"
-          width={120}
-          height={120}
-          className="h-12 w-12 rounded-xl object-cover"
+          width={200}
+          height={200}
+          className="h-20 w-20 rounded-xl object-cover"
           unoptimized
         />
       </div>
