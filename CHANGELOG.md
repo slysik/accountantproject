@@ -5,17 +5,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.5.5] — 2026-04-07
+## [1.5.6] — 2026-04-07
+
+### Fixed
+
+#### Chatbot
+- Switched expense chatbot from OpenAI (quota exceeded) to Claude (`claude-haiku`) — chatbot is fully functional again
+- All chat features preserved: expense Q&A, category breakdowns, delete intent detection with confirmation flow
+
+#### Authentication
+- Sign out now reliably lands on the public home page in all cases — fixed race condition where `AuthGuard` was redirecting to `/login` before the sign-out navigation completed
 
 ### Changed
 
 #### Branding
-- Replaced the generic chart icon in the sidebar and top navigation with the official Accountant's Best Friend logo
-- Logo automatically switches between dark and light variants based on the active theme
-- Collapsed sidebar now shows the small logo above the toggle button
-
-#### Authentication
-- Sign out now reliably lands on the public home page in all cases (manual sign out, idle timeout, and session warning modal)
+- Added official Accountant's Best Friend logo to the public landing page nav (dark/light theme-aware)
+- Logo enlarged to 80×80px in the top nav and sidebar for better visibility
+- Top nav height increased to accommodate the larger logo
 
 ---
 
