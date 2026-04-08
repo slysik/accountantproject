@@ -5,6 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.5] — 2026-04-07
+
+### Changed
+
+#### Branding
+- Replaced the generic chart icon in the sidebar and top navigation with the official Accountant's Best Friend logo
+- Logo automatically switches between dark and light variants based on the active theme
+- Collapsed sidebar now shows the small logo above the toggle button
+
+#### Authentication
+- Sign out now reliably lands on the public home page in all cases (manual sign out, idle timeout, and session warning modal)
+
+---
+
 ## [1.5.4] — 2026-04-06
 
 ### Changed
