@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { parseDateString, toDateString, getYear, getYearMonth } from './date-utils';
 import { DEFAULT_COMPANY_NAME } from './company';
 import { buildSampleExpenses, SAMPLE_COMPANY_NAME } from './sample-data';
-import type { CategorizedExpense, CompanyNode, FolderNode, MonthNode, Receipt } from '@/types';
+import type { CategorizedExpense, CompanyNode, FolderNode, MonthNode, Receipt, SubfolderNode } from '@/types';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -449,6 +449,32 @@ export async function createYearFolders(userId: string, companyName: string, yea
   if (error) throw error;
 }
 
+export async function createCustomerSubfolder(
+  userId: string,
+  companyName: string,
+  year: string,
+  name: string
+): Promise<void> {
+  const normalizedName = name.trim();
+  if (!normalizedName) throw new Error('Subfolder name is required.');
+
+  await createYearFolders(userId, companyName, year);
+
+  const { error } = await supabase
+    .from('customer_subfolders')
+    .upsert(
+      {
+        user_id: userId,
+        company_name: companyName,
+        year,
+        name: normalizedName,
+      },
+      { onConflict: 'user_id,company_name,year,name' }
+    );
+
+  if (error) throw error;
+}
+
 /**
  * Fetches all companies, years, and month-level stats.
  */
@@ -469,6 +495,16 @@ export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
     .order('year', { ascending: true });
 
   if (foldersError) throw foldersError;
+
+  const { data: subfolderRows, error: subfoldersError } = await supabase
+    .from('customer_subfolders')
+    .select('id, company_name, year, name')
+    .eq('user_id', userId)
+    .order('company_name', { ascending: true })
+    .order('year', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (subfoldersError) throw subfoldersError;
 
   // Get all non-deleted expenses for this user to compute stats
   const { data: expenseRows, error: expensesError } = await supabase
@@ -509,6 +545,16 @@ export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
 
       const yearNodes: FolderNode[] = uniqueYears.map((year) => {
         const yearStats = stats[companyName]?.[year] ?? {};
+        const subfolders: SubfolderNode[] = (subfolderRows ?? [])
+          .filter(
+            (row) =>
+              ((row.company_name as string) ?? DEFAULT_COMPANY_NAME) === companyName &&
+              (row.year as string) === year
+          )
+          .map((row) => ({
+            id: row.id as string,
+            name: row.name as string,
+          }));
 
         const months: MonthNode[] = MONTH_NAMES.map((name, index) => {
           const monthNum = String(index + 1).padStart(2, '0');
@@ -521,7 +567,7 @@ export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
           };
         });
 
-        return { year, months };
+        return { year, months, subfolders };
       });
 
       return { companyName, years: yearNodes };

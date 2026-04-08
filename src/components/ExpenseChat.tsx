@@ -1,17 +1,26 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { LuBot, LuChevronDown, LuLoader, LuSend, LuTriangle } from 'react-icons/lu';
+import { usePathname } from 'next/navigation';
+import * as XLSX from 'xlsx';
+import { LuChevronDown, LuDownload, LuFileSpreadsheet, LuLoader, LuSend, LuSparkles, LuTriangle } from 'react-icons/lu';
+import { decodeCompanySlug, isMonthSegment, isYearSegment } from '@/lib/company';
+
+function AlladinMark({ className = 'h-5 w-5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden="true" className={className}>
+      <path d="M25 13c0-5 3.4-9 7.5-9 3.3 0 6 2.5 6 5.7 0 3.2-2.4 5.8-5.6 6.2 5.8 1.4 10.4 5.8 12 11.6" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+      <path d="M18 35c0-6.6 5.4-12 12-12h8c8.8 0 16 7.2 16 16v1H28c-5.5 0-10-4.5-10-10v5Z" fill="currentColor" opacity="0.16"/>
+      <path d="M17 41h28c2.3 0 4.1 1.8 4.1 4.1S47.3 49.2 45 49.2H31.5c-3.1 0-5.6 2.5-5.6 5.6V56h-5.4c-3.6 0-6.5-2.9-6.5-6.5V44c0-1.7 1.3-3 3-3Z" fill="currentColor"/>
+      <path d="M50.5 37.5c5.2 0 9.5 4.2 9.5 9.5s-4.3 9.5-9.5 9.5H41" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+      <circle cx="21" cy="34" r="3" fill="currentColor"/>
+    </svg>
+  );
+}
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-}
-
-interface ExpenseChatProps {
-  companyName?: string;
-  year?: string;
-  month?: string;
 }
 
 interface PendingDelete {
@@ -41,7 +50,93 @@ const SUGGESTIONS = [
   'How much did I spend on meals?',
 ];
 
-export default function ExpenseChat({ companyName, year, month }: ExpenseChatProps) {
+function sanitizeFilenamePart(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'expenses';
+}
+
+function downloadTextFile(filename: string, content: string) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function extractMarkdownTable(content: string): string[][] | null {
+  const lines = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const tableStart = lines.findIndex((line, index) => {
+    const next = lines[index + 1];
+    return line.includes('|') && !!next && /^\|?[\s:-|]+\|?$/.test(next);
+  });
+
+  if (tableStart === -1) return null;
+
+  const tableLines: string[] = [];
+  for (let i = tableStart; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (!line.includes('|')) break;
+    tableLines.push(line);
+  }
+
+  if (tableLines.length < 2) return null;
+
+  const rows = tableLines
+    .filter((line, index) => index !== 1)
+    .map((line) =>
+      line
+        .replace(/^\|/, '')
+        .replace(/\|$/, '')
+        .split('|')
+        .map((cell) => cell.trim())
+    )
+    .filter((row) => row.length > 1 && row.some(Boolean));
+
+  return rows.length >= 2 ? rows : null;
+}
+
+function getRouteContext(pathname: string) {
+  const segments = pathname.split('/').filter(Boolean);
+  const inDashboard = segments[0] === 'dashboard';
+  const section = segments[1];
+
+  if (!inDashboard || !section || section === 'wizard' || section === 'trash') {
+    return {
+      companyName: undefined,
+      year: undefined,
+      month: undefined,
+      scopeLabel: 'All expenses',
+      scopeKey: 'dashboard-all',
+    };
+  }
+
+  const companyName = decodeCompanySlug(section);
+  const year = isYearSegment(segments[2] ?? '') ? segments[2] : undefined;
+  const month = isMonthSegment(segments[3] ?? '') ? segments[3] : undefined;
+
+  return {
+    companyName,
+    year,
+    month,
+    scopeLabel: month && year ? `${companyName} • ${year}-${month}` : year ? `${companyName} • ${year}` : companyName,
+    scopeKey: `${companyName ?? 'all'}-${year ?? 'all'}-${month ?? 'all'}`,
+  };
+}
+
+export default function ExpenseChat() {
+  const pathname = usePathname();
+  const { companyName, year, month, scopeLabel, scopeKey } = getRouteContext(pathname);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -50,16 +145,34 @@ export default function ExpenseChat({ companyName, year, month }: ExpenseChatPro
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastScopeKeyRef = useRef(scopeKey);
 
   useEffect(() => {
     if (open && messages.length === 0) {
       // Greeting on first open
       setMessages([{
         role: 'assistant',
-        content: `Hi! I can answer questions about your expenses${month && year ? ` for ${year}-${month}` : year ? ` for ${year}` : ''}. What would you like to know?`,
+        content: `Hi, I'm Alladin. I can answer questions about your expenses in ${scopeLabel}. What would you like to know?`,
       }]);
     }
-  }, [open, messages.length, year, month]);
+  }, [open, messages.length, scopeLabel]);
+
+  useEffect(() => {
+    if (lastScopeKeyRef.current === scopeKey) return;
+    lastScopeKeyRef.current = scopeKey;
+    setPendingDelete(null);
+    setError('');
+
+    if (!open || messages.length === 0) return;
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: `Context updated. I’m now looking at ${scopeLabel}.`,
+      },
+    ]);
+  }, [scopeKey, scopeLabel, open, messages.length]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,32 +242,58 @@ export default function ExpenseChat({ companyName, year, month }: ExpenseChatPro
     send(input);
   };
 
+  const handleDownloadMessage = useCallback((content: string) => {
+    const scope = sanitizeFilenamePart(scopeLabel);
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    downloadTextFile(`expense-assistant-${scope}-${timestamp}.txt`, content);
+  }, [scopeLabel]);
+
+  const handleDownloadExcel = useCallback((content: string) => {
+    const table = extractMarkdownTable(content);
+    if (!table) return;
+
+    const worksheet = XLSX.utils.aoa_to_sheet(table);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Chat Table');
+
+    const scope = sanitizeFilenamePart(scopeLabel);
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    XLSX.writeFile(workbook, `expense-assistant-${scope}-${timestamp}.xlsx`);
+  }, [scopeLabel]);
+
   return (
     <>
       {/* Floating button */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-accent-primary text-bg-primary shadow-lg transition-all hover:bg-accent-dark hover:scale-105"
-          title="Ask about your expenses"
+          className="fixed bottom-4 right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-accent-primary text-bg-primary shadow-[0_18px_45px_rgba(0,0,0,0.28)] transition-all hover:scale-105 hover:bg-accent-dark md:bottom-6 md:right-6"
+          title="Open Alladin"
         >
-          <LuBot className="h-5 w-5" />
+          <div className="relative flex items-center justify-center">
+            <AlladinMark className="h-7 w-7" />
+            <LuSparkles className="absolute -right-2 -top-2 h-3.5 w-3.5" />
+          </div>
         </button>
       )}
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-6 right-6 z-50 flex w-80 flex-col rounded-2xl border border-border-primary bg-bg-secondary shadow-2xl sm:w-96" style={{ maxHeight: '70vh' }}>
+        <div
+          className="fixed bottom-4 right-4 z-50 flex w-[calc(100vw-2rem)] max-w-[26rem] flex-col rounded-2xl border border-border-primary bg-bg-secondary shadow-2xl md:bottom-6 md:right-6"
+          style={{ maxHeight: 'min(72vh, 44rem)' }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border-primary px-4 py-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-primary/10">
-                <LuBot className="h-4 w-4 text-accent-primary" />
+              <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-accent-primary/10 text-accent-primary">
+                <AlladinMark className="h-4.5 w-4.5" />
+                <LuSparkles className="absolute -right-1 -top-1 h-3 w-3 text-accent-primary" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-text-primary">Expense Assistant</p>
+                <p className="text-xs font-semibold text-text-primary">Alladin</p>
                 <p className="text-[10px] text-text-muted">
-                  {month && year ? `${year}-${month}` : year ?? 'All expenses'}
+                  Genie for {scopeLabel}
                 </p>
               </div>
             </div>
@@ -173,14 +312,38 @@ export default function ExpenseChat({ companyName, year, month }: ExpenseChatPro
                 key={i}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap ${
-                    msg.role === 'user'
-                      ? 'bg-accent-primary text-bg-primary'
-                      : 'bg-bg-tertiary text-text-primary'
-                  }`}
-                >
-                  {msg.content}
+                <div className="max-w-[85%]">
+                  <div
+                    className={`rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap ${
+                      msg.role === 'user'
+                        ? 'bg-accent-primary text-bg-primary'
+                        : 'bg-bg-tertiary text-text-primary'
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                  {msg.role === 'assistant' && (
+                    <div className="mt-1.5 flex items-center gap-2 px-1">
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadMessage(msg.content)}
+                        className="inline-flex items-center gap-1 text-[10px] text-text-muted transition-colors hover:text-text-primary"
+                      >
+                        <LuDownload className="h-3 w-3" />
+                        Save
+                      </button>
+                      {extractMarkdownTable(msg.content) && (
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadExcel(msg.content)}
+                          className="inline-flex items-center gap-1 text-[10px] text-text-muted transition-colors hover:text-text-primary"
+                        >
+                          <LuFileSpreadsheet className="h-3 w-3" />
+                          Excel
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

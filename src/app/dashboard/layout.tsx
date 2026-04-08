@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import AuthGuard from '@/components/AuthGuard';
+import ExpenseChat from '@/components/ExpenseChat';
 import Sidebar from '@/components/Sidebar';
 import TopNav from '@/components/TopNav';
 
@@ -10,23 +11,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  // Collapse sidebar by default on mobile
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    if (mq.matches) setSidebarCollapsed(true);
-
-    const handler = (e: MediaQueryListEvent) => {
-      if (e.matches) {
-        setSidebarCollapsed(true);
-        setMobileOpen(false);
-      }
-    };
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
 
   const toggleMobileSidebar = useCallback(() => {
     setMobileOpen((prev) => !prev);
@@ -51,16 +36,14 @@ export default function DashboardLayout({
             ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           `}
         >
-          <Sidebar
-            collapsed={sidebarCollapsed}
-            onToggle={() => setSidebarCollapsed((prev) => !prev)}
-          />
+          <Sidebar />
         </div>
 
         {/* Right: TopNav + Content */}
         <div className="flex flex-1 flex-col overflow-hidden">
           <TopNav onMobileMenuToggle={toggleMobileSidebar} />
           <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+          <ExpenseChat />
         </div>
       </div>
     </AuthGuard>

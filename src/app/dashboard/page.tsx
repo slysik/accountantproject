@@ -9,7 +9,6 @@ import { getAllExpenses } from '@/lib/database';
 import { formatCurrency } from '@/lib/expense-processor';
 import { buildSampleExpenses } from '@/lib/sample-data';
 import CategoryBreakdown from '@/components/CategoryBreakdown';
-import ExpenseChat from '@/components/ExpenseChat';
 import MonthlyChart from '@/components/MonthlyChart';
 import SummaryCards from '@/components/SummaryCards';
 import type { CategorizedExpense } from '@/types';
@@ -285,8 +284,6 @@ export default function DashboardPage() {
           </div>
         </>
       )}
-
-      <ExpenseChat />
     </div>
   );
 }

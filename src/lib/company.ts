@@ -12,6 +12,18 @@ export function decodeCompanySlug(slug: string): string {
   }
 }
 
+export function encodeFolderSlug(name: string): string {
+  return encodeURIComponent(name.trim());
+}
+
+export function decodeFolderSlug(slug: string): string {
+  try {
+    return decodeURIComponent(slug);
+  } catch {
+    return slug;
+  }
+}
+
 export function isYearSegment(value: string): boolean {
   return /^\d{4}$/.test(value);
 }

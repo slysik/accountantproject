@@ -6,6 +6,8 @@ import type { User } from '@supabase/supabase-js';
 
 const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 const IDLE_WARNING_MS = 4 * 60 * 1000;
+const MFA_TRUST_COOKIE = 'abf_recent_mfa';
+const MFA_TRUST_WINDOW_MS = 10 * 60 * 1000;
 
 interface MFAFactor {
   id: string;
@@ -39,6 +41,37 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function setRecentMfaCookie(userId: string) {
+  const expiresAt = Date.now() + MFA_TRUST_WINDOW_MS;
+  document.cookie = `${MFA_TRUST_COOKIE}=${encodeURIComponent(`${userId}:${expiresAt}`)}; Path=/; Max-Age=${Math.floor(MFA_TRUST_WINDOW_MS / 1000)}; SameSite=Lax`;
+}
+
+function clearRecentMfaCookie() {
+  document.cookie = `${MFA_TRUST_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+}
+
+function hasRecentMfaCookie(userId: string) {
+  const cookieValue = document.cookie
+    .split('; ')
+    .find((cookie) => cookie.startsWith(`${MFA_TRUST_COOKIE}=`))
+    ?.split('=')
+    .slice(1)
+    .join('=');
+
+  if (!cookieValue) return false;
+
+  const decodedValue = decodeURIComponent(cookieValue);
+  const [cookieUserId, expiresAtRaw] = decodedValue.split(':');
+  const expiresAt = Number(expiresAtRaw);
+
+  if (cookieUserId !== userId || Number.isNaN(expiresAt) || Date.now() >= expiresAt) {
+    clearRecentMfaCookie();
+    return false;
+  }
+
+  return true;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -113,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await supabase.auth.signOut();
       } finally {
+        clearRecentMfaCookie();
         window.location.href = '/';
       }
     };
@@ -178,6 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!currentUser) {
       setMfaRequired(false);
       setMfaSetupRequired(false);
+      clearRecentMfaCookie();
       return;
     }
 
@@ -194,11 +229,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
 
       // nextLevel > currentLevel means MFA challenge is still needed
+      const hasRecentMfa = hasRecentMfaCookie(currentUser.id);
       setMfaRequired(
         verifiedTotpFactors.length > 0 &&
         !!aalData &&
         aalData.nextLevel === 'aal2' &&
-        aalData.currentLevel !== 'aal2'
+        aalData.currentLevel !== 'aal2' &&
+        !hasRecentMfa
       );
       setMfaSetupRequired(verifiedTotpFactors.length === 0);
     } catch (error) {
@@ -272,6 +309,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    clearRecentMfaCookie();
     window.location.href = '/';
   };
 
@@ -306,6 +344,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyTOTPEnrollment = async (factorId: string, code: string) => {
     const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
     if (error) throw error;
+    if (user?.id) setRecentMfaCookie(user.id);
     await refreshMFAState(user);
   };
 
@@ -318,6 +357,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       code,
     });
     if (verifyErr) throw verifyErr;
+    if (user?.id) setRecentMfaCookie(user.id);
     await refreshMFAState(user);
   };
 
@@ -380,6 +420,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   try {
                     await supabase.auth.signOut();
                   } finally {
+                    clearRecentMfaCookie();
                     window.location.href = '/';
                   }
                 }}

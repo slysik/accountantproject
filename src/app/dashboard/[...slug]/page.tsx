@@ -15,7 +15,7 @@ import {
   LuTrendingUp,
 } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
-import { DEFAULT_COMPANY_NAME, decodeCompanySlug, encodeCompanySlug, isMonthSegment, isYearSegment } from '@/lib/company';
+import { DEFAULT_COMPANY_NAME, decodeCompanySlug, decodeFolderSlug, encodeCompanySlug, encodeFolderSlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import {
   getExpenses,
   getAllExpenses,
@@ -27,13 +27,12 @@ import {
 } from '@/lib/database';
 import CSVUploader from '@/components/CSVUploader';
 import CategoryBreakdown from '@/components/CategoryBreakdown';
-import ExpenseChat from '@/components/ExpenseChat';
 import ExpenseTable from '@/components/ExpenseTable';
 import ExportMenu from '@/components/ExportMenu';
 import MonthlyChart from '@/components/MonthlyChart';
 import SummaryCards from '@/components/SummaryCards';
 import { SkeletonCard, SkeletonSection } from '@/components/Skeleton';
-import type { CategorizedExpense, MonthNode, Receipt } from '@/types';
+import type { CategorizedExpense, MonthNode, Receipt, SubfolderNode } from '@/types';
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'January',
@@ -88,6 +87,7 @@ export default function DashboardSlugPage() {
   const [loading, setLoading] = useState(true);
   const [years, setYears] = useState<string[]>([]);
   const [months, setMonths] = useState<MonthNode[]>([]);
+  const [subfolders, setSubfolders] = useState<SubfolderNode[]>([]);
   const [yearExpenses, setYearExpenses] = useState<CategorizedExpense[]>([]);
   const [expenses, setExpenses] = useState<CategorizedExpense[]>([]);
   const [receiptsByExpenseId, setReceiptsByExpenseId] = useState<Record<string, Receipt[]>>({});
@@ -98,12 +98,14 @@ export default function DashboardSlugPage() {
   const companySlug = slug[0];
   const year = slug[1];
   const month = slug[2];
+  const subfolderName = slug[3] === 'subfolder' && slug[4] ? decodeFolderSlug(slug[4]) : undefined;
   const companyName = companySlug ? decodeCompanySlug(companySlug) : DEFAULT_COMPANY_NAME;
   const isLegacyYearRoute = slug.length === 1 && isYearSegment(companySlug ?? '');
   const isLegacyMonthRoute = slug.length === 2 && isYearSegment(companySlug ?? '') && isMonthSegment(year ?? '');
   const isCompanyView = slug.length === 1 && !isLegacyYearRoute;
   const isYearView = slug.length === 2 && !isLegacyMonthRoute && isYearSegment(year ?? '');
   const isMonthView = slug.length === 3 && isYearSegment(year ?? '') && isMonthSegment(month ?? '');
+  const isSubfolderView = slug.length === 5 && isYearSegment(year ?? '') && slug[3] === 'subfolder' && !!slug[4];
 
   useEffect(() => {
     if (isLegacyYearRoute) {
@@ -126,20 +128,21 @@ export default function DashboardSlugPage() {
   }, [companyName, isCompanyView, user]);
 
   useEffect(() => {
-    if (!user || !isYearView || !year) return;
+    if (!user || (!isYearView && !isSubfolderView) || !year) return;
     setLoading(true);
     Promise.all([getUserFolders(user.id), getAllExpenses(user.id)])
       .then(([companies, allExpenses]) => {
         const company = companies.find((item) => item.companyName === companyName);
         const yearFolder = company?.years.find((folder) => folder.year === year);
         setMonths(yearFolder?.months ?? []);
+        setSubfolders(yearFolder?.subfolders ?? []);
         setYearExpenses(
           allExpenses.filter((expense) => expense.companyName === companyName && expense.year === year)
         );
       })
       .catch((err) => console.error('Failed to load year data:', err))
       .finally(() => setLoading(false));
-  }, [companyName, isYearView, user, year]);
+  }, [companyName, isSubfolderView, isYearView, user, year]);
 
   const fetchExpenses = useCallback(async () => {
     if (!user || !isMonthView || !year || !month) return;
@@ -290,6 +293,11 @@ export default function DashboardSlugPage() {
     return { total, average, topExpense };
   }, [expenses, isMonthView]);
 
+  const activeSubfolder = useMemo(
+    () => subfolders.find((item) => item.name === subfolderName) ?? null,
+    [subfolderName, subfolders]
+  );
+
   if (isLegacyYearRoute || isLegacyMonthRoute) return null;
 
   if (isCompanyView) {
@@ -323,6 +331,60 @@ export default function DashboardSlugPage() {
                 <div className="mt-1 text-xs text-text-muted">Open year workspace</div>
               </button>
             ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (isSubfolderView && year && subfolderName) {
+    return (
+      <div className="mx-auto max-w-5xl">
+        <section className="hero-surface mb-6">
+          <div className="bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.22),_transparent_34%),linear-gradient(135deg,var(--bg-secondary),var(--bg-primary))] px-6 py-7">
+            <p className="section-kicker mb-3">Customer Subfolder</p>
+            <h1 className="font-display text-4xl font-bold text-text-primary">{subfolderName}</h1>
+            <p className="mt-3 max-w-2xl text-sm text-text-secondary">
+              Organize customer-specific work for {companyName} in {year}. This subfolder is ready for your records and workflow.
+            </p>
+          </div>
+        </section>
+
+        {loading ? (
+          <SkeletonSection />
+        ) : !activeSubfolder ? (
+          <section className="shell-panel p-6">
+            <p className="text-sm text-text-muted">That subfolder could not be found for this year.</p>
+          </section>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <section className="shell-panel p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <LuFolderOpen className="h-4 w-4 text-accent-primary" />
+                <h2 className="text-sm font-semibold text-text-primary">Subfolder Workspace</h2>
+              </div>
+              <p className="text-sm text-text-secondary">
+                Use this area to keep customer folders visible and easy to revisit from the sidebar. This first release adds customer subfolder organization under each year, with room to expand what lives inside each folder next.
+              </p>
+            </section>
+
+            <section className="shell-panel p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <LuInbox className="h-4 w-4 text-accent-primary" />
+                <h2 className="text-sm font-semibold text-text-primary">Year Context</h2>
+              </div>
+              <div className="space-y-3 text-sm text-text-secondary">
+                <p><span className="font-medium text-text-primary">Company:</span> {companyName}</p>
+                <p><span className="font-medium text-text-primary">Year:</span> {year}</p>
+                <p><span className="font-medium text-text-primary">Subfolder:</span> {subfolderName}</p>
+                <button
+                  onClick={() => router.push(`/dashboard/${encodeCompanySlug(companyName)}/${year}`)}
+                  className="inline-flex items-center gap-2 rounded-full bg-accent-primary px-4 py-2 text-xs font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
+                >
+                  Back to Year View
+                </button>
+              </div>
+            </section>
           </div>
         )}
       </div>
@@ -537,6 +599,45 @@ export default function DashboardSlugPage() {
             </div>
 
             <section className="mb-4">
+              <div className="mb-6">
+                <div className="mb-3 flex items-center gap-2">
+                  <LuFolderOpen className="h-4 w-4 text-accent-primary" />
+                  <h2 className="text-sm font-semibold text-text-primary">Subfolders</h2>
+                </div>
+                {subfolders.length === 0 ? (
+                  <div className="rounded-2xl border border-border-primary bg-bg-secondary/70 px-5 py-4">
+                    <p className="text-sm text-text-muted">
+                      Use the sidebar&apos;s <span className="font-medium text-text-secondary">Add Subfolder</span> action to create customer folders for this year.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {subfolders.map((subfolder) => (
+                      <button
+                        key={subfolder.id}
+                        onClick={() =>
+                          router.push(`/dashboard/${encodeCompanySlug(companyName)}/${year}/subfolder/${encodeFolderSlug(subfolder.name)}`)
+                        }
+                        className="group overflow-hidden rounded-2xl border border-border-primary bg-bg-secondary text-left transition-all hover:-translate-y-0.5 hover:border-accent-primary/50 hover:shadow-[0_18px_50px_rgba(37,99,235,0.08)]"
+                      >
+                        <div className="border-b border-border-primary bg-[linear-gradient(135deg,var(--bg-secondary),var(--bg-tertiary))] px-5 py-4">
+                          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-bg-primary/70">
+                            <LuFolderOpen className="h-4 w-4 text-accent-primary" />
+                          </div>
+                          <p className="text-lg font-semibold text-text-primary">{subfolder.name}</p>
+                          <p className="mt-1 text-xs text-text-muted">Customer subfolder</p>
+                        </div>
+                        <div className="px-5 py-4">
+                          <span className="text-xs font-medium text-accent-primary transition-transform group-hover:translate-x-0.5">
+                            Open subfolder
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="mb-3 flex items-center gap-2">
                 <LuFolderOpen className="h-4 w-4 text-accent-primary" />
                 <h2 className="text-sm font-semibold text-text-primary">Monthly Folders</h2>
@@ -757,8 +858,6 @@ export default function DashboardSlugPage() {
           </section>
         )}
       </div>
-
-      <ExpenseChat companyName={companyName} year={year} month={month} />
     </div>
   );
 }

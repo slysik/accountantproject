@@ -12,7 +12,7 @@ import {
 } from '@/lib/subscription';
 
 // Pages accessible even when trial/subscription has expired
-const SUBSCRIPTION_EXEMPT = ['/subscribe', '/settings/security', '/mfa/verify', '/mfa/setup'];
+const SUBSCRIPTION_EXEMPT = ['/subscribe', '/settings/security', '/settings/admin', '/mfa/verify', '/mfa/setup'];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading, mfaRequired, mfaSetupRequired } = useAuth();

@@ -5,6 +5,12 @@ import Link from 'next/link';
 import { LuCheck, LuArrowRight } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
 import {
+  EMPTY_ACCOUNT_PROFILE,
+  getAccountProfile,
+  saveAccountProfile,
+  type AccountProfile,
+} from '@/lib/account-profile';
+import {
   getSubscription,
   trialDaysRemaining,
   isTrialExpired,
@@ -33,9 +39,13 @@ function planExpiry(sub: Subscription): string {
 export default function AccountSettingsPage() {
   const { user, updatePassword } = useAuth();
   const [sub, setSub] = useState<Subscription | null>(null);
+  const [profile, setProfile] = useState<AccountProfile>(EMPTY_ACCOUNT_PROFILE);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState(false);
 
   // Password change state
-  const [current, setCurrent] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirm, setConfirm] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
@@ -45,6 +55,58 @@ export default function AccountSettingsPage() {
   useEffect(() => {
     if (user) getSubscription(user.id).then(setSub);
   }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setProfile(EMPTY_ACCOUNT_PROFILE);
+      setProfileLoading(false);
+      return;
+    }
+
+    setProfileLoading(true);
+    setProfileError('');
+    getAccountProfile(user.id)
+      .then((data) => {
+        setProfile(data);
+      })
+      .catch((err: unknown) => {
+        setProfileError((err as { message?: string }).message ?? 'Failed to load account details.');
+      })
+      .finally(() => {
+        setProfileLoading(false);
+      });
+  }, [user]);
+
+  const updateProfileField = (field: keyof AccountProfile, value: string) => {
+    setProfile((currentProfile) => ({
+      ...currentProfile,
+      [field]: value,
+    }));
+    setProfileError('');
+    setProfileSuccess(false);
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setProfileError('');
+    setProfileSuccess(false);
+    setProfileSaving(true);
+
+    try {
+      const savedProfile = await saveAccountProfile({
+        ...profile,
+        user_id: user.id,
+      });
+      setProfile(savedProfile);
+      setProfileSuccess(true);
+    } catch (err: unknown) {
+      setProfileError((err as { message?: string }).message ?? 'Failed to save account details.');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +118,7 @@ export default function AccountSettingsPage() {
     try {
       await updatePassword(newPw);
       setPwSuccess(true);
-      setCurrent(''); setNewPw(''); setConfirm('');
+      setNewPw(''); setConfirm('');
     } catch (err: unknown) {
       setPwError((err as { message?: string }).message ?? 'Failed to update password.');
     } finally {
@@ -70,6 +132,197 @@ export default function AccountSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
+        <h2 className="mb-1 text-sm font-semibold text-text-primary">Account Details</h2>
+        <p className="mb-5 text-xs text-text-muted">
+          Store your business and contact information here so your account details stay organized in one place.
+        </p>
+
+        {profileSuccess && (
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
+            <LuCheck className="h-4 w-4 flex-shrink-0 text-success" />
+            <span className="text-sm text-success">Account details saved successfully.</span>
+          </div>
+        )}
+        {profileError && (
+          <div className="mb-4 rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-sm text-error">
+            {profileError}
+          </div>
+        )}
+
+        {profileLoading ? (
+          <p className="text-sm text-text-muted">Loading account details...</p>
+        ) : (
+          <form onSubmit={handleSaveProfile} className="flex flex-col gap-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  Account name
+                </label>
+                <input
+                  type="text"
+                  value={profile.account_name}
+                  onChange={(e) => updateProfileField('account_name', e.target.value)}
+                  placeholder="Primary account name"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  Business name
+                </label>
+                <input
+                  type="text"
+                  value={profile.business_name}
+                  onChange={(e) => updateProfileField('business_name', e.target.value)}
+                  placeholder="Legal or trading business name"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  First name
+                </label>
+                <input
+                  type="text"
+                  value={profile.first_name}
+                  onChange={(e) => updateProfileField('first_name', e.target.value)}
+                  placeholder="First name"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  Last name
+                </label>
+                <input
+                  type="text"
+                  value={profile.last_name}
+                  onChange={(e) => updateProfileField('last_name', e.target.value)}
+                  placeholder="Last name"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  Contact email
+                </label>
+                <input
+                  type="email"
+                  value={profile.contact_email}
+                  onChange={(e) => updateProfileField('contact_email', e.target.value)}
+                  placeholder={user?.email ?? 'contact@business.com'}
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  value={profile.phone}
+                  onChange={(e) => updateProfileField('phone', e.target.value)}
+                  placeholder="Business or primary phone"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  Website
+                </label>
+                <input
+                  type="url"
+                  value={profile.website}
+                  onChange={(e) => updateProfileField('website', e.target.value)}
+                  placeholder="https://yourbusiness.com"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  Address line 1
+                </label>
+                <input
+                  type="text"
+                  value={profile.address_line_1}
+                  onChange={(e) => updateProfileField('address_line_1', e.target.value)}
+                  placeholder="Street address"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  Address line 2
+                </label>
+                <input
+                  type="text"
+                  value={profile.address_line_2}
+                  onChange={(e) => updateProfileField('address_line_2', e.target.value)}
+                  placeholder="Suite, unit, or apartment"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  City
+                </label>
+                <input
+                  type="text"
+                  value={profile.city}
+                  onChange={(e) => updateProfileField('city', e.target.value)}
+                  placeholder="City"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  State / region
+                </label>
+                <input
+                  type="text"
+                  value={profile.state_region}
+                  onChange={(e) => updateProfileField('state_region', e.target.value)}
+                  placeholder="State or region"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  Postal code
+                </label>
+                <input
+                  type="text"
+                  value={profile.postal_code}
+                  onChange={(e) => updateProfileField('postal_code', e.target.value)}
+                  placeholder="ZIP or postal code"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-text-secondary">
+                  Country
+                </label>
+                <input
+                  type="text"
+                  value={profile.country}
+                  onChange={(e) => updateProfileField('country', e.target.value)}
+                  placeholder="Country"
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={profileSaving}
+              className="self-start rounded-lg bg-accent-primary px-5 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:opacity-50"
+            >
+              {profileSaving ? 'Saving...' : 'Save Account Details'}
+            </button>
+          </form>
+        )}
+      </section>
 
       {/* ── Plan & Billing ─────────────────────────────────── */}
       <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">

@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.2.1 — Admin Controls & Customer Organization (2026-04-07)
+The app now includes a master admin area for monitoring active customer accounts, mapped to the existing `vic@alpina.net` site user. Account Settings now store richer business and contact details, year folders can contain customer-specific subfolders, the chatbot is now branded as **Alladin** with a genie-style mark, and the dashboard sidebar stays consistently open without a collapse toggle.
+
 ### v2.2.0 — Brand Refresh & Site Polish (2026-04-07)
 The color scheme is now warm black with a Claude-inspired light orange accent throughout — buttons, links, focus rings, and badges all use the new palette. The logo now appears consistently on every page including login, pricing, subscribe, reset-password, settings, and the footer. The login page gained a proper header and footer matching the rest of the public site. Privacy Policy and Terms of Service pages were added with full content covering data collection, payments, subscriptions, acceptable use, and legal terms.
 
@@ -44,6 +47,34 @@ Attach receipts (images, PDFs, Office docs) to any expense from a gallery modal 
 
 ### v0.2.0 — Full App Rebuild (2026-03-24)
 Migrated from a vanilla JS proof-of-concept to a full Next.js 14 application backed by Supabase. Added authentication, cloud storage, a 4-step import wizard, and exports to Excel, CSV, and QuickBooks (QBO/OFX).
+
+---
+
+## [2.2.1] — 2026-04-07
+
+### Added
+
+#### Site Administration
+- Added a master site admin mapping tied to the existing `vic@alpina.net` account
+- Added an admin-only `/settings/admin` dashboard for reviewing active customer account state
+- Added server-side admin account reporting for subscription status, sign-in recency, company counts, and team-member counts
+
+#### Account Details
+- Added persistent account profile storage for account name, business name, contact details, phone, website, and mailing address
+- Added an expanded Account Settings form to manage those business/contact details directly in the app
+
+#### Customer Subfolders
+- Added `customer_subfolders` support so users can create customer folders under each `Company / Year`
+- Added subfolder creation in the sidebar and dedicated year-level subfolder cards/pages
+
+### Changed
+
+#### Chatbot Branding
+- Renamed the chatbot to `Alladin`
+- Replaced the generic bot icon with a genie-style mark in the launcher and chat header
+
+#### Navigation
+- Removed the dashboard sidebar collapse toggle so the left navigation stays consistently open
 
 ---
 

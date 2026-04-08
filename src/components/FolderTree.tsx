@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { createCompany, createYearFolders, getUserFolders, renameCompany, softDeleteMonth, softDeleteYear } from '@/lib/database';
-import { decodeCompanySlug, encodeCompanySlug } from '@/lib/company';
+import { createCompany, createCustomerSubfolder, createYearFolders, getUserFolders, renameCompany, softDeleteMonth, softDeleteYear } from '@/lib/database';
+import { decodeCompanySlug, encodeCompanySlug, encodeFolderSlug } from '@/lib/company';
 import type { CompanyNode } from '@/types';
 import {
   LuBuilding2,
@@ -15,6 +15,7 @@ import {
   LuPencil,
   LuFolder,
   LuFolderOpen,
+  LuFolders,
   LuPlus,
   LuTrash2,
   LuX,
@@ -49,6 +50,9 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   const [addingYearCompany, setAddingYearCompany] = useState<string | null>(null);
   const [newYear, setNewYear] = useState(String(new Date().getFullYear()));
   const [addingYear, setAddingYear] = useState(false);
+  const [addingSubfolderKey, setAddingSubfolderKey] = useState<string | null>(null);
+  const [newSubfolder, setNewSubfolder] = useState('');
+  const [addingSubfolder, setAddingSubfolder] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -141,6 +145,23 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
     setShowAddCompany(false);
   };
 
+  const handleAddSubfolder = async (companyName: string, year: string) => {
+    if (!user || !newSubfolder.trim()) return;
+    setAddingSubfolder(true);
+    try {
+      await createCustomerSubfolder(user.id, companyName, year, newSubfolder.trim());
+      await fetchFolders();
+      setExpandedCompanies((prev) => new Set(prev).add(companyName));
+      setExpandedYears((prev) => new Set(prev).add(`${companyName}::${year}`));
+      setAddingSubfolderKey(null);
+      setNewSubfolder('');
+    } catch (err) {
+      console.error('Failed to create subfolder:', err);
+    } finally {
+      setAddingSubfolder(false);
+    }
+  };
+
   const handleRenameCompany = async (currentName: string) => {
     if (!user || !editedCompanyName.trim()) return;
     setRenamingCompany(true);
@@ -205,6 +226,8 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
 
   const isActiveMonth = (companyName: string, year: string, month: string) =>
     pathname === `/dashboard/${encodeCompanySlug(companyName)}/${year}/${month}`;
+  const isActiveSubfolder = (companyName: string, year: string, subfolderName: string) =>
+    pathname === `/dashboard/${encodeCompanySlug(companyName)}/${year}/subfolder/${encodeFolderSlug(subfolderName)}`;
 
   if (loading) return <SkeletonFolderTree />;
 
@@ -449,6 +472,86 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
 
                       {yearExpanded && (
                         <div className="ml-4 mt-1 flex flex-col gap-1 border-l border-border-primary/40 pl-3">
+                          {addingSubfolderKey === yearKey ? (
+                            <div className="mb-1 flex items-center gap-1 px-2">
+                              <input
+                                type="text"
+                                value={newSubfolder}
+                                onChange={(e) => setNewSubfolder(e.target.value)}
+                                placeholder="Customer folder name"
+                                className="w-full rounded border border-border-primary bg-bg-tertiary px-2 py-1 text-xs text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/40"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleAddSubfolder(company.companyName, folder.year);
+                                  if (e.key === 'Escape') {
+                                    setAddingSubfolderKey(null);
+                                    setNewSubfolder('');
+                                  }
+                                }}
+                                autoFocus
+                                disabled={addingSubfolder}
+                              />
+                              <button
+                                onClick={() => handleAddSubfolder(company.companyName, folder.year)}
+                                disabled={addingSubfolder}
+                                className="rounded p-1 text-success transition-colors hover:bg-bg-tertiary disabled:opacity-50"
+                                title="Save subfolder"
+                              >
+                                <LuCheck className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setAddingSubfolderKey(null);
+                                  setNewSubfolder('');
+                                }}
+                                className="rounded p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+                                title="Cancel"
+                              >
+                                <LuX className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setAddingSubfolderKey(yearKey)}
+                              className="mb-1 flex items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+                            >
+                              <LuPlus className="h-3 w-3" />
+                              Add Subfolder
+                            </button>
+                          )}
+
+                          <div className="mb-1 rounded-xl border border-border-primary/40 bg-bg-secondary/55 px-2 py-2">
+                            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">
+                              <LuFolders className="h-3.5 w-3.5" />
+                              Subfolders
+                            </div>
+                            {folder.subfolders.length === 0 ? (
+                              <p className="px-1 text-[11px] text-text-muted">
+                                Add customer folders for this year.
+                              </p>
+                            ) : (
+                              <div className="flex flex-col gap-1">
+                                {folder.subfolders.map((subfolder) => (
+                                  <button
+                                    key={subfolder.id}
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/${companySlug}/${folder.year}/subfolder/${encodeFolderSlug(subfolder.name)}`
+                                      )
+                                    }
+                                    className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-left text-xs transition-all ${
+                                      isActiveSubfolder(company.companyName, folder.year, subfolder.name)
+                                        ? 'border-accent-primary/30 bg-accent-primary/10 text-accent-primary shadow-[0_10px_24px_rgba(37,99,235,0.12)]'
+                                        : 'border-transparent text-text-muted hover:border-border-primary/70 hover:bg-bg-tertiary hover:text-text-secondary'
+                                    }`}
+                                  >
+                                    <LuFolder className="h-3.5 w-3.5" />
+                                    <span className="truncate">{subfolder.name}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
                           {folder.months.map((month) => {
                             const isPendingMonthDelete =
                               deleteTarget?.type === 'month' &&

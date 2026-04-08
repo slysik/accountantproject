@@ -5,11 +5,12 @@ import { usePathname } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
 import ExpenseChat from '@/components/ExpenseChat';
 import { useAuth } from '@/lib/auth';
-import { LuUser, LuShield, LuUsers, LuChevronLeft } from 'react-icons/lu';
+import { LuUser, LuShield, LuUsers, LuChevronLeft, LuLayoutDashboard } from 'react-icons/lu';
 import SiteLogo from '@/components/SiteLogo';
 import { APP_VERSION } from '@/lib/version';
+import { isMasterAdminEmail } from '@/lib/admin';
 
-const NAV = [
+const BASE_NAV = [
   { href: '/settings/account', icon: LuUser, label: 'Account' },
   { href: '/settings/team', icon: LuUsers, label: 'Team' },
   { href: '/settings/security', icon: LuShield, label: 'Security' },
@@ -17,7 +18,10 @@ const NAV = [
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const nav = isMasterAdminEmail(user?.email)
+    ? [...BASE_NAV, { href: '/settings/admin', icon: LuLayoutDashboard, label: 'Admin' }]
+    : BASE_NAV;
 
   return (
     <AuthGuard>
@@ -53,7 +57,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             {/* Sidebar */}
             <aside className="w-44 flex-shrink-0">
               <nav className="flex flex-col gap-1">
-                {NAV.map(({ href, icon: Icon, label }) => {
+                {nav.map(({ href, icon: Icon, label }) => {
                   const active = pathname.startsWith(href);
                   return (
                     <Link

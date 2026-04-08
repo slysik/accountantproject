@@ -2,9 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useAuth } from '@/lib/auth';
-import { decodeCompanySlug, isMonthSegment, isYearSegment } from '@/lib/company';
+import { decodeCompanySlug, decodeFolderSlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import { useTheme } from '@/lib/theme';
 import { useSubscription } from '@/lib/useSubscription';
 import { LuChevronRight, LuWand, LuMenu, LuSun, LuMoon, LuLogOut } from 'react-icons/lu';
@@ -55,6 +54,20 @@ function Breadcrumbs() {
     }
   }
 
+  if (segments.length >= 5 && segments[1] !== 'wizard' && segments[1] !== 'trash') {
+    const year = segments[2];
+    if (isYearSegment(year) && segments[3] === 'subfolder') {
+      crumbs.push({
+        label: 'Subfolder',
+        href: `/dashboard/${segments[1]}/${year}/subfolder`,
+      });
+      crumbs.push({
+        label: decodeFolderSlug(segments[4]),
+        href: `/dashboard/${segments[1]}/${year}/subfolder/${segments[4]}`,
+      });
+    }
+  }
+
   return (
     <nav className="flex items-center gap-1 text-sm">
       {crumbs.map((crumb, index) => (
@@ -93,8 +106,17 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
       className="flex h-14 flex-shrink-0 items-center justify-between border-b px-4"
       style={{ borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
     >
-      {/* Left: mobile toggle + breadcrumbs */}
+      {/* Left: sign out + mobile toggle + breadcrumbs */}
       <div className="flex items-center gap-3">
+        <button
+          onClick={() => signOut()}
+          title="Sign out"
+          className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold text-text-primary transition-colors hover:bg-bg-tertiary"
+          style={{ borderColor: 'var(--border-primary)' }}
+        >
+          <LuLogOut className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Sign Out</span>
+        </button>
         {onMobileMenuToggle && (
           <button
             onClick={onMobileMenuToggle}
@@ -135,17 +157,10 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
           {theme === 'dark' ? <LuSun className="h-4 w-4" /> : <LuMoon className="h-4 w-4" />}
         </button>
 
-        {/* User + sign out */}
+        {/* User */}
         {user?.email && (
           <span className="hidden text-[11px] text-text-muted lg:block">{user.email}</span>
         )}
-        <button
-          onClick={() => signOut()}
-          title="Sign out"
-          className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
-        >
-          <LuLogOut className="h-4 w-4" />
-        </button>
       </div>
     </header>
   );

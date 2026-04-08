@@ -31,6 +31,7 @@ export interface CompanyNode {
 export interface FolderNode {
   year: string;
   months: MonthNode[];
+  subfolders: SubfolderNode[];
 }
 
 export interface MonthNode {
@@ -38,6 +39,11 @@ export interface MonthNode {
   name: string; // "January" through "December"
   expenseCount: number;
   total: number;
+}
+
+export interface SubfolderNode {
+  id: string;
+  name: string;
 }
 
 export interface AggregationResult {

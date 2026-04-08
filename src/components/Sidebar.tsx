@@ -2,18 +2,13 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { LuChevronLeft, LuChevronRight, LuTrash2, LuSettings, LuLayoutDashboard } from 'react-icons/lu';
+import { LuTrash2, LuSettings, LuLayoutDashboard } from 'react-icons/lu';
 import FolderTree from './FolderTree';
 import { APP_VERSION } from '@/lib/version';
 import { useTheme } from '@/lib/theme';
 import { usePathname } from 'next/navigation';
 
-interface SidebarProps {
-  collapsed: boolean;
-  onToggle: () => void;
-}
-
-export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export default function Sidebar() {
   const { theme } = useTheme();
   const pathname = usePathname();
 
@@ -21,95 +16,67 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   return (
     <aside
-      className={`relative flex h-full flex-col border-r transition-all duration-200 ${
-        collapsed ? 'w-[52px]' : 'w-[240px]'
-      }`}
+      className="relative flex h-full w-[240px] flex-col border-r"
       style={{ borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
     >
-      {/* Logo + Toggle */}
-      <div className={`flex h-14 flex-shrink-0 items-center border-b px-3 ${collapsed ? 'justify-center' : 'justify-between'}`}
-        style={{ borderColor: 'var(--border-primary)' }}>
-        {!collapsed && (
-          <div className="flex items-center gap-2.5">
-            <Image
-              src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
-              alt="Accountant's Best Friend"
-              width={200}
-              height={200}
-              className="h-8 w-8 rounded-md object-contain flex-shrink-0"
-              unoptimized
-            />
-            <span className="text-sm font-semibold text-text-primary truncate">ABF</span>
-          </div>
-        )}
-        {collapsed && (
+      <div
+        className="flex h-14 flex-shrink-0 items-center border-b px-3"
+        style={{ borderColor: 'var(--border-primary)' }}
+      >
+        <div className="flex items-center gap-2.5">
           <Image
             src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
             alt="Accountant's Best Friend"
             width={200}
             height={200}
-            className="h-7 w-7 rounded-md object-contain"
+            className="h-8 w-8 rounded-md object-contain flex-shrink-0"
             unoptimized
           />
-        )}
-        <button
-          onClick={onToggle}
-          className={`rounded-md p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary ${collapsed ? 'mt-0' : ''}`}
-          title={collapsed ? 'Expand' : 'Collapse'}
-        >
-          {collapsed ? <LuChevronRight className="h-3.5 w-3.5" /> : <LuChevronLeft className="h-3.5 w-3.5" />}
-        </button>
+          <span className="text-sm font-semibold text-text-primary truncate">ABF</span>
+        </div>
       </div>
 
       {/* Nav: Dashboard */}
       <div className="flex-shrink-0 px-2 pt-3">
-        {!collapsed && (
-          <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
-            Overview
-          </p>
-        )}
+        <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
+          Overview
+        </p>
         <Link
           href="/dashboard"
           className={`flex items-center gap-2.5 rounded-md px-2 py-1.5 text-xs transition-colors ${
             pathname === '/dashboard'
               ? 'bg-bg-tertiary text-text-primary'
               : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
-          } ${collapsed ? 'justify-center' : ''}`}
-          title={collapsed ? 'Dashboard' : undefined}
+          }`}
         >
           <LuLayoutDashboard className="h-3.5 w-3.5 flex-shrink-0" />
-          {!collapsed && <span>Dashboard</span>}
+          <span>Dashboard</span>
         </Link>
       </div>
 
       {/* Nav: Folders */}
       <div className="flex-1 overflow-y-auto px-2 pt-4">
-        {!collapsed && (
-          <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
-            Companies
-          </p>
-        )}
-        <FolderTree collapsed={collapsed} />
+        <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
+          Companies
+        </p>
+        <FolderTree />
       </div>
 
       {/* Bottom: Manage section */}
       <div className="flex-shrink-0 border-t px-2 py-3" style={{ borderColor: 'var(--border-primary)' }}>
-        {!collapsed && (
-          <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
-            Manage
-          </p>
-        )}
+        <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
+          Manage
+        </p>
         <Link
           href="/dashboard/trash"
           className={`flex items-center gap-2.5 rounded-md px-2 py-1.5 text-xs transition-colors ${
             isActive('/dashboard/trash')
               ? 'bg-bg-tertiary text-text-primary'
               : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
-          } ${collapsed ? 'justify-center' : ''}`}
-          title={collapsed ? 'Trash' : undefined}
+          }`}
         >
           <LuTrash2 className="h-3.5 w-3.5 flex-shrink-0" />
-          {!collapsed && <span>Trash</span>}
+          <span>Trash</span>
         </Link>
         <Link
           href="/settings/account"
@@ -117,19 +84,16 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             isActive('/settings')
               ? 'bg-bg-tertiary text-text-primary'
               : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
-          } ${collapsed ? 'justify-center' : ''}`}
-          title={collapsed ? 'Settings' : undefined}
+          }`}
         >
           <LuSettings className="h-3.5 w-3.5 flex-shrink-0" />
-          {!collapsed && <span>Settings</span>}
+          <span>Settings</span>
         </Link>
 
         {/* Version */}
-        {!collapsed && (
-          <p className="mt-3 px-2 text-[10px] text-text-muted">
-            v{APP_VERSION}
-          </p>
-        )}
+        <p className="mt-3 px-2 text-[10px] text-text-muted">
+          v{APP_VERSION}
+        </p>
       </div>
     </aside>
   );
