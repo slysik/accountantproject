@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import { LuChartBar, LuCheck } from 'react-icons/lu';
+import { LuCheck } from 'react-icons/lu';
+import SiteLogo from '@/components/SiteLogo';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -73,7 +74,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg-primary px-4">
         <div className="w-full max-w-[440px] rounded-2xl border border-border-primary bg-bg-secondary p-8 text-center">
-          <LuChartBar className="mx-auto mb-4 h-10 w-10 text-accent-primary" />
+          <SiteLogo className="mx-auto mb-4 h-14 w-14" size={56} />
           <h1 className="mb-2 text-lg font-semibold text-text-primary">Invalid or expired link</h1>
           <p className="mb-6 text-sm text-text-muted">
             This password reset link is invalid or has expired. Please request a new one.
@@ -93,7 +94,7 @@ export default function ResetPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-bg-primary px-4">
       <div className="w-full max-w-[440px] rounded-2xl border border-border-primary bg-bg-secondary p-8">
         <div className="mb-8 flex flex-col items-center gap-2">
-          <LuChartBar className="h-10 w-10 text-accent-primary" />
+          <SiteLogo className="h-14 w-14" size={56} />
           <h1 className="text-xl font-semibold text-text-primary">Set new password</h1>
           <p className="text-sm text-text-muted">Enter a new password for your account</p>
         </div>

@@ -5,6 +5,89 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Release Notes
+
+Quick summary of what's new in each release, written for users.
+
+### v2.2.0 — Brand Refresh & Site Polish (2026-04-07)
+The color scheme is now warm black with a Claude-inspired light orange accent throughout — buttons, links, focus rings, and badges all use the new palette. The logo now appears consistently on every page including login, pricing, subscribe, reset-password, settings, and the footer. The login page gained a proper header and footer matching the rest of the public site. Privacy Policy and Terms of Service pages were added with full content covering data collection, payments, subscriptions, acceptable use, and legal terms.
+
+### v2.1.0 — PayPal Payments (2026-04-07)
+You can now subscribe directly from the pricing page. Every plan card has a **Buy it now** button that takes you through a secure PayPal checkout. No need to enter card details on our site — PayPal handles everything. Sandbox mode is supported for testing before going live.
+
+### v2.0.1 — Security & Authentication Hardening (2026-04-07)
+Signup is now server-validated and rate-limited to 5 attempts per IP per day. Account security is stronger with required authenticator-app enrollment and a 10-minute MFA grace window after successful verification. Signup emails now include source IP monitoring, the chatbot stays mounted more reliably and can export replies to text or Excel, and the refreshed light theme now uses a light blue/white palette with clearer sign-out controls.
+
+### v2.0.0 — Full UI Redesign (2026-04-07)
+The entire interface has been rebuilt with a clean, minimal dark aesthetic — flat backgrounds, no gradients, no glow effects. The sidebar has clearer section groupings (Overview / Companies / Manage), the top nav is slimmer with breadcrumb navigation, and the font is now Arial at a comfortable 16px base size. A Contact page was added so users can reach support directly from the site.
+
+### v1.5.x — Analytics, Exports & Onboarding (2026-04-06)
+Year pages now open with six analytics dashboards (spend trend, category mix, top months, and more). Excel and CSV exports gained a yearly-summary option. New accounts are seeded with a sample company and demo expenses so you can explore the product immediately. An idle-session warning replaced the abrupt 5-minute sign-out.
+
+### v1.5.0 — Company Layer & Team Settings (2026-04-05)
+Expenses are now organized as **Company → Year → Month**. A full Settings area was added with Account, Team, and Security tabs. The main dashboard now shows account-wide spend analytics instead of a blank screen after login.
+
+### v1.3.0 — Free Trial & Subscription Plans (2026-04-04)
+Every new account gets a 30-day free trial with no credit card required. After the trial, choose from Personal ($5/mo), Lite ($10/mo), Business ($25/mo), or Elite ($100/mo). A public pricing page explains each plan, and a subscription page appears automatically when the trial ends.
+
+### v1.2.0 — Light / Dark Mode (2026-04-04)
+Full light and dark theme support with a one-click toggle. Your preference is saved across sessions and applied before the page loads so there is no flash of the wrong theme.
+
+### v1.1.0 — Landing Page & Expense Chatbot (2026-04-04)
+A proper public landing page replaced the old direct-to-dashboard redirect. An AI-powered chatbot (floating button, bottom-right) now lets you ask plain-English questions about your expenses — totals, categories, top vendors, and more.
+
+### v1.0.0 — Two-Factor Authentication & Password Reset (2026-04-04)
+All accounts now support TOTP 2FA via an authenticator app, with an email OTP fallback. A "Forgot password?" flow was added to the sign-in page.
+
+### v0.4.0 — Receipt Uploads & Folder Deletes (2026-03-29)
+Attach receipts (images, PDFs, Office docs) to any expense from a gallery modal with drag-and-drop support. Years and months can now be deleted from the sidebar with a soft-delete safety net.
+
+### v0.2.0 — Full App Rebuild (2026-03-24)
+Migrated from a vanilla JS proof-of-concept to a full Next.js 14 application backed by Supabase. Added authentication, cloud storage, a 4-step import wizard, and exports to Excel, CSV, and QuickBooks (QBO/OFX).
+
+---
+
+## [2.2.0] — 2026-04-07
+
+### Changed
+
+#### Theme
+- Replaced blue accent palette with warm black + Claude-orange (`#DA7756` dark / `#C4603D` light) across the entire site
+- Dark mode backgrounds shifted from cool blue-black to warm brown-black (`#0a0907` / `#131110` / `#1d1a17`)
+- Light mode backgrounds shifted from blue-tinted whites to warm cream/parchment (`#faf8f5` / `#f2ede7` / `#e8e0d6`)
+- All text, borders, and muted colors updated to match the warm palette
+
+#### Branding / Logo
+- Created shared `SiteLogo` component — theme-aware, uses `logo-dark.jpeg` / `logo-light.jpeg`
+- Logo now appears consistently on: login header, login card, pricing, subscribe, reset-password, settings layout, and public footer
+- Replaced all remaining `LuChartBar` placeholder icons in headers with the real logo
+
+#### Login Page
+- Added site header (logo + nav links to Pricing and Contact)
+- Added `PublicFooter` matching every other public page
+
+### Added
+
+#### Legal Pages
+- New `/privacy` — Privacy Policy (9 sections): data collected, usage, storage & security, cookies, retention, user rights, children's privacy, changes, contact
+- New `/terms` — Terms of Service (12 sections): service description, eligibility, subscriptions & payments, acceptable use, data ownership, no tax advice disclaimer, availability, liability, termination, governing law, contact
+
+---
+
+## [2.1.0] — 2026-04-07
+
+### Added
+
+#### PayPal Payment Integration
+- Added "Buy it now" button to every plan card on the public pricing page — links directly to the subscribe/checkout flow
+- Subscribe page now shows PayPal Smart Payment Buttons (Buy Now) for each plan, powered by `@paypal/react-paypal-js`
+- New `/api/paypal/create-order` route — creates a PayPal order server-side for the selected plan amount
+- New `/api/paypal/capture-order` route — verifies and captures the PayPal payment, then activates the subscription
+- Supports sandbox mode (`PAYPAL_SANDBOX=true`) for testing without real charges
+- Gracefully falls back to direct plan selection when PayPal credentials are not yet configured
+
+---
+
 ## [2.0.1] — 2026-04-07
 
 ### Changed
@@ -16,10 +99,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added a required authenticator-app 2FA registration flow as part of account onboarding
 - Existing account sign-ins now route through the 2FA registration flow when no authenticator has been enrolled
 - Added a dedicated `/mfa/setup` flow for enrolling and confirming TOTP during account setup
+- Added a 10-minute post-verification MFA trust window so recently verified users are not prompted again immediately on the same browser
 
 #### Email / Notifications
 - Fixed SMTP2GO configuration and production email wiring for signup notifications
 - Added resend support and stable production redirect handling for signup confirmation emails
+
+#### Chatbot / Exports
+- Moved the chatbot into persistent authenticated layouts so it stays available while navigating between dashboard views
+- Added one-click download of chatbot replies as text files
+- Added Excel export for chatbot responses that contain tabular data
+
+#### Theme / Navigation
+- Refreshed the site-wide light theme to a light blue/white palette with darker text for readability
+- Adjusted dark theme text to use a slightly off-white contrast color
+- Added a more obvious left-side sign-out button in authenticated top bars
 
 ## [2.0.0] — 2026-04-07
 

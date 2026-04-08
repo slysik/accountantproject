@@ -1,5 +1,7 @@
+'use client';
+
 import Link from 'next/link';
-import { LuChartBar } from 'react-icons/lu';
+import SiteLogo from '@/components/SiteLogo';
 
 export default function PublicFooter() {
   const year = new Date().getFullYear();
@@ -10,7 +12,7 @@ export default function PublicFooter() {
         {/* Top row */}
         <div className="mb-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2">
-            <LuChartBar className="h-4 w-4 text-accent-primary" />
+            <SiteLogo className="h-6 w-6" size={24} />
             <span className="text-sm font-semibold text-text-primary">
               Accountant&apos;s Best Friend
             </span>

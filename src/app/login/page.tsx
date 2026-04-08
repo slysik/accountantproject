@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { LuChartBar } from 'react-icons/lu';
 import { FcGoogle } from 'react-icons/fc';
+import PublicFooter from '@/components/PublicFooter';
+import SiteLogo from '@/components/SiteLogo';
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
@@ -94,11 +96,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg-primary px-4">
+    <div className="flex min-h-screen flex-col bg-bg-primary">
+      {/* Header */}
+      <header className="flex items-center justify-between border-b border-border-primary bg-bg-secondary px-6 py-4">
+        <Link href="/" className="flex items-center gap-2">
+          <SiteLogo className="h-8 w-8" size={32} />
+          <span className="text-base font-semibold text-text-primary">Accountant&apos;s Best Friend</span>
+        </Link>
+        <nav className="flex items-center gap-4 text-sm text-text-muted">
+          <Link href="/pricing" className="transition-colors hover:text-text-primary">Pricing</Link>
+          <Link href="/contact" className="transition-colors hover:text-text-primary">Contact</Link>
+        </nav>
+      </header>
+
+      {/* Form */}
+      <div className="flex flex-1 items-center justify-center px-4 py-12">
       <div className="w-full max-w-[440px] rounded-2xl border border-border-primary bg-bg-secondary p-8">
         {/* Header */}
         <div className="mb-8 flex flex-col items-center gap-2">
-          <LuChartBar className="h-10 w-10 text-accent-primary" />
+          <SiteLogo className="h-14 w-14" size={56} />
           <h1 className="text-xl font-semibold text-text-primary">
             Accountant&apos;s Best Friend
           </h1>
@@ -236,6 +252,9 @@ export default function LoginPage() {
           Google
         </button>
       </div>
+      </div>
+
+      <PublicFooter />
     </div>
   );
 }

@@ -3,7 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
-import { LuUser, LuShield, LuUsers, LuChartBar, LuChevronLeft } from 'react-icons/lu';
+import ExpenseChat from '@/components/ExpenseChat';
+import { useAuth } from '@/lib/auth';
+import { LuUser, LuShield, LuUsers, LuChevronLeft } from 'react-icons/lu';
+import SiteLogo from '@/components/SiteLogo';
 import { APP_VERSION } from '@/lib/version';
 
 const NAV = [
@@ -14,17 +17,26 @@ const NAV = [
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { signOut } = useAuth();
 
   return (
     <AuthGuard>
       <div className="min-h-screen bg-bg-primary">
         {/* Top bar */}
         <header className="flex h-14 items-center justify-between border-b border-border-primary bg-bg-secondary px-4 md:px-6">
-          <div className="flex items-center gap-2">
-            <LuChartBar className="h-5 w-5 text-accent-primary" />
-            <span className="text-sm font-semibold text-text-primary hidden md:inline">
-              Accountant&apos;s Best Friend
-            </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => signOut()}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border-primary px-3 py-1.5 text-xs font-semibold text-text-primary transition-colors hover:bg-bg-tertiary"
+            >
+              Sign Out
+            </button>
+            <div className="flex items-center gap-2">
+              <SiteLogo className="h-7 w-7" size={28} />
+              <span className="hidden text-sm font-semibold text-text-primary md:inline">
+                Accountant&apos;s Best Friend
+              </span>
+            </div>
           </div>
           <Link
             href="/dashboard"
@@ -70,6 +82,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             </main>
           </div>
         </div>
+        <ExpenseChat />
       </div>
     </AuthGuard>
   );

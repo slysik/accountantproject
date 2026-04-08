@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { LuChartBar, LuCheck, LuArrowRight, LuSun, LuMoon, LuZap } from 'react-icons/lu';
+import { LuChartBar, LuCheck, LuArrowRight, LuSun, LuMoon, LuZap, LuCreditCard } from 'react-icons/lu';
 import { useTheme } from '@/lib/theme';
 import { PLANS } from '@/lib/subscription';
 import PublicFooter from '@/components/PublicFooter';
+import SiteLogo from '@/components/SiteLogo';
 
 const plans = [
   {
@@ -38,7 +39,7 @@ export default function PricingPage() {
       {/* Nav */}
       <header className="flex items-center justify-between border-b border-border-primary bg-bg-secondary px-6 py-4">
         <Link href="/" className="flex items-center gap-2">
-          <LuChartBar className="h-6 w-6 text-accent-primary" />
+          <SiteLogo className="h-8 w-8" size={32} />
           <span className="text-base font-semibold">Accountant&apos;s Best Friend</span>
         </Link>
         <div className="flex items-center gap-3">
@@ -127,7 +128,7 @@ export default function PricingPage() {
                 </ul>
 
                 <div className="mt-auto">
-                  <div className="mb-2 text-xs text-text-muted">
+                  <div className="mb-3 text-xs text-text-muted">
                     {plan.maxUsers === 1
                       ? '1 user'
                       : `Up to ${plan.maxUsers} users`}
@@ -138,16 +139,25 @@ export default function PricingPage() {
                       ? ` · ${plan.maxYears} years`
                       : ' · Unlimited years'}
                   </div>
+                  {/* Buy it now — goes to subscribe (auth gated) */}
                   <Link
-                    href="/login"
-                    className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors ${
+                    href="/subscribe"
+                    className={`mb-2 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors ${
                       highlight
                         ? 'bg-accent-primary text-bg-primary hover:bg-accent-dark'
-                        : 'border border-border-primary text-text-primary hover:bg-bg-tertiary'
+                        : 'bg-accent-primary text-bg-primary hover:bg-accent-dark'
                     }`}
                   >
+                    <LuCreditCard className="h-4 w-4" />
+                    Buy it now
+                  </Link>
+                  {/* Free trial secondary option */}
+                  <Link
+                    href="/login"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-border-primary px-6 py-2.5 text-xs font-medium text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+                  >
                     Start free trial
-                    <LuArrowRight className="h-4 w-4" />
+                    <LuArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
               </div>
