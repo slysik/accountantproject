@@ -19,12 +19,46 @@ export default function ResetPasswordPage() {
   const { updatePassword } = useAuth();
   const router = useRouter();
 
-  // Supabase puts the recovery token in the URL hash — exchange it for a session
+  // Supabase recovery links may arrive with tokens in the URL hash or a PKCE code
+  // in the query string. Explicitly establish the session here so password updates
+  // do not depend on implicit client-side URL detection timing.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setValidSession(!!session);
-      setCheckingSession(false);
-    });
+    let cancelled = false;
+
+    async function bootstrapRecoverySession() {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const searchParams = new URLSearchParams(window.location.search);
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const authCode = searchParams.get('code');
+
+      try {
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (error) throw error;
+        } else if (authCode) {
+          const { error } = await supabase.auth.exchangeCodeForSession(authCode);
+          if (error) throw error;
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!cancelled) {
+          setValidSession(!!session);
+          setCheckingSession(false);
+        }
+      } catch (err) {
+        console.error('Failed to establish password reset session:', err);
+        if (!cancelled) {
+          setValidSession(false);
+          setCheckingSession(false);
+        }
+      }
+    }
+
+    void bootstrapRecoverySession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
@@ -33,7 +67,10 @@ export default function ResetPasswordPage() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
