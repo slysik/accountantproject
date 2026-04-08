@@ -35,6 +35,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             width={34}
             height={34}
             className="rounded-lg"
+            unoptimized
           />
         )}
         {!collapsed && (
@@ -45,6 +46,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               width={40}
               height={40}
               className="rounded-xl flex-shrink-0"
+              unoptimized
             />
             <div>
               <p className="font-display text-sm font-bold text-text-primary">Navigator</p>

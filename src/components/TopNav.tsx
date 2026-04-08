@@ -121,6 +121,7 @@ export default function TopNav({ onMobileMenuToggle }: TopNavProps) {
           width={40}
           height={40}
           className="rounded-xl"
+          unoptimized
         />
       </div>
 
