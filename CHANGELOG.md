@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.7] — 2026-04-07
+
+### Fixed
+
+#### Chatbot
+- Updated Anthropic API key to active account with credits — chatbot fully restored
+- Removed unused OpenAI API key from configuration
+
+---
+
 ## [1.5.6] — 2026-04-07
 
 ### Fixed
