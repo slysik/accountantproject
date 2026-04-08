@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LuChartBar, LuCheck, LuArrowRight, LuSun, LuMoon, LuZap, LuCreditCard } from 'react-icons/lu';
+import { LuCheck, LuArrowRight, LuSun, LuMoon, LuZap, LuCreditCard } from 'react-icons/lu';
 import { useTheme } from '@/lib/theme';
 import { PLANS } from '@/lib/subscription';
 import PublicFooter from '@/components/PublicFooter';
@@ -26,6 +26,11 @@ const plans = [
   {
     key: 'elite' as const,
     badge: null,
+    highlight: false,
+  },
+  {
+    key: 'vps' as const,
+    badge: 'Private Server',
     highlight: false,
   },
 ];
@@ -87,7 +92,7 @@ export default function PricingPage() {
 
       {/* Plan cards */}
       <section className="mx-auto max-w-5xl px-6 pb-24">
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
           {plans.map(({ key, badge, highlight }) => {
             const plan = PLANS[key];
             return (
@@ -139,6 +144,11 @@ export default function PricingPage() {
                       ? ` · ${plan.maxYears} years`
                       : ' · Unlimited years'}
                   </div>
+                  {key === 'vps' && (
+                    <div className="mb-3 rounded-xl border border-accent-primary/25 bg-accent-primary/10 px-3 py-2 text-xs text-text-secondary">
+                      Run Accountant&apos;s Best Friend on your own secured server with isolated infrastructure and the highest plan capabilities.
+                    </div>
+                  )}
                   {/* Buy it now — goes to subscribe (auth gated) */}
                   <Link
                     href="/subscribe"
@@ -187,6 +197,10 @@ export default function PricingPage() {
               {
                 q: 'Is there a contract or commitment?',
                 a: 'No contracts, no lock-in. All plans are month-to-month and you can cancel any time.',
+              },
+              {
+                q: 'What is the Virtual Private Server plan?',
+                a: 'The VPS plan includes everything in Elite, plus your own secured copy of Accountant\'s Best Friend running on your own server environment.',
               },
             ].map(({ q, a }) => (
               <div key={q}>

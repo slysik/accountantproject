@@ -10,6 +10,7 @@ const PLAN_PRICES: Record<string, string> = {
   lite: '10.00',
   business: '25.00',
   elite: '100.00',
+  vps: '250.00',
 };
 
 const PLAN_LABELS: Record<string, string> = {
@@ -17,6 +18,7 @@ const PLAN_LABELS: Record<string, string> = {
   lite: 'Lite',
   business: 'Business',
   elite: 'Elite',
+  vps: 'Virtual Private Server',
 };
 
 async function getAccessToken(): Promise<string> {

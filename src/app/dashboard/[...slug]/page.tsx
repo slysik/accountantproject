@@ -15,7 +15,7 @@ import {
   LuTrendingUp,
 } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
-import { DEFAULT_COMPANY_NAME, decodeCompanySlug, decodeFolderSlug, encodeCompanySlug, encodeFolderSlug, isMonthSegment, isYearSegment } from '@/lib/company';
+import { DEFAULT_COMPANY_NAME, decodeCompanySlug, decodeFolderSlug, encodeCompanySlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import {
   getExpenses,
   getAllExpenses,
@@ -503,6 +503,20 @@ export default function DashboardSlugPage() {
           </section>
         ) : (
           <>
+            {yearExpenses.length > 0 && (
+              <section className="shell-panel mb-6 p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-sm font-semibold text-text-primary">Yearly Analysis & Export</h2>
+                    <p className="mt-1 text-xs text-text-muted">
+                      Export the full {year} dataset for {companyName} in CSV, Excel, or QBO with the same analysis-ready output used in monthly views.
+                    </p>
+                  </div>
+                  <ExportMenu expenses={yearExpenses} />
+                </div>
+              </section>
+            )}
+
             <div className="mb-6 grid gap-6 xl:grid-cols-2">
               <DashboardPanel title="Year Snapshot" icon={<LuInbox className="h-4 w-4" />}>
                 <SummaryCards expenses={yearExpenses} />

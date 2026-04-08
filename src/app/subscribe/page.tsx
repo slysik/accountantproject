@@ -17,7 +17,7 @@ import {
 } from '@/lib/subscription';
 
 const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? '';
-const PLAN_ORDER: Exclude<Plan, 'trial'>[] = ['personal', 'lite', 'business', 'elite'];
+const PLAN_ORDER: Exclude<Plan, 'trial'>[] = ['personal', 'lite', 'business', 'elite', 'vps'];
 
 export default function SubscribePage() {
   const { user, signOut } = useAuth();
@@ -122,7 +122,7 @@ export default function SubscribePage() {
         <PayPalScriptProvider
           options={paypalConfigured ? { clientId: PAYPAL_CLIENT_ID, currency: 'USD' } : { clientId: 'disabled' }}
         >
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
             {PLAN_ORDER.map((key) => {
               const plan = PLANS[key];
               const isPopular = key === 'business';
@@ -161,6 +161,12 @@ export default function SubscribePage() {
                       </li>
                     ))}
                   </ul>
+
+                  {key === 'vps' && (
+                    <div className="mb-6 rounded-xl border border-accent-primary/25 bg-accent-primary/10 px-3 py-3 text-xs text-text-secondary">
+                      Includes the full Elite capability set, but deployed as your own secured Accountant&apos;s Best Friend instance on your own server.
+                    </div>
+                  )}
 
                   <div className="mt-auto space-y-3">
                     {/* PayPal button */}

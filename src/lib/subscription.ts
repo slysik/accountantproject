@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export type Plan = 'trial' | 'personal' | 'lite' | 'business' | 'elite';
+export type Plan = 'trial' | 'personal' | 'lite' | 'business' | 'elite' | 'vps';
 
 export interface Subscription {
   id: string;
@@ -87,6 +87,21 @@ export const PLANS: Record<Exclude<Plan, 'trial'>, PlanDetails> = {
       'IRS Schedule C categories',
       'Receipt attachments',
       'Excel & QBO export',
+      'Priority support',
+      'Dedicated account manager',
+    ],
+  },
+  vps: {
+    name: 'Virtual Private Server',
+    price: 250,
+    maxUsers: 20,
+    maxTransactions: null,
+    maxYears: null,
+    features: [
+      'Everything in Elite',
+      'Your own secured copy of Accountant\'s Best Friend',
+      'Deployment to your own server environment',
+      'Isolated infrastructure for your business',
       'Priority support',
       'Dedicated account manager',
     ],
