@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2.0.0] — 2026-04-07
+
+### Changed
+
+#### UI Redesign
+- Complete visual overhaul to a minimal dark platform aesthetic inspired by modern developer tools
+- Replaced blue-tinted dark palette with true near-black backgrounds (`#0a0a0a` / `#111` / `#1a1a1a`)
+- Removed all body gradients, grid overlays, and glow effects — fully flat design
+- Sidebar redesigned with section headers (Overview / Companies / Manage), compact 52px collapsed state, and clean icon + text nav items
+- TopNav slimmed to 56px with breadcrumbs on the left and action icons on the right
+- Settings link added to sidebar Manage section
+- Theme toggle simplified to a single sun/moon icon button
+- Sign out replaced with a clean icon button
+
+---
+
 ## [1.5.7] — 2026-04-07
 
 ### Fixed
