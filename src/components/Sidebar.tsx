@@ -73,7 +73,7 @@ export default function Sidebar() {
       </div>
 
       {/* Bottom: Manage section */}
-      <div className="flex-shrink-0 border-t px-2 py-3" style={{ borderColor: 'var(--border-primary)' }}>
+      <div className="flex flex-shrink-0 flex-col border-t px-2 py-3" style={{ borderColor: 'var(--border-primary)' }}>
         <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
           Manage
         </p>
@@ -101,20 +101,6 @@ export default function Sidebar() {
         </Link>
 
         <div className="mt-4 px-2">
-          <button
-            onClick={() => signOut()}
-            title="Sign out"
-            className="group flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition-all hover:border-accent-primary/50 hover:bg-accent-primary/10"
-            style={{ borderColor: 'var(--border-primary)' }}
-          >
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-accent-primary text-bg-primary shadow-sm transition-transform group-hover:scale-105">
-              <LuLogOut className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-text-primary">Sign Out</p>
-            </div>
-          </button>
-
           <p className="mt-3 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
             Current Plan
           </p>
@@ -127,6 +113,18 @@ export default function Sidebar() {
           <p className="mt-1 text-[12px] font-semibold leading-tight text-text-primary">
             v{APP_VERSION}
           </p>
+        </div>
+
+        <div className="mt-4 px-2">
+          <button
+            onClick={() => signOut()}
+            title="Sign out"
+            className="flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs font-semibold text-text-primary transition-colors hover:border-accent-primary/50 hover:bg-accent-primary/10"
+            style={{ borderColor: 'var(--border-primary)' }}
+          >
+            <LuLogOut className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </div>
     </aside>

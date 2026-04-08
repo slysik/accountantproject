@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.2.4 — VPS Plan, HTTPS & Recovery Improvements (2026-04-08)
+The platform now includes a new **Virtual Private Server** plan at **$250/month** for customers who want their own secured deployment of Accountant's Best Friend on a dedicated server environment. Year pages now support full-year analysis export in CSV, Excel, and QBO formats similar to monthly exports, password reset links now correctly establish the recovery session before allowing a new password to be saved, and production requests now default to HTTPS when the reverse proxy forwards the original protocol.
+
 ### v2.2.3 — Public Site Refresh & Team Account Fixes (2026-04-07)
 The public homepage is now a full features-and-capabilities landing page with workflow diagrams and clearer product positioning. Sign out has been moved into the lower-left sidebar as a more visible exit control, the Privacy Policy was simplified by removing the child privacy section, team-account access has been corrected so invited users can load the owner account's companies and folders once the matching database policy migration is applied, and companies can now be moved to Trash and restored later with their folder structure intact.
 
@@ -53,6 +56,33 @@ Attach receipts (images, PDFs, Office docs) to any expense from a gallery modal 
 
 ### v0.2.0 — Full App Rebuild (2026-03-24)
 Migrated from a vanilla JS proof-of-concept to a full Next.js 14 application backed by Supabase. Added authentication, cloud storage, a 4-step import wizard, and exports to Excel, CSV, and QuickBooks (QBO/OFX).
+
+---
+
+## [2.2.4] — 2026-04-08
+
+### Added
+
+#### Subscription Plans
+- Added a new `Virtual Private Server` plan at `$250/month`
+- Added VPS messaging across pricing, subscribe, PayPal order creation, and account upgrade flows
+- Positioned the VPS offering as an isolated, secured copy of Accountant's Best Friend running on the customer's own server
+
+#### Yearly Exports
+- Added a `Yearly Analysis & Export` section to year views
+- Enabled full-year export in CSV, Excel, and QBO formats from the year page using the same export workflow available for monthly analysis
+
+### Fixed
+
+#### Password Recovery
+- Fixed the reset-password flow so Supabase recovery links correctly establish a recovery session before allowing the password update
+- Added support for both URL hash token recovery links and PKCE `code`-based recovery links
+
+### Changed
+
+#### Production Security
+- Added middleware that redirects production HTTP traffic to HTTPS when the deployed proxy forwards `x-forwarded-proto`
+- Kept localhost and development traffic unaffected so local development continues to work normally
 
 ---
 
