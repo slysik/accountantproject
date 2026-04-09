@@ -9,7 +9,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
-### v2.2.4 — VPS Plan, HTTPS & Recovery Improvements (2026-04-08)
+### v2.2.4 — Team Invitations, Enrollment Tracking & 2FA Toggle (2026-04-08)
+Team members now receive an email invitation when they are added, with a direct link to sign in or create an account. Invitations expire after 24 hours — the Team Members tab now shows each invite timestamp and a real-time status badge: **Enrolled** (signed in), **Pending** (invite still valid), or **Expired** (24 hrs passed without sign-in), with a Resend button for expired invites. Two-factor authentication can now be enabled and disabled from Security Settings — enabling starts the authenticator app enrollment flow, and disabling unenrolls all TOTP factors cleanly. The logo in the Settings header is now clickable and returns you to the dashboard.
+
+### v2.2.3 — VPS Plan, HTTPS & Recovery Improvements (2026-04-08)
 The platform now includes a new **Virtual Private Server** plan at **$250/month** for customers who want their own secured deployment of Accountant's Best Friend on a dedicated server environment. Year pages now support full-year analysis export in CSV, Excel, and QBO formats similar to monthly exports, password reset links now correctly establish the recovery session before allowing a new password to be saved, and production requests now default to HTTPS when the reverse proxy forwards the original protocol.
 
 ### v2.2.3 — Public Site Refresh & Team Account Fixes (2026-04-07)

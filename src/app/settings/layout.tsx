@@ -35,12 +35,12 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             >
               Sign Out
             </button>
-            <div className="flex items-center gap-2">
+            <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <SiteLogo className="h-7 w-7" size={28} />
               <span className="hidden text-sm font-semibold text-text-primary md:inline">
                 Accountant&apos;s Best Friend
               </span>
-            </div>
+            </Link>
           </div>
           <Link
             href="/dashboard"

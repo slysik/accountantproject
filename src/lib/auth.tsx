@@ -38,6 +38,7 @@ interface AuthContextType {
   challengeAndVerifyMFA: (_factorId: string, _code: string) => Promise<void>;
   unenrollMFA: (_factorId: string) => Promise<void>;
   sendEmailOTP: () => Promise<void>;
+  set2FARequired: (_enabled: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -99,11 +100,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       void refreshMFAState(session?.user ?? null).finally(() => {
         setLoading(false);
       });
+      // Auto-mark team member enrollment on first sign-in
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        void (async () => {
+          try { await supabase.rpc('mark_team_member_enrolled'); } catch { /* ignore */ }
+        })();
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -237,7 +244,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         aalData.currentLevel !== 'aal2' &&
         !hasRecentMfa
       );
-      setMfaSetupRequired(verifiedTotpFactors.length === 0);
+      // Only require setup when the user has explicitly opted in to 2FA
+      // and hasn't completed enrollment yet.
+      // Existing users with a verified factor are always treated as opted in.
+      const hasOptedIn =
+        verifiedTotpFactors.length > 0 ||
+        currentUser.user_metadata?.require_2fa === true;
+      setMfaSetupRequired(hasOptedIn && verifiedTotpFactors.length === 0);
     } catch (error) {
       console.error('Failed to refresh MFA state:', error);
       setMfaRequired(false);
@@ -245,9 +258,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const markTeamMemberEnrolled = async () => {
+    try {
+      await supabase.rpc('mark_team_member_enrolled');
+    } catch {
+      // non-critical — ignore
+    }
+  };
+
   const signInWithEmail = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    await markTeamMemberEnrolled();
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
@@ -367,6 +389,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await refreshMFAState(user);
   };
 
+  const set2FARequired = async (enabled: boolean) => {
+    const { error } = await supabase.auth.updateUser({
+      data: { require_2fa: enabled },
+    });
+    if (error) throw error;
+    // Re-fetch session so user_metadata is up to date before refreshing MFA state
+    const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+    await refreshMFAState(refreshedUser);
+  };
+
   const sendEmailOTP = async () => {
     if (!user?.email) throw new Error('No email on account');
     const { error } = await supabase.auth.signInWithOtp({ email: user.email });
@@ -393,6 +425,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         challengeAndVerifyMFA,
         unenrollMFA,
         sendEmailOTP,
+        set2FARequired,
       }}
     >
       {children}

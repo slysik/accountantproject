@@ -190,6 +190,7 @@ export interface AccountMember {
   member_email: string;
   member_user_id: string | null;
   created_at: string;
+  invited_at: string;
 }
 
 /** Returns members the current user (as owner) has added. */
@@ -203,8 +204,12 @@ export async function getAccountMembers(ownerUserId: string): Promise<AccountMem
   return (data ?? []) as AccountMember[];
 }
 
-/** Adds a member by email. Attempts to resolve their user_id if they exist. */
-export async function addAccountMember(ownerUserId: string, email: string): Promise<AccountMember> {
+/** Adds a member by email and sends them an invitation email. */
+export async function addAccountMember(
+  ownerUserId: string,
+  email: string,
+  ownerEmail?: string,
+): Promise<AccountMember> {
   const sub = await getSubscription(ownerUserId);
   const maxUsers = maxUsersForSubscription(sub);
 
@@ -217,12 +222,29 @@ export async function addAccountMember(ownerUserId: string, email: string): Prom
     throw new Error(`You have reached the ${maxUsers}-user limit for your plan.`);
   }
 
+  const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('account_members')
-    .insert({ owner_user_id: ownerUserId, member_email: email.toLowerCase().trim() })
+    .insert({
+      owner_user_id: ownerUserId,
+      member_email: email.toLowerCase().trim(),
+      invited_at: now,
+    })
     .select()
     .single();
   if (error) throw error;
+
+  // Fire invite email (non-blocking — member is added regardless)
+  try {
+    await fetch('/api/team/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memberEmail: email.toLowerCase().trim(), ownerEmail: ownerEmail ?? '' }),
+    });
+  } catch {
+    // ignore email errors
+  }
+
   return data as AccountMember;
 }
 
@@ -235,25 +257,40 @@ export async function removeAccountMember(memberId: string): Promise<void> {
   if (error) throw error;
 }
 
+const INVITE_EXPIRY_MS = 24 * 60 * 60 * 1000;
+
 async function listOwnerAccountUserIds(memberEmail: string): Promise<string[]> {
   const normalizedEmail = memberEmail.toLowerCase().trim();
 
   const { data, error } = await supabase
     .from('account_members')
-    .select('owner_user_id, created_at')
+    .select('owner_user_id, member_user_id, invited_at, created_at')
     .eq('member_email', normalizedEmail)
     .order('created_at', { ascending: false });
 
   if (error || !data) return [];
 
+  const now = Date.now();
   const seen = new Set<string>();
   const ownerIds: string[] = [];
 
   for (const row of data) {
     const ownerUserId = row.owner_user_id as string | null;
     if (!ownerUserId || seen.has(ownerUserId)) continue;
-    seen.add(ownerUserId);
-    ownerIds.push(ownerUserId);
+
+    // Already enrolled — always allowed
+    if (row.member_user_id) {
+      seen.add(ownerUserId);
+      ownerIds.push(ownerUserId);
+      continue;
+    }
+
+    // Not yet enrolled — only allow within the 24-hour invite window
+    const invitedAt = new Date(row.invited_at ?? row.created_at).getTime();
+    if (now - invitedAt <= INVITE_EXPIRY_MS) {
+      seen.add(ownerUserId);
+      ownerIds.push(ownerUserId);
+    }
   }
 
   return ownerIds;

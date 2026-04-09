@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { LuUsers, LuPlus, LuTrash2, LuCheck, LuInfo } from 'react-icons/lu';
+import { LuUsers, LuPlus, LuTrash2, LuCheck, LuInfo, LuRefreshCw } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
 import {
   getSubscription,
@@ -13,6 +13,24 @@ import {
   type Subscription,
 } from '@/lib/subscription';
 
+const INVITE_EXPIRY_MS = 24 * 60 * 60 * 1000;
+
+function enrollmentStatus(m: AccountMember): 'enrolled' | 'pending' | 'expired' {
+  if (m.member_user_id) return 'enrolled';
+  const invitedAt = new Date(m.invited_at ?? m.created_at).getTime();
+  return Date.now() - invitedAt <= INVITE_EXPIRY_MS ? 'pending' : 'expired';
+}
+
+function formatInvitedAt(value: string) {
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 export default function TeamSettingsPage() {
   const { user } = useAuth();
   const [sub, setSub] = useState<Subscription | null>(null);
@@ -21,6 +39,7 @@ export default function TeamSettingsPage() {
   const [email, setEmail] = useState('');
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [resending, setResending] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -44,7 +63,6 @@ export default function TeamSettingsPage() {
   useEffect(() => { refresh(); }, [refresh]);
 
   const maxUsers = maxUsersForSubscription(sub);
-  // +1 because the owner themselves counts as a user
   const totalUsers = members.length + 1;
   const canAddMore = totalUsers < maxUsers;
 
@@ -63,9 +81,9 @@ export default function TeamSettingsPage() {
     }
     setAdding(true);
     try {
-      await addAccountMember(user.id, trimmed);
+      await addAccountMember(user.id, trimmed, user.email);
       setEmail('');
-      setSuccess(`${trimmed} has been added to your team.`);
+      setSuccess(`Invitation sent to ${trimmed}.`);
       await refresh();
     } catch (err: unknown) {
       setError((err as { message?: string }).message ?? 'Failed to add member.');
@@ -85,6 +103,33 @@ export default function TeamSettingsPage() {
       setError((err as { message?: string }).message ?? 'Failed to remove member.');
     } finally {
       setRemoving(null);
+    }
+  };
+
+  const handleResend = async (member: AccountMember) => {
+    setError(''); setSuccess('');
+    setResending(member.id);
+    try {
+      // Update invited_at so the 24-hr window resets
+      const { error: updateErr } = await import('@/lib/supabase').then(({ supabase }) =>
+        supabase
+          .from('account_members')
+          .update({ invited_at: new Date().toISOString() })
+          .eq('id', member.id)
+      );
+      if (updateErr) throw updateErr;
+
+      await fetch('/api/team/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberEmail: member.member_email, ownerEmail: user?.email ?? '' }),
+      });
+      setSuccess(`Invitation resent to ${member.member_email}.`);
+      await refresh();
+    } catch (err: unknown) {
+      setError((err as { message?: string }).message ?? 'Failed to resend invitation.');
+    } finally {
+      setResending(null);
     }
   };
 
@@ -139,29 +184,61 @@ export default function TeamSettingsPage() {
             </div>
 
             {/* Member rows */}
-            {members.map((m) => (
-              <div
-                key={m.id}
-                className="mb-2 flex items-center justify-between rounded-lg bg-bg-tertiary px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-text-primary">{m.member_email}</p>
-                  <p className="text-xs text-text-muted">
-                    Added {new Date(m.created_at).toLocaleDateString('en-US', {
-                      month: 'short', day: 'numeric', year: 'numeric',
-                    })}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleRemove(m)}
-                  disabled={removing === m.id}
-                  className="flex items-center gap-1 rounded px-2 py-1 text-xs text-error transition-colors hover:bg-error/10 disabled:opacity-50"
+            {members.map((m) => {
+              const status = enrollmentStatus(m);
+              return (
+                <div
+                  key={m.id}
+                  className="mb-2 flex items-center justify-between rounded-lg bg-bg-tertiary px-4 py-3 gap-3"
                 >
-                  <LuTrash2 className="h-3.5 w-3.5" />
-                  {removing === m.id ? 'Removing...' : 'Remove'}
-                </button>
-              </div>
-            ))}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-text-primary truncate">{m.member_email}</p>
+                    <p className="text-xs text-text-muted">
+                      Invited {formatInvitedAt(m.invited_at ?? m.created_at)}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-shrink-0 items-center gap-2">
+                    {/* Enrollment status badge */}
+                    {status === 'enrolled' && (
+                      <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success">
+                        Enrolled
+                      </span>
+                    )}
+                    {status === 'pending' && (
+                      <span className="rounded-full bg-yellow-500/10 px-2.5 py-0.5 text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                        Pending
+                      </span>
+                    )}
+                    {status === 'expired' && (
+                      <>
+                        <span className="rounded-full bg-error/10 px-2.5 py-0.5 text-xs font-medium text-error">
+                          Expired
+                        </span>
+                        <button
+                          onClick={() => handleResend(m)}
+                          disabled={resending === m.id}
+                          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-accent-primary transition-colors hover:bg-accent-primary/10 disabled:opacity-50"
+                          title="Resend invitation"
+                        >
+                          <LuRefreshCw className="h-3 w-3" />
+                          {resending === m.id ? 'Sending...' : 'Resend'}
+                        </button>
+                      </>
+                    )}
+
+                    <button
+                      onClick={() => handleRemove(m)}
+                      disabled={removing === m.id}
+                      className="flex items-center gap-1 rounded px-2 py-1 text-xs text-error transition-colors hover:bg-error/10 disabled:opacity-50"
+                    >
+                      <LuTrash2 className="h-3.5 w-3.5" />
+                      {removing === m.id ? 'Removing...' : 'Remove'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
 
             {members.length === 0 && (
               <p className="mt-2 text-xs text-text-muted">
@@ -176,8 +253,8 @@ export default function TeamSettingsPage() {
       <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
         <h2 className="mb-1 text-sm font-semibold text-text-primary">Add Team Member</h2>
         <p className="mb-5 text-xs text-text-muted">
-          Enter the email address of the person you want to add. They can sign in (or create an
-          account) with that email to access the dashboard.
+          Enter their email address. They&apos;ll receive an invitation link valid for 24 hours.
+          Once they sign in with that email, they&apos;ll have access to your dashboard.
         </p>
 
         {!canAddMore && (
@@ -202,7 +279,7 @@ export default function TeamSettingsPage() {
             className="flex items-center gap-1.5 rounded-lg bg-accent-primary px-4 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:opacity-50"
           >
             <LuPlus className="h-4 w-4" />
-            {adding ? 'Adding...' : 'Add'}
+            {adding ? 'Sending...' : 'Invite'}
           </button>
         </form>
       </section>
