@@ -22,10 +22,12 @@ function LoginForm() {
   const isInvite = searchParams.get('invite') === '1';
   const inviteEmail = searchParams.get('email') ?? '';
   const inviteToken = searchParams.get('token') ?? '';
+  const inviteEnrolled = searchParams.get('enrolled') === '1';
 
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>(isInvite ? 'signup' : 'signin');
   const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [inviteTokenStatus, setInviteTokenStatus] = useState<InviteTokenStatus>(
     isInvite && inviteToken ? 'checking' : 'idle'
   );
@@ -34,10 +36,17 @@ function LoginForm() {
   useEffect(() => {
     if (isInvite && inviteEmail) {
       setEmail(inviteEmail);
-      setMode('signup');
+      setMode(inviteEnrolled ? 'signin' : 'signup');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (inviteEnrolled) {
+      setMode('signin');
+      setSuccess('Account created and activated. Sign in with your email and password to continue.');
+    }
+  }, [inviteEnrolled]);
 
   useEffect(() => {
     if (!isInvite || !inviteToken) {
@@ -115,6 +124,12 @@ function LoginForm() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (mode === 'signup' && password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -126,9 +141,15 @@ function LoginForm() {
         await signInWithEmail(email, password);
         router.push('/mfa/setup');
       } else {
-        const result = await signUpWithEmail(email, password);
+        const result = await signUpWithEmail(email, password, inviteToken || undefined);
 
-        if (result.sessionCreated) {
+        if (result.inviteActivated) {
+          setPendingConfirmationEmail('');
+          setMode('signin');
+          setPassword('');
+          setConfirmPassword('');
+          router.replace(`/login?invite=1&email=${encodeURIComponent(email)}&enrolled=1`);
+        } else if (result.sessionCreated) {
           setPendingConfirmationEmail('');
           router.push(isInvite ? '/dashboard' : '/mfa/setup');
         } else {
@@ -140,6 +161,7 @@ function LoginForm() {
           );
           setMode('signin');
           setPassword('');
+          setConfirmPassword('');
         }
       }
     } catch (err: unknown) {
@@ -303,6 +325,24 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
+                required
+                minLength={6}
+                className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary placeholder-text-muted outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+              />
+            </div>
+          )}
+
+          {mode === 'signup' && (
+            <div>
+              <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-medium text-text-secondary">
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Type your password again"
                 required
                 minLength={6}
                 className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary placeholder-text-muted outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"

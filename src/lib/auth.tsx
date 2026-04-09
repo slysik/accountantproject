@@ -24,8 +24,9 @@ interface AuthContextType {
   signInWithEmail: (_email: string, _password: string) => Promise<void>;
   signUpWithEmail: (
     _email: string,
-    _password: string
-  ) => Promise<{ sessionCreated: boolean; emailConfirmationRequired: boolean }>;
+    _password: string,
+    _inviteToken?: string
+  ) => Promise<{ sessionCreated: boolean; emailConfirmationRequired: boolean; inviteActivated?: boolean }>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   sendPasswordReset: (_email: string) => Promise<void>;
@@ -272,7 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await markTeamMemberEnrolled();
   };
 
-  const signUpWithEmail = async (email: string, password: string) => {
+  const signUpWithEmail = async (email: string, password: string, inviteToken?: string) => {
     // Prevent a stale session from surviving a sign-up attempt and making the
     // app appear to log into the previously authenticated user.
     await supabase.auth.signOut({ scope: 'local' });
@@ -285,6 +286,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({
         email,
         password,
+        inviteToken,
       }),
     });
 
@@ -304,6 +306,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       sessionCreated: !!payload.sessionCreated,
       emailConfirmationRequired: !!payload.emailConfirmationRequired,
+      inviteActivated: !!payload.inviteActivated,
     };
   };
 
