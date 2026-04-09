@@ -267,9 +267,9 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
   if (loading) return <SkeletonFolderTree />;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1">
       {!collapsed && (
-        <div className="mb-3">
+        <div className="mb-1.5">
           {showAddCompany ? (
             <div className="flex items-center gap-1 px-2">
               <input
@@ -314,7 +314,7 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
       )}
 
       {companies.length === 0 && !collapsed && (
-        <p className="px-2 py-4 text-center text-xs text-text-muted">
+        <p className="px-2 py-3 text-center text-xs text-text-muted">
           No companies yet. Add one to get started.
         </p>
       )}

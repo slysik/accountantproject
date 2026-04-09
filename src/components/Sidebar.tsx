@@ -90,7 +90,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav: Folders */}
-      <div className="flex-1 overflow-y-auto px-2 pt-4">
+      <div className="flex-1 overflow-y-auto px-2 pt-2">
         <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
           Companies
         </p>
