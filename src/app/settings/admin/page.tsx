@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { LuBuilding2, LuShield, LuTriangle, LuUsers } from 'react-icons/lu';
+import { LuBuilding2, LuShield, LuTriangle, LuUsers, LuKeyRound, LuX } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
 import { isMasterAdminEmail } from '@/lib/admin';
+import { supabase } from '@/lib/supabase';
 
 type AdminAccountState = {
   user_id: string;
@@ -43,11 +44,20 @@ function formatDateTime(value: string | null) {
   });
 }
 
+type PasswordModal = { userId: string; email: string } | null;
+
 export default function AdminSettingsPage() {
   const { user } = useAuth();
   const [accounts, setAccounts] = useState<AdminAccountState[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Password change modal state
+  const [pwModal, setPwModal] = useState<PasswordModal>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState('');
 
   const isAdmin = isMasterAdminEmail(user?.email);
 
@@ -86,6 +96,31 @@ export default function AdminSettingsPage() {
       planCounts,
     };
   }, [accounts]);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pwModal) return;
+    setPwError(''); setPwSuccess('');
+    if (newPassword.length < 6) { setPwError('Password must be at least 6 characters.'); return; }
+    setPwLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? '';
+      const res = await fetch('/api/admin/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ targetUserId: pwModal.userId, newPassword }),
+      });
+      const payload = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(payload.error ?? 'Failed to update password.');
+      setPwSuccess('Password updated successfully.');
+      setNewPassword('');
+    } catch (err: unknown) {
+      setPwError((err as { message?: string }).message ?? 'Failed to update password.');
+    } finally {
+      setPwLoading(false);
+    }
+  };
 
   if (!isAdmin) {
     return (
@@ -235,11 +270,89 @@ export default function AdminSettingsPage() {
                     </p>
                   </div>
                 </div>
+
+                {/* Admin actions */}
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() => { setPwModal({ userId: account.user_id, email: account.email }); setPwError(''); setPwSuccess(''); setNewPassword(''); }}
+                    className="flex items-center gap-1.5 rounded-lg border border-border-primary px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-secondary hover:text-accent-primary"
+                  >
+                    <LuKeyRound className="h-3.5 w-3.5" />
+                    Change Password
+                  </button>
+                </div>
               </article>
             ))}
           </div>
         )}
       </section>
+
+      {/* ── Password Change Modal ─────────────────────────────── */}
+      {pwModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border-primary bg-bg-secondary p-6 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-text-primary">Change Password</h2>
+                <p className="mt-1 text-xs text-text-muted">{pwModal.email}</p>
+              </div>
+              <button
+                onClick={() => setPwModal(null)}
+                className="rounded p-1 text-text-muted transition-colors hover:text-text-primary"
+              >
+                <LuX className="h-4 w-4" />
+              </button>
+            </div>
+
+            {pwSuccess ? (
+              <div className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
+                {pwSuccess}
+              </div>
+            ) : (
+              <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    minLength={6}
+                    required
+                    autoFocus
+                    className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                  />
+                </div>
+                {pwError && <p className="text-sm text-error">{pwError}</p>}
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    disabled={pwLoading || newPassword.length < 6}
+                    className="flex-1 rounded-lg bg-accent-primary px-4 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:opacity-50"
+                  >
+                    {pwLoading ? 'Updating...' : 'Update Password'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPwModal(null)}
+                    className="rounded-lg border border-border-primary px-4 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {!pwSuccess && (
+              <p className="mt-4 text-xs text-text-muted">
+                Requires <code className="rounded bg-bg-tertiary px-1 py-0.5 font-mono">SUPABASE_SERVICE_ROLE_KEY</code> in server environment.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

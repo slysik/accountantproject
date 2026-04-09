@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.2.6 — Team Roles & Admin Password Change (2026-04-08)
+Team members can now be assigned one of three roles: **Admin** (full access, can manage team), **Contributor** (can add/edit companies and expenses, no team management), or **Viewer** (read-only). The role is set when inviting and can be changed at any time from the Team tab using the inline role selector on each member row. The master admin can now change any user's password directly from the Admin settings page via a "Change Password" button on each account card — requires `SUPABASE_SERVICE_ROLE_KEY` to be added to the server environment (see setup note in the modal).
+
 ### v2.2.5 — Invite Flow Fixes & 1-Hour Expiry (2026-04-08)
 The team invitation link now takes new users directly to a **Sign Up** form with their email pre-filled and a clear "You've been invited to a team" banner — no more landing on a blank sign-in screen with no context. After creating an account via invite, users go straight to the dashboard instead of the 2FA setup page. Invitation links now expire after **1 hour** (down from 24 hours) and the Resend button resets the clock. The enrollment status badges on the Team tab reflect the new expiry window.
 

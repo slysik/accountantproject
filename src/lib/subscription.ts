@@ -184,6 +184,8 @@ export function maxUsersForSubscription(sub: Subscription | null): number {
 
 // ── Team / account members ────────────────────────────────────────────────
 
+export type TeamRole = 'admin' | 'contributor' | 'viewer';
+
 export interface AccountMember {
   id: string;
   owner_user_id: string;
@@ -191,6 +193,7 @@ export interface AccountMember {
   member_user_id: string | null;
   created_at: string;
   invited_at: string;
+  role: TeamRole;
 }
 
 /** Returns members the current user (as owner) has added. */
@@ -209,6 +212,7 @@ export async function addAccountMember(
   ownerUserId: string,
   email: string,
   ownerEmail?: string,
+  role: TeamRole = 'contributor',
 ): Promise<AccountMember> {
   const sub = await getSubscription(ownerUserId);
   const maxUsers = maxUsersForSubscription(sub);
@@ -229,6 +233,7 @@ export async function addAccountMember(
       owner_user_id: ownerUserId,
       member_email: email.toLowerCase().trim(),
       invited_at: now,
+      role,
     })
     .select()
     .single();
@@ -255,6 +260,27 @@ export async function removeAccountMember(memberId: string): Promise<void> {
     .delete()
     .eq('id', memberId);
   if (error) throw error;
+}
+
+/** Updates the role of a team member. */
+export async function updateMemberRole(memberId: string, role: TeamRole): Promise<void> {
+  const { error } = await supabase
+    .from('account_members')
+    .update({ role })
+    .eq('id', memberId);
+  if (error) throw error;
+}
+
+/** Returns the current user's role within an owner's account, or null if not a member. */
+export async function getMyTeamRole(memberEmail: string): Promise<TeamRole | null> {
+  const { data, error } = await supabase
+    .from('account_members')
+    .select('role, member_user_id')
+    .eq('member_email', memberEmail.toLowerCase().trim())
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data.role as TeamRole;
 }
 
 const INVITE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
