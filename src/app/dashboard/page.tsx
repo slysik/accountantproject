@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { LuArrowUpRight, LuChartLine, LuDatabase, LuFileText, LuSparkles, LuTrendingUp, LuWand } from 'react-icons/lu';
+import { LuChartLine, LuDatabase, LuFileText, LuSparkles, LuTrendingUp, LuWand } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
 import { getCategoryName } from '@/lib/categories';
 import { getAllExpenses } from '@/lib/database';
@@ -177,13 +177,6 @@ export default function DashboardPage() {
               >
                 <LuWand className="h-4 w-4" />
                 Start Wizard
-              </Link>
-              <Link
-                href="/pricing"
-                className="action-pill"
-              >
-                <LuArrowUpRight className="h-4 w-4" />
-                View Pricing
               </Link>
             </div>
           </div>

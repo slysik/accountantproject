@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { decodeCompanySlug, decodeFolderSlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import { useTheme } from '@/lib/theme';
-import { LuChevronRight, LuWand, LuSun, LuMoon } from 'react-icons/lu';
+import { LuChevronRight, LuSun, LuMoon } from 'react-icons/lu';
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr',
@@ -102,15 +102,6 @@ export default function TopNav() {
 
       {/* Right: actions */}
       <div className="flex items-center gap-2">
-        {/* Import wizard */}
-        <Link
-          href="/dashboard/wizard"
-          className="flex items-center gap-2 rounded-lg bg-accent-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-dark"
-        >
-          <LuWand className="h-4.5 w-4.5" />
-          <span className="hidden sm:inline">Import Wizard</span>
-        </Link>
-
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
@@ -122,7 +113,7 @@ export default function TopNav() {
 
         {/* User */}
         {user?.email && (
-          <span className="hidden text-sm font-medium text-text-muted lg:block">{user.email}</span>
+          <span className="hidden text-lg font-semibold tracking-tight text-text-primary lg:block">{user.email}</span>
         )}
       </div>
     </header>
