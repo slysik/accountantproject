@@ -6,6 +6,7 @@ import {
   LuCalendar,
   LuChartLine,
   LuChartPie,
+  LuCheck,
   LuCirclePlus,
   LuFolderOpen,
   LuInbox,
@@ -21,6 +22,7 @@ import {
   getAllExpenses,
   getReceiptsByExpenseIds,
   getUserFolders,
+  createExpense,
   softDeleteExpense,
   softDeleteMonth,
   updateExpenseCategory,
@@ -33,6 +35,7 @@ import MonthlyChart from '@/components/MonthlyChart';
 import SummaryCards from '@/components/SummaryCards';
 import { SkeletonCard, SkeletonSection } from '@/components/Skeleton';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
+import { getAllCategories } from '@/lib/categories';
 import { getCategoryName } from '@/lib/categories';
 import type { CategorizedExpense, MonthNode, Receipt, SubfolderNode } from '@/types';
 
@@ -56,8 +59,14 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   currency: 'USD',
 });
 
+const CATEGORY_OPTIONS = getAllCategories();
+
 function formatCurrency(value: number): string {
   return currencyFormatter.format(value);
+}
+
+function toLocalDateInputValue(year: string, month: string) {
+  return `${year}-${month}-01`;
 }
 
 function DashboardPanel({
@@ -98,6 +107,16 @@ export default function DashboardSlugPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingMonth, setDeletingMonth] = useState(false);
   const [selectedMissingMonth, setSelectedMissingMonth] = useState('');
+  const [showManualEntryForm, setShowManualEntryForm] = useState(false);
+  const [manualSaving, setManualSaving] = useState(false);
+  const [manualError, setManualError] = useState<string | null>(null);
+  const [manualEntry, setManualEntry] = useState({
+    date: '',
+    description: '',
+    amount: '',
+    category: 'office_expense',
+    originalCategory: '',
+  });
 
   const companySlug = slug[0];
   const year = slug[1];
@@ -211,6 +230,14 @@ export default function DashboardSlugPage() {
   const handleReceiptsUpdated = useCallback((expenseId: string, receipts: Receipt[]) => {
     setReceiptsByExpenseId((prev) => ({ ...prev, [expenseId]: receipts }));
   }, []);
+
+  useEffect(() => {
+    if (!isMonthView || !year || !month) return;
+    setManualEntry((current) => ({
+      ...current,
+      date: current.date || toLocalDateInputValue(year, month),
+    }));
+  }, [isMonthView, month, year]);
 
   const yearSummary = useMemo(() => {
     if (!isYearView) return null;
@@ -835,6 +862,59 @@ export default function DashboardSlugPage() {
   const monthName = MONTH_NAMES[month] ?? month;
   const hasExpenses = expenses.length > 0;
 
+  const handleManualEntryChange = useCallback(
+    (field: 'date' | 'description' | 'amount' | 'category' | 'originalCategory', value: string) => {
+      setManualEntry((current) => ({ ...current, [field]: value }));
+    },
+    []
+  );
+
+  const handleManualEntrySave = useCallback(async () => {
+    if (!effectiveUserId || !year || !month) return;
+
+    const trimmedDescription = manualEntry.description.trim();
+    const parsedAmount = Number(manualEntry.amount);
+
+    if (!manualEntry.date || !trimmedDescription || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setManualError('Enter a valid date, description, and positive amount before saving.');
+      return;
+    }
+
+    setManualSaving(true);
+    setManualError(null);
+
+    try {
+      await createExpense(effectiveUserId, companyName, year, month, {
+        id: crypto.randomUUID(),
+        date: new Date(`${manualEntry.date}T12:00:00`),
+        month: `${year}-${month}`,
+        year,
+        companyName,
+        description: trimmedDescription,
+        amount: parsedAmount,
+        originalCategory: manualEntry.originalCategory.trim(),
+        category: manualEntry.category,
+        filename: 'manual-entry',
+        rawData: [],
+        deletedAt: null,
+      });
+
+      setManualEntry({
+        date: toLocalDateInputValue(year, month),
+        description: '',
+        amount: '',
+        category: manualEntry.category,
+        originalCategory: '',
+      });
+      setShowManualEntryForm(false);
+      await fetchExpenses();
+    } catch (err) {
+      setManualError(err instanceof Error ? err.message : 'Failed to save the manual entry.');
+    } finally {
+      setManualSaving(false);
+    }
+  }, [companyName, effectiveUserId, fetchExpenses, manualEntry, month, year]);
+
   return (
     <div className="mx-auto max-w-6xl">
       <section className="hero-surface mb-6">
@@ -920,6 +1000,106 @@ export default function DashboardSlugPage() {
         {hasExpenses && <SummaryCards expenses={expenses} />}
 
         <section className="shell-panel p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-text-primary">Monthly Analysis</h2>
+              <p className="mt-1 text-xs text-text-muted">
+                Review the monthly analysis for {companyName} in {monthName} {year}, then import or hand-add more transactions directly into this month.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setShowManualEntryForm((current) => !current);
+                setManualError(null);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
+            >
+              {showManualEntryForm ? <LuCheck className="h-4 w-4" /> : <LuCirclePlus className="h-4 w-4" />}
+              {showManualEntryForm ? 'Close Hand Entry' : 'Hand Add Entry'}
+            </button>
+          </div>
+
+          {showManualEntryForm && (
+            <div className="mt-4 rounded-2xl border border-border-primary bg-bg-tertiary/30 p-4">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                <label className="text-xs text-text-secondary">
+                  <span className="mb-1 block font-medium text-text-primary">Date</span>
+                  <input
+                    type="date"
+                    value={manualEntry.date}
+                    onChange={(e) => handleManualEntryChange('date', e.target.value)}
+                    className="w-full rounded-xl border border-border-primary bg-bg-secondary px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/30"
+                  />
+                </label>
+                <label className="text-xs text-text-secondary xl:col-span-2">
+                  <span className="mb-1 block font-medium text-text-primary">Description</span>
+                  <input
+                    type="text"
+                    value={manualEntry.description}
+                    onChange={(e) => handleManualEntryChange('description', e.target.value)}
+                    placeholder="Vendor or transaction memo"
+                    className="w-full rounded-xl border border-border-primary bg-bg-secondary px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/30"
+                  />
+                </label>
+                <label className="text-xs text-text-secondary">
+                  <span className="mb-1 block font-medium text-text-primary">Amount</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={manualEntry.amount}
+                    onChange={(e) => handleManualEntryChange('amount', e.target.value)}
+                    placeholder="0.00"
+                    className="w-full rounded-xl border border-border-primary bg-bg-secondary px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/30"
+                  />
+                </label>
+                <label className="text-xs text-text-secondary">
+                  <span className="mb-1 block font-medium text-text-primary">Category</span>
+                  <select
+                    value={manualEntry.category}
+                    onChange={(e) => handleManualEntryChange('category', e.target.value)}
+                    className="w-full rounded-xl border border-border-primary bg-bg-secondary px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/30"
+                  >
+                    {CATEGORY_OPTIONS.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <label className="mt-3 block text-xs text-text-secondary">
+                <span className="mb-1 block font-medium text-text-primary">Imported Category Label (optional)</span>
+                <input
+                  type="text"
+                  value={manualEntry.originalCategory}
+                  onChange={(e) => handleManualEntryChange('originalCategory', e.target.value)}
+                  placeholder="Optional original category"
+                  className="w-full rounded-xl border border-border-primary bg-bg-secondary px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/30"
+                />
+              </label>
+
+              {manualError && (
+                <div className="mt-3 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-xs text-error">
+                  {manualError}
+                </div>
+              )}
+
+              <div className="mt-4 flex items-center gap-3">
+                <button
+                  onClick={() => void handleManualEntrySave()}
+                  disabled={manualSaving}
+                  className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {manualSaving ? 'Saving...' : 'Save Entry'}
+                </button>
+                <p className="text-xs text-text-muted">This creates a transaction directly inside {monthName} {year}.</p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="shell-panel p-6">
           <div className="mb-4">
             <h2 className="text-sm font-semibold text-text-primary">Import & Refresh</h2>
             <p className="mt-1 text-xs text-text-muted">
@@ -930,33 +1110,24 @@ export default function DashboardSlugPage() {
         </section>
 
         {hasExpenses && (
-          <section className="shell-panel p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <LuChartLine className="h-4 w-4 text-accent-primary" />
-              <h2 className="text-sm font-semibold text-text-primary">Monthly Spending</h2>
-            </div>
-            <MonthlyChart expenses={expenses} />
-          </section>
+          <div className="grid gap-6 xl:grid-cols-2">
+            <DashboardPanel title="Monthly Spending" icon={<LuChartLine className="h-4 w-4" />}>
+              <MonthlyChart expenses={expenses} />
+            </DashboardPanel>
+
+            <DashboardPanel title="Category Breakdown" icon={<LuChartPie className="h-4 w-4" />}>
+              <CategoryBreakdown expenses={expenses} />
+            </DashboardPanel>
+          </div>
         )}
 
         {hasExpenses && (
           <section className="shell-panel p-6">
             <div className="mb-4 flex items-center gap-2">
-              <LuChartPie className="h-4 w-4 text-accent-primary" />
-              <h2 className="text-sm font-semibold text-text-primary">Category Breakdown</h2>
-            </div>
-            <CategoryBreakdown expenses={expenses} />
-          </section>
-        )}
-
-        {hasExpenses && (
-          <section className="shell-panel p-6">
-            <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <LuTable className="h-4 w-4 text-accent-primary" />
                 <h2 className="text-sm font-semibold text-text-primary">Expenses</h2>
               </div>
-              <ExportMenu expenses={expenses} />
             </div>
             <ExpenseTable
               expenses={expenses}
