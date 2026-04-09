@@ -334,6 +334,59 @@ export default function DashboardSlugPage() {
     [subfolderName, subfolders]
   );
 
+  const handleManualEntryChange = useCallback(
+    (field: 'date' | 'description' | 'amount' | 'category' | 'originalCategory', value: string) => {
+      setManualEntry((current) => ({ ...current, [field]: value }));
+    },
+    []
+  );
+
+  const handleManualEntrySave = useCallback(async () => {
+    if (!effectiveUserId || !year || !month) return;
+
+    const trimmedDescription = manualEntry.description.trim();
+    const parsedAmount = Number(manualEntry.amount);
+
+    if (!manualEntry.date || !trimmedDescription || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setManualError('Enter a valid date, description, and positive amount before saving.');
+      return;
+    }
+
+    setManualSaving(true);
+    setManualError(null);
+
+    try {
+      await createExpense(effectiveUserId, companyName, year, month, {
+        id: crypto.randomUUID(),
+        date: new Date(`${manualEntry.date}T12:00:00`),
+        month: `${year}-${month}`,
+        year,
+        companyName,
+        description: trimmedDescription,
+        amount: parsedAmount,
+        originalCategory: manualEntry.originalCategory.trim(),
+        category: manualEntry.category,
+        filename: 'manual-entry',
+        rawData: [],
+        deletedAt: null,
+      });
+
+      setManualEntry({
+        date: toLocalDateInputValue(year, month),
+        description: '',
+        amount: '',
+        category: manualEntry.category,
+        originalCategory: '',
+      });
+      setShowManualEntryForm(false);
+      await fetchExpenses();
+    } catch (err) {
+      setManualError(err instanceof Error ? err.message : 'Failed to save the manual entry.');
+    } finally {
+      setManualSaving(false);
+    }
+  }, [companyName, effectiveUserId, fetchExpenses, manualEntry, month, year]);
+
   const companySummary = useMemo(() => {
     if (!isCompanyView) return null;
 
@@ -861,59 +914,6 @@ export default function DashboardSlugPage() {
 
   const monthName = MONTH_NAMES[month] ?? month;
   const hasExpenses = expenses.length > 0;
-
-  const handleManualEntryChange = useCallback(
-    (field: 'date' | 'description' | 'amount' | 'category' | 'originalCategory', value: string) => {
-      setManualEntry((current) => ({ ...current, [field]: value }));
-    },
-    []
-  );
-
-  const handleManualEntrySave = useCallback(async () => {
-    if (!effectiveUserId || !year || !month) return;
-
-    const trimmedDescription = manualEntry.description.trim();
-    const parsedAmount = Number(manualEntry.amount);
-
-    if (!manualEntry.date || !trimmedDescription || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      setManualError('Enter a valid date, description, and positive amount before saving.');
-      return;
-    }
-
-    setManualSaving(true);
-    setManualError(null);
-
-    try {
-      await createExpense(effectiveUserId, companyName, year, month, {
-        id: crypto.randomUUID(),
-        date: new Date(`${manualEntry.date}T12:00:00`),
-        month: `${year}-${month}`,
-        year,
-        companyName,
-        description: trimmedDescription,
-        amount: parsedAmount,
-        originalCategory: manualEntry.originalCategory.trim(),
-        category: manualEntry.category,
-        filename: 'manual-entry',
-        rawData: [],
-        deletedAt: null,
-      });
-
-      setManualEntry({
-        date: toLocalDateInputValue(year, month),
-        description: '',
-        amount: '',
-        category: manualEntry.category,
-        originalCategory: '',
-      });
-      setShowManualEntryForm(false);
-      await fetchExpenses();
-    } catch (err) {
-      setManualError(err instanceof Error ? err.message : 'Failed to save the manual entry.');
-    } finally {
-      setManualSaving(false);
-    }
-  }, [companyName, effectiveUserId, fetchExpenses, manualEntry, month, year]);
 
   return (
     <div className="mx-auto max-w-6xl">
