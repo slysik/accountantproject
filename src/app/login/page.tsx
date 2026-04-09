@@ -4,19 +4,31 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import { FcGoogle } from 'react-icons/fc';
 import { LuUsers } from 'react-icons/lu';
 import PublicFooter from '@/components/PublicFooter';
 import SiteLogo from '@/components/SiteLogo';
 
+type InviteTokenStatus = 'idle' | 'checking' | 'valid' | 'used' | 'expired' | 'invalid';
+type InviteTokenCheckResult = {
+  valid: boolean;
+  member_email: string | null;
+  already_used: boolean;
+};
+
 function LoginForm() {
   const searchParams = useSearchParams();
   const isInvite = searchParams.get('invite') === '1';
   const inviteEmail = searchParams.get('email') ?? '';
+  const inviteToken = searchParams.get('token') ?? '';
 
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>(isInvite ? 'signup' : 'signin');
   const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
+  const [inviteTokenStatus, setInviteTokenStatus] = useState<InviteTokenStatus>(
+    isInvite && inviteToken ? 'checking' : 'idle'
+  );
 
   // If query params change after mount (e.g. hydration), sync once
   useEffect(() => {
@@ -26,6 +38,56 @@ function LoginForm() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!isInvite || !inviteToken) {
+      setInviteTokenStatus('idle');
+      return;
+    }
+
+    let cancelled = false;
+
+    async function validateInviteToken() {
+      setInviteTokenStatus('checking');
+
+      const { data, error } = await supabase
+        .rpc('check_invite_token', { p_token: inviteToken })
+        .single<InviteTokenCheckResult>();
+
+      if (cancelled) return;
+
+      if (error || !data) {
+        setInviteTokenStatus('invalid');
+        return;
+      }
+
+      if (data.member_email) {
+        setEmail(data.member_email);
+      }
+
+      if (data.valid) {
+        setInviteTokenStatus('valid');
+        setMode('signup');
+        return;
+      }
+
+      if (data.already_used) {
+        setInviteTokenStatus('used');
+        setMode('signin');
+        return;
+      }
+
+      setInviteTokenStatus('expired');
+      setMode('signin');
+    }
+
+    void validateInviteToken();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [inviteToken, isInvite]);
+
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -40,6 +102,14 @@ function LoginForm() {
     resendSignupConfirmation,
   } = useAuth();
   const router = useRouter();
+  const inviteEmailLocked = isInvite && !!email && inviteTokenStatus !== 'invalid';
+  const inviteSignUpAllowed =
+    isInvite && (!inviteToken || inviteTokenStatus === 'valid' || inviteTokenStatus === 'checking');
+  const googleDisabled = loading || (isInvite && !!inviteToken && inviteTokenStatus !== 'valid');
+  const submitDisabled =
+    loading ||
+    (mode === 'signup' && isInvite && !!inviteToken && inviteTokenStatus !== 'valid') ||
+    inviteTokenStatus === 'checking';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +220,15 @@ function LoginForm() {
             <div>
               <p className="text-sm font-medium text-text-primary">You&apos;ve been invited to a team</p>
               <p className="mt-0.5 text-xs text-text-muted">
-                Create an account (or sign in) with <strong>{inviteEmail}</strong> to get access.
+                {inviteTokenStatus === 'used'
+                  ? <>This invite link has already been used. Sign in with <strong>{email || inviteEmail}</strong> to access the dashboard.</>
+                  : inviteTokenStatus === 'expired'
+                    ? <>This invite link has expired. Ask the account owner to resend the invitation, or sign in with <strong>{email || inviteEmail}</strong> if you already enrolled.</>
+                    : inviteTokenStatus === 'invalid'
+                      ? 'This invite link is invalid. Please request a new team invitation.'
+                      : inviteTokenStatus === 'checking'
+                        ? 'Checking your invitation link...'
+                        : <>Create an account (or sign in) with <strong>{email || inviteEmail}</strong> to get access.</>}
               </p>
             </div>
           </div>
@@ -172,12 +250,13 @@ function LoginForm() {
             </button>
             <button
               type="button"
-              onClick={() => { setMode('signup'); setError(''); setSuccess(''); }}
+              onClick={() => { if (inviteSignUpAllowed) { setMode('signup'); setError(''); setSuccess(''); } }}
+              disabled={isInvite && !inviteSignUpAllowed}
               className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 mode === 'signup'
                   ? 'bg-bg-secondary text-text-primary shadow-sm'
                   : 'text-text-muted hover:text-text-secondary'
-              }`}
+              } ${isInvite && !inviteSignUpAllowed ? 'cursor-not-allowed opacity-50' : ''}`}
             >
               Sign Up
             </button>
@@ -194,11 +273,11 @@ function LoginForm() {
               id="email"
               type="email"
               value={email}
-              onChange={(e) => { if (!isInvite) setEmail(e.target.value); }}
-              readOnly={isInvite && !!inviteEmail}
+              onChange={(e) => { if (!inviteEmailLocked) setEmail(e.target.value); }}
+              readOnly={inviteEmailLocked}
               placeholder="you@example.com"
               required
-              className={`w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary placeholder-text-muted outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary ${isInvite && inviteEmail ? 'cursor-not-allowed opacity-70' : ''}`}
+              className={`w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary placeholder-text-muted outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary ${inviteEmailLocked ? 'cursor-not-allowed opacity-70' : ''}`}
             />
           </div>
 
@@ -249,10 +328,18 @@ function LoginForm() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={submitDisabled}
             className="mt-1 w-full rounded-lg bg-accent-primary px-4 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:opacity-50"
           >
-            {loading ? 'Please wait...' : mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
+            {inviteTokenStatus === 'checking'
+              ? 'Checking invite...'
+              : loading
+                ? 'Please wait...'
+                : mode === 'signin'
+                  ? 'Sign In'
+                  : mode === 'signup'
+                    ? 'Create Account'
+                    : 'Send Reset Link'}
           </button>
 
           {mode === 'forgot' && (
@@ -277,7 +364,7 @@ function LoginForm() {
         <button
           type="button"
           onClick={handleGoogleSignIn}
-          disabled={loading}
+          disabled={googleDisabled}
           className="flex w-full items-center justify-center gap-2 rounded-lg border border-border-primary bg-bg-tertiary px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-bg-secondary disabled:opacity-50"
         >
           <FcGoogle className="h-5 w-5" />
