@@ -6,7 +6,7 @@ import AppFooter from '@/components/AppFooter';
 import AuthGuard from '@/components/AuthGuard';
 import ExpenseChat from '@/components/ExpenseChat';
 import { useAuth } from '@/lib/auth';
-import { LuUser, LuShield, LuUsers, LuChevronLeft, LuLayoutDashboard } from 'react-icons/lu';
+import { LuUser, LuShield, LuUsers, LuChevronLeft, LuLayoutDashboard, LuTags } from 'react-icons/lu';
 import SiteLogo from '@/components/SiteLogo';
 import { isMasterAdminEmail } from '@/lib/admin';
 
@@ -14,6 +14,7 @@ const BASE_NAV = [
   { href: '/settings/account', icon: LuUser, label: 'Account' },
   { href: '/settings/team', icon: LuUsers, label: 'Team' },
   { href: '/settings/security', icon: LuShield, label: 'Security' },
+  { href: '/settings/categories', icon: LuTags, label: 'Categories' },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {

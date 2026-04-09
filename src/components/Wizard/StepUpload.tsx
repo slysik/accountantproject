@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { LuUpload, LuFlaskConical } from 'react-icons/lu';
 import { parseCSV, categorizeAll, formatCurrency, formatDate } from '@/lib/expense-processor';
+import { buildCategoryMappingLookup, getCategoryMappings } from '@/lib/category-mappings';
+import { useAuth } from '@/lib/auth';
+import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { CategorizedExpense } from '@/types';
 
 interface StepUploadProps {
@@ -10,11 +13,38 @@ interface StepUploadProps {
 }
 
 export default function StepUpload({ onComplete }: StepUploadProps) {
+  const { user } = useAuth();
+  const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<CategorizedExpense[] | null>(null);
+  const [mappingLookup, setMappingLookup] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!effectiveUserId) return;
+    const userId = effectiveUserId;
+
+    let cancelled = false;
+
+    async function loadMappings() {
+      try {
+        const mappings = await getCategoryMappings(userId);
+        if (!cancelled) {
+          setMappingLookup(buildCategoryMappingLookup(mappings));
+        }
+      } catch (err) {
+        console.error('Failed to load category mappings:', err);
+      }
+    }
+
+    void loadMappings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveUserId]);
 
   const processText = useCallback((text: string, filename: string) => {
     setParsing(true);
@@ -24,14 +54,14 @@ export default function StepUpload({ onComplete }: StepUploadProps) {
       if (expenses.length === 0) {
         throw new Error('No valid expense rows found in the CSV file.');
       }
-      const categorized = categorizeAll(expenses);
+      const categorized = categorizeAll(expenses, mappingLookup);
       setPreview(categorized);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to parse CSV file.');
     } finally {
       setParsing(false);
     }
-  }, []);
+  }, [mappingLookup]);
 
   const processFile = useCallback(
     async (file: File) => {

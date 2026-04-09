@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { LuTrash2, LuSettings, LuLayoutDashboard, LuLogOut } from 'react-icons/lu';
+import { LuTrash2, LuSettings, LuLayoutDashboard, LuLogOut, LuTags } from 'react-icons/lu';
 import FolderTree from './FolderTree';
 import { APP_VERSION } from '@/lib/version';
 import { useTheme } from '@/lib/theme';
@@ -115,6 +115,17 @@ export default function Sidebar() {
         >
           <LuSettings className="h-3.5 w-3.5 flex-shrink-0" />
           <span>Settings</span>
+        </Link>
+        <Link
+          href="/settings/categories"
+          className={`flex items-center gap-2.5 rounded-md px-2 py-1.5 text-xs transition-colors ${
+            isActive('/settings/categories')
+              ? 'bg-bg-tertiary text-text-primary'
+              : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+          }`}
+        >
+          <LuTags className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>Categories</span>
         </Link>
 
         <div className="mt-1 px-2">

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { LuUpload, LuFileText, LuCheck, LuX, LuFlaskConical } from 'react-icons/lu';
 import { parseCSV, categorizeAll, formatCurrency, formatDate } from '@/lib/expense-processor';
 import { bulkCreateExpenses } from '@/lib/database';
 import { useAuth } from '@/lib/auth';
+import { buildCategoryMappingLookup, getCategoryMappings } from '@/lib/category-mappings';
+import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { CategorizedExpense } from '@/types';
 
 interface CSVUploaderProps {
@@ -20,6 +22,7 @@ function rewriteSampleDataYear(csvText: string, targetYear: string): string {
 
 export default function CSVUploader({ companyName, year, month: _month, onUploadComplete }: CSVUploaderProps) {
   const { user } = useAuth();
+  const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isDragging, setIsDragging] = useState(false);
@@ -30,6 +33,31 @@ export default function CSVUploader({ companyName, year, month: _month, onUpload
   const [info, setInfo] = useState<string | null>(null);
   const [preview, setPreview] = useState<CategorizedExpense[] | null>(null);
   const [filename, setFilename] = useState<string>('');
+  const [mappingLookup, setMappingLookup] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!effectiveUserId) return;
+    const userId = effectiveUserId;
+
+    let cancelled = false;
+
+    async function loadMappings() {
+      try {
+        const mappings = await getCategoryMappings(userId);
+        if (!cancelled) {
+          setMappingLookup(buildCategoryMappingLookup(mappings));
+        }
+      } catch (err) {
+        console.error('Failed to load category mappings:', err);
+      }
+    }
+
+    void loadMappings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveUserId]);
 
   const processFile = useCallback(async (file: File) => {
     setError(null);
@@ -49,7 +77,7 @@ export default function CSVUploader({ companyName, year, month: _month, onUpload
         throw new Error('No valid expense rows found in the CSV file.');
       }
 
-      const categorized = categorizeAll(expenses);
+      const categorized = categorizeAll(expenses, mappingLookup);
       setPreview(categorized);
       setFilename(file.name);
     } catch (err) {
@@ -57,7 +85,7 @@ export default function CSVUploader({ companyName, year, month: _month, onUpload
     } finally {
       setParsing(false);
     }
-  }, []);
+  }, [mappingLookup]);
 
   const processCSVText = useCallback(async (text: string, name: string) => {
     setError(null);
@@ -72,7 +100,7 @@ export default function CSVUploader({ companyName, year, month: _month, onUpload
         throw new Error('No valid expense rows found in the CSV file.');
       }
 
-      const categorized = categorizeAll(expenses);
+      const categorized = categorizeAll(expenses, mappingLookup);
       setPreview(categorized);
       setFilename(name);
     } catch (err) {
@@ -80,7 +108,7 @@ export default function CSVUploader({ companyName, year, month: _month, onUpload
     } finally {
       setParsing(false);
     }
-  }, []);
+  }, [mappingLookup]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();

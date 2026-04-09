@@ -291,6 +291,15 @@ export function parseDate(dateStr: string): Date | null {
   return null;
 }
 
+function resolveMappedCategory(
+  originalCategory: string | undefined,
+  mappings?: Record<string, string>
+) {
+  const key = (originalCategory ?? '').trim().toLowerCase();
+  if (!key || !mappings) return null;
+  return mappings[key] ?? null;
+}
+
 /** Parse an amount string to a number, handling currency symbols, commas, and parentheses. */
 export function parseAmount(amountStr: string | undefined): number {
   if (!amountStr || amountStr === '') return 0;
@@ -311,11 +320,14 @@ export function parseAmount(amountStr: string | undefined): number {
   return isNaN(num) ? 0 : num;
 }
 
-/** Categorize all expenses using IRS category keyword matching. */
-export function categorizeAll(expenses: Expense[]): CategorizedExpense[] {
+/** Categorize all expenses using saved category mappings first, then IRS keyword matching. */
+export function categorizeAll(
+  expenses: Expense[],
+  mappings?: Record<string, string>
+): CategorizedExpense[] {
   return expenses.map(expense => ({
     ...expense,
-    category: categorizeExpense(expense.description)
+    category: resolveMappedCategory(expense.originalCategory, mappings) ?? categorizeExpense(expense.description)
   }));
 }
 

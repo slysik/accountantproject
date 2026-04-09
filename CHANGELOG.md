@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.2.8 — Invite Activation, Reset Cleanup & Alladin Scope (2026-04-09)
+Invited users can now complete enrollment more reliably: invite emails carry single-use tokens, invite-based signups activate the account immediately, and successful enrollment returns the user to the sign-in page instead of leaving the flow in an uncertain state. Password reset now ends cleanly on the login page with a success message instead of dropping users into the dashboard, and Alladin now includes a selectable company scope so users can choose exactly which company they want to ask about.
+
 ### v2.2.7 — Custom Folders (2026-04-08)
 You can now create custom-named folders in two places. Inside any **year folder**, click **Add Folder** to create a subfolder with any name you choose (e.g. "Tax Documents", "Q1 Audit"). At the **company level**, an **Add Folder** button lets you create folders that sit alongside years — useful for project files, notes, or any records that don't belong to a specific year. Both folder types appear in the sidebar with a trash icon to remove them. The folder page displays the company and folder context with a back button.
 
@@ -68,6 +71,30 @@ Attach receipts (images, PDFs, Office docs) to any expense from a gallery modal 
 
 ### v0.2.0 — Full App Rebuild (2026-03-24)
 Migrated from a vanilla JS proof-of-concept to a full Next.js 14 application backed by Supabase. Added authentication, cloud storage, a 4-step import wizard, and exports to Excel, CSV, and QuickBooks (QBO/OFX).
+
+---
+
+## [2.2.8] — 2026-04-09
+
+### Added
+
+#### Alladin
+- Added a selectable company dropdown in the Alladin chat header
+- Allowed users to ask Alladin questions against `All` companies or a specific company of their choosing
+
+### Changed
+
+#### Team Invite Enrollment
+- Added single-use invite token groundwork for team invitation links
+- Invite emails now include the invite token when sent and when resent
+- Invite-based signups now create an active account immediately through the server-side enrollment path
+- Successful invite enrollment now returns the user to the login page with the account ready for sign-in
+- Added password confirmation during invited account creation
+
+#### Password Reset
+- Updated password reset completion to return users to the login page instead of redirecting to the dashboard
+- Added a login success message after reset so the handoff back into sign-in is clearer
+- Added clearer guidance in the forgot-password view for users who no longer control the email address on file
 
 ---
 
