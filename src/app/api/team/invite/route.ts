@@ -10,9 +10,10 @@ function getSiteUrl() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { memberEmail, ownerEmail } = await req.json() as {
+    const { memberEmail, ownerEmail, inviteToken } = await req.json() as {
       memberEmail?: string;
       ownerEmail?: string;
+      inviteToken?: string;
     };
 
     if (!memberEmail || !ownerEmail) {
@@ -26,7 +27,8 @@ export async function POST(req: NextRequest) {
     }
 
     const siteUrl = getSiteUrl();
-    const loginUrl = `${siteUrl}/login?invite=1&email=${encodeURIComponent(memberEmail.toLowerCase().trim())}`;
+    const tokenParam = inviteToken ? `&token=${encodeURIComponent(inviteToken)}` : '';
+    const loginUrl = `${siteUrl}/login?invite=1&email=${encodeURIComponent(memberEmail.toLowerCase().trim())}${tokenParam}`;
 
     const htmlBody = `
 <!DOCTYPE html>

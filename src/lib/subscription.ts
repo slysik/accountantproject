@@ -193,6 +193,8 @@ export interface AccountMember {
   member_user_id: string | null;
   created_at: string;
   invited_at: string;
+  invite_token: string | null;
+  invite_token_used_at: string | null;
   role: TeamRole;
 }
 
