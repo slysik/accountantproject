@@ -26,6 +26,7 @@ export interface IrsCategory {
 export interface CompanyNode {
   companyName: string;
   years: FolderNode[];
+  rootFolders: SubfolderNode[];
 }
 
 export interface TrashCompanyItem {

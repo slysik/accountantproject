@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { createCompany, createYearFolders, getUserFolders, renameCompany, softDeleteCompany, softDeleteMonth, softDeleteYear } from '@/lib/database';
-import { decodeCompanySlug, encodeCompanySlug } from '@/lib/company';
+import { createCompany, createYearFolders, getUserFolders, renameCompany, softDeleteCompany, softDeleteMonth, softDeleteYear, createCustomerSubfolder, createCompanyRootFolder, deleteCustomerSubfolder } from '@/lib/database';
+import { decodeCompanySlug, encodeCompanySlug, encodeFolderSlug } from '@/lib/company';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { CompanyNode } from '@/types';
 import {
@@ -55,6 +55,16 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
 
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Custom folder (subfolder under year) state
+  const [addingSubfolderKey, setAddingSubfolderKey] = useState<string | null>(null); // "company::year"
+  const [newSubfolderName, setNewSubfolderName] = useState('');
+  const [addingSubfolder, setAddingSubfolder] = useState(false);
+
+  // Root custom folder (under company) state
+  const [addingRootFolderCompany, setAddingRootFolderCompany] = useState<string | null>(null);
+  const [newRootFolderName, setNewRootFolderName] = useState('');
+  const [addingRootFolder, setAddingRootFolder] = useState(false);
 
   const fetchFolders = useCallback(async () => {
     if (!effectiveUserId) return;
@@ -208,6 +218,47 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
       console.error('Failed to delete:', err);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleAddSubfolder = async (companyName: string, year: string) => {
+    if (!effectiveUserId || !newSubfolderName.trim()) return;
+    setAddingSubfolder(true);
+    try {
+      await createCustomerSubfolder(effectiveUserId, companyName, year, newSubfolderName.trim());
+      await fetchFolders();
+      setAddingSubfolderKey(null);
+      setNewSubfolderName('');
+    } catch (err) {
+      console.error('Failed to create subfolder:', err);
+    } finally {
+      setAddingSubfolder(false);
+    }
+  };
+
+  const handleAddRootFolder = async (companyName: string) => {
+    if (!effectiveUserId || !newRootFolderName.trim()) return;
+    setAddingRootFolder(true);
+    try {
+      await createCompanyRootFolder(effectiveUserId, companyName, newRootFolderName.trim());
+      await fetchFolders();
+      setExpandedCompanies((prev) => new Set(prev).add(companyName));
+      setAddingRootFolderCompany(null);
+      setNewRootFolderName('');
+    } catch (err) {
+      console.error('Failed to create root folder:', err);
+    } finally {
+      setAddingRootFolder(false);
+    }
+  };
+
+  const handleDeleteSubfolder = async (companyName: string, year: string, name: string) => {
+    if (!effectiveUserId) return;
+    try {
+      await deleteCustomerSubfolder(effectiveUserId, companyName, year, name);
+      await fetchFolders();
+    } catch (err) {
+      console.error('Failed to delete subfolder:', err);
     }
   };
 
@@ -373,6 +424,66 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
 
             {!collapsed && companyExpanded && (
               <div className="ml-4 mt-1 flex flex-col gap-1.5 border-l border-border-primary/50 pl-3">
+
+                {/* Root custom folders */}
+                {company.rootFolders.map((rf) => (
+                  <div key={rf.id} className="group flex items-center">
+                    <button
+                      onClick={() => router.push(`/dashboard/${encodeCompanySlug(company.companyName)}/folder/${encodeFolderSlug(rf.name)}`)}
+                      className={`flex flex-1 items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-all ${
+                        pathname === `/dashboard/${encodeCompanySlug(company.companyName)}/folder/${encodeFolderSlug(rf.name)}`
+                          ? 'border-accent-primary/30 bg-accent-primary/10 text-accent-primary'
+                          : 'border-transparent text-text-muted hover:border-border-primary/70 hover:bg-bg-tertiary hover:text-text-secondary'
+                      }`}
+                    >
+                      <LuFolder className="h-3.5 w-3.5" />
+                      <span className="flex-1 truncate text-left">{rf.name}</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSubfolder(company.companyName, '__root__', rf.name)}
+                      className="opacity-0 rounded-xl p-1.5 text-text-muted transition-all hover:bg-bg-tertiary hover:text-error group-hover:opacity-100"
+                      title={`Delete ${rf.name}`}
+                    >
+                      <LuTrash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+
+                {/* Add root folder inline */}
+                {addingRootFolderCompany === company.companyName ? (
+                  <div className="flex items-center gap-1 px-2">
+                    <input
+                      type="text"
+                      value={newRootFolderName}
+                      onChange={(e) => setNewRootFolderName(e.target.value)}
+                      placeholder="Folder name"
+                      className="w-full rounded border border-border-primary bg-bg-tertiary px-2 py-1 text-xs text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/40"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleAddRootFolder(company.companyName);
+                        if (e.key === 'Escape') { setAddingRootFolderCompany(null); setNewRootFolderName(''); }
+                      }}
+                      autoFocus
+                      disabled={addingRootFolder}
+                    />
+                    <button onClick={() => handleAddRootFolder(company.companyName)} disabled={addingRootFolder}
+                      className="rounded p-1 text-success transition-colors hover:bg-bg-tertiary disabled:opacity-50">
+                      <LuCheck className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => { setAddingRootFolderCompany(null); setNewRootFolderName(''); }}
+                      className="rounded p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary">
+                      <LuX className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setAddingRootFolderCompany(company.companyName); setNewRootFolderName(''); }}
+                    className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+                  >
+                    <LuPlus className="h-3 w-3" />
+                    Add Folder
+                  </button>
+                )}
+
                 {addingYearCompany === company.companyName ? (
                   <div className="flex items-center gap-1 px-2">
                     <input
@@ -483,6 +594,66 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
 
                       {yearExpanded && (
                         <div className="ml-4 mt-1 flex flex-col gap-1 border-l border-border-primary/40 pl-3">
+
+                          {/* Year-level custom subfolders */}
+                          {folder.subfolders.map((sf) => (
+                            <div key={sf.id} className="group flex items-center">
+                              <button
+                                onClick={() => router.push(`/dashboard/${encodeCompanySlug(company.companyName)}/${folder.year}/subfolder/${encodeFolderSlug(sf.name)}`)}
+                                className={`flex flex-1 items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-all ${
+                                  pathname === `/dashboard/${encodeCompanySlug(company.companyName)}/${folder.year}/subfolder/${encodeFolderSlug(sf.name)}`
+                                    ? 'border-accent-primary/30 bg-accent-primary/10 text-accent-primary'
+                                    : 'border-transparent text-text-muted hover:border-border-primary/70 hover:bg-bg-tertiary hover:text-text-secondary'
+                                }`}
+                              >
+                                <LuFolder className="h-3.5 w-3.5" />
+                                <span className="flex-1 truncate text-left">{sf.name}</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSubfolder(company.companyName, folder.year, sf.name)}
+                                className="opacity-0 rounded-xl p-1.5 text-text-muted transition-all hover:bg-bg-tertiary hover:text-error group-hover:opacity-100"
+                                title={`Delete ${sf.name}`}
+                              >
+                                <LuTrash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+
+                          {/* Add subfolder inline */}
+                          {addingSubfolderKey === `${company.companyName}::${folder.year}` ? (
+                            <div className="flex items-center gap-1 px-2">
+                              <input
+                                type="text"
+                                value={newSubfolderName}
+                                onChange={(e) => setNewSubfolderName(e.target.value)}
+                                placeholder="Folder name"
+                                className="w-full rounded border border-border-primary bg-bg-tertiary px-2 py-1 text-xs text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/40"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleAddSubfolder(company.companyName, folder.year);
+                                  if (e.key === 'Escape') { setAddingSubfolderKey(null); setNewSubfolderName(''); }
+                                }}
+                                autoFocus
+                                disabled={addingSubfolder}
+                              />
+                              <button onClick={() => handleAddSubfolder(company.companyName, folder.year)} disabled={addingSubfolder}
+                                className="rounded p-1 text-success transition-colors hover:bg-bg-tertiary disabled:opacity-50">
+                                <LuCheck className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => { setAddingSubfolderKey(null); setNewSubfolderName(''); }}
+                                className="rounded p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary">
+                                <LuX className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => { setAddingSubfolderKey(`${company.companyName}::${folder.year}`); setNewSubfolderName(''); }}
+                              className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+                            >
+                              <LuPlus className="h-3 w-3" />
+                              Add Folder
+                            </button>
+                          )}
+
                           {folder.months.map((month) => {
                             const isPendingMonthDelete =
                               deleteTarget?.type === 'month' &&

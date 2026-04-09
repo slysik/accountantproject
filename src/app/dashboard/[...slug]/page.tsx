@@ -101,6 +101,7 @@ export default function DashboardSlugPage() {
   const year = slug[1];
   const month = slug[2];
   const subfolderName = slug[3] === 'subfolder' && slug[4] ? decodeFolderSlug(slug[4]) : undefined;
+  const rootFolderName = slug[1] === 'folder' && slug[2] ? decodeFolderSlug(slug[2]) : undefined;
   const companyName = companySlug ? decodeCompanySlug(companySlug) : DEFAULT_COMPANY_NAME;
   const isLegacyYearRoute = slug.length === 1 && isYearSegment(companySlug ?? '');
   const isLegacyMonthRoute = slug.length === 2 && isYearSegment(companySlug ?? '') && isMonthSegment(year ?? '');
@@ -108,6 +109,7 @@ export default function DashboardSlugPage() {
   const isYearView = slug.length === 2 && !isLegacyMonthRoute && isYearSegment(year ?? '');
   const isMonthView = slug.length === 3 && isYearSegment(year ?? '') && isMonthSegment(month ?? '');
   const isSubfolderView = slug.length === 5 && isYearSegment(year ?? '') && slug[3] === 'subfolder' && !!slug[4];
+  const isRootFolderView = slug.length === 3 && slug[1] === 'folder' && !!slug[2];
 
   useEffect(() => {
     if (isLegacyYearRoute) {
@@ -389,6 +391,38 @@ export default function DashboardSlugPage() {
             </section>
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (isRootFolderView && rootFolderName) {
+    return (
+      <div className="mx-auto max-w-5xl">
+        <section className="hero-surface mb-6">
+          <div className="bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.22),_transparent_34%),linear-gradient(135deg,var(--bg-secondary),var(--bg-primary))] px-6 py-7">
+            <p className="section-kicker mb-3">Custom Folder</p>
+            <h1 className="font-display text-4xl font-bold text-text-primary">{rootFolderName}</h1>
+            <p className="mt-3 max-w-2xl text-sm text-text-secondary">
+              A custom folder under <strong>{companyName}</strong>. Use it to organize any records, notes, or supporting documents outside of the year/month structure.
+            </p>
+          </div>
+        </section>
+        <section className="shell-panel p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <LuFolderOpen className="h-4 w-4 text-accent-primary" />
+            <h2 className="text-sm font-semibold text-text-primary">Folder Details</h2>
+          </div>
+          <div className="space-y-3 text-sm text-text-secondary">
+            <p><span className="font-medium text-text-primary">Company:</span> {companyName}</p>
+            <p><span className="font-medium text-text-primary">Folder:</span> {rootFolderName}</p>
+            <button
+              onClick={() => router.push(`/dashboard/${encodeCompanySlug(companyName)}`)}
+              className="inline-flex items-center gap-2 rounded-full bg-accent-primary px-4 py-2 text-xs font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
+            >
+              Back to Company
+            </button>
+          </div>
+        </section>
       </div>
     );
   }

@@ -509,6 +509,40 @@ export async function createCustomerSubfolder(
   if (error) throw error;
 }
 
+/** Creates a custom folder directly under a company (not tied to a year). */
+export async function createCompanyRootFolder(
+  userId: string,
+  companyName: string,
+  name: string
+): Promise<void> {
+  const normalizedName = name.trim();
+  if (!normalizedName) throw new Error('Folder name is required.');
+  const { error } = await supabase
+    .from('customer_subfolders')
+    .upsert(
+      { user_id: userId, company_name: companyName, year: '__root__', name: normalizedName },
+      { onConflict: 'user_id,company_name,year,name' }
+    );
+  if (error) throw error;
+}
+
+/** Deletes a custom subfolder (year-level or root-level). */
+export async function deleteCustomerSubfolder(
+  userId: string,
+  companyName: string,
+  year: string,
+  name: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('customer_subfolders')
+    .delete()
+    .eq('user_id', userId)
+    .eq('company_name', companyName)
+    .eq('year', year)
+    .eq('name', name);
+  if (error) throw error;
+}
+
 /**
  * Fetches all companies, years, and month-level stats.
  */
@@ -614,7 +648,8 @@ export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
           .filter(
             (row) =>
               ((row.company_name as string) ?? DEFAULT_COMPANY_NAME) === companyName &&
-              (row.year as string) === year
+              (row.year as string) === year &&
+              (row.year as string) !== '__root__'
           )
           .map((row) => ({
             id: row.id as string,
@@ -635,7 +670,15 @@ export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
         return { year, months, subfolders };
       });
 
-      return { companyName, years: yearNodes };
+      const rootFolders: SubfolderNode[] = subfolderRowsForActiveCompanies
+        .filter(
+          (row) =>
+            ((row.company_name as string) ?? DEFAULT_COMPANY_NAME) === companyName &&
+            (row.year as string) === '__root__'
+        )
+        .map((row) => ({ id: row.id as string, name: row.name as string }));
+
+      return { companyName, years: yearNodes, rootFolders };
     });
 }
 

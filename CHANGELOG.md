@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.2.7 — Custom Folders (2026-04-08)
+You can now create custom-named folders in two places. Inside any **year folder**, click **Add Folder** to create a subfolder with any name you choose (e.g. "Tax Documents", "Q1 Audit"). At the **company level**, an **Add Folder** button lets you create folders that sit alongside years — useful for project files, notes, or any records that don't belong to a specific year. Both folder types appear in the sidebar with a trash icon to remove them. The folder page displays the company and folder context with a back button.
+
 ### v2.2.6 — Team Roles & Admin Password Change (2026-04-08)
 Team members can now be assigned one of three roles: **Admin** (full access, can manage team), **Contributor** (can add/edit companies and expenses, no team management), or **Viewer** (read-only). The role is set when inviting and can be changed at any time from the Team tab using the inline role selector on each member row. The master admin can now change any user's password directly from the Admin settings page via a "Change Password" button on each account card — requires `SUPABASE_SERVICE_ROLE_KEY` to be added to the server environment (see setup note in the modal).
 
