@@ -194,10 +194,11 @@ function LoginForm() {
               id="email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { if (!isInvite) setEmail(e.target.value); }}
+              readOnly={isInvite && !!inviteEmail}
               placeholder="you@example.com"
               required
-              className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary placeholder-text-muted outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+              className={`w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary placeholder-text-muted outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary ${isInvite && inviteEmail ? 'cursor-not-allowed opacity-70' : ''}`}
             />
           </div>
 

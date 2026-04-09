@@ -10,6 +10,7 @@ import {
   isAccessAllowed,
   findOwnerSubscription,
 } from '@/lib/subscription';
+import { supabase } from '@/lib/supabase';
 
 // Pages accessible even when trial/subscription has expired
 const SUBSCRIPTION_EXEMPT = ['/subscribe', '/settings/security', '/settings/admin', '/mfa/verify', '/mfa/setup'];
@@ -50,8 +51,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         let shouldSeedSampleData = false;
 
         // Team members can inherit access from the account owner without creating
-        // their own subscription row first.
+        // their own subscription row first. Run enrollment first so member_user_id
+        // is set before the expiry check in findOwnerSubscription runs.
         if (!sub && user.email) {
+          try { await supabase.rpc('mark_team_member_enrolled'); } catch { /* ignore */ }
           const ownerSub = await findOwnerSubscription(user.email);
           if (ownerSub && isAccessAllowed(ownerSub)) {
             setSubBlocked(false);
@@ -82,6 +85,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
         // Own subscription expired — check if they're a member of another active account
         if (user.email) {
+          try { await supabase.rpc('mark_team_member_enrolled'); } catch { /* ignore */ }
           const ownerSub = await findOwnerSubscription(user.email);
           if (ownerSub && isAccessAllowed(ownerSub)) {
             setSubBlocked(false);
