@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { LuTrash2, LuSettings, LuLayoutDashboard, LuLogOut, LuTags } from 'react-icons/lu';
+import { LuTrash2, LuSettings, LuLayoutDashboard, LuLogOut, LuTags, LuCircleHelp, LuClipboardList } from 'react-icons/lu';
 import FolderTree from './FolderTree';
 import { APP_VERSION } from '@/lib/version';
 import { useTheme } from '@/lib/theme';
@@ -126,6 +126,28 @@ export default function Sidebar() {
         >
           <LuTags className="h-3.5 w-3.5 flex-shrink-0" />
           <span>Categories</span>
+        </Link>
+        <Link
+          href="/settings/audit"
+          className={`flex items-center gap-2.5 rounded-md px-2 py-1.5 text-xs transition-colors ${
+            isActive('/settings/audit')
+              ? 'bg-bg-tertiary text-text-primary'
+              : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+          }`}
+        >
+          <LuClipboardList className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>Audit</span>
+        </Link>
+        <Link
+          href="/settings/help"
+          className={`flex items-center gap-2.5 rounded-md px-2 py-1.5 text-xs transition-colors ${
+            isActive('/settings/help')
+              ? 'bg-bg-tertiary text-text-primary'
+              : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+          }`}
+        >
+          <LuCircleHelp className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>Help</span>
         </Link>
 
         <div className="mt-1 px-2">

@@ -3,7 +3,7 @@ import { categorizeExpense } from './categories';
 import { getYearMonth } from './date-utils';
 import type { CategoryMappingLookup } from './category-mappings';
 
-interface ColumnMap {
+export interface ImportColumnMap {
   date: number | null;
   description: number | null;
   amount: number | null;
@@ -11,6 +11,12 @@ interface ColumnMap {
   credit: number | null;
   category: number | null;
   useDebitCredit?: boolean;
+}
+
+export interface ParsedImportPreview {
+  headers: string[];
+  rows: string[][];
+  suggestedMapping: ImportColumnMap;
 }
 
 /**
@@ -56,31 +62,50 @@ function splitCSVRows(text: string): string[] {
 
 /** Parse a CSV string into an array of Expense objects. */
 export function parseCSV(csvText: string, filename: string): Expense[] {
+  const preview = parseCSVPreview(csvText);
+  return mapRowsToExpenses(preview.rows, preview.suggestedMapping, preview.headers, filename);
+}
+
+export function parseCSVPreview(csvText: string): ParsedImportPreview {
   const rows = splitCSVRows(csvText.trim());
   if (rows.length < 2) {
     throw new Error('CSV file must have headers and at least one data row');
   }
 
-  // Parse headers
-  const headers = parseCSVLine(rows[0]).map(h => h.toLowerCase().trim());
+  const headers = parseCSVLine(rows[0]).map((header) => header.trim());
+  const normalizedHeaders = headers.map((header) => header.toLowerCase().trim());
+  const suggestedMapping = detectColumns(normalizedHeaders);
+  const dataRows = rows
+    .slice(1)
+    .map((line) => parseCSVLine(line))
+    .filter((values) => values.some((value) => value.trim().length > 0));
 
-  // Find relevant columns (flexible mapping)
-  const columnMap = detectColumns(headers);
-  console.log('Detected columns:', columnMap, 'from headers:', headers);
+  return {
+    headers,
+    rows: dataRows,
+    suggestedMapping,
+  };
+}
 
-  if (columnMap.date === null || (columnMap.amount === null && !columnMap.useDebitCredit)) {
-    throw new Error('CSV must contain Date and Amount columns. Found headers: ' + headers.join(', '));
+export function hasRequiredImportMapping(columnMap: ImportColumnMap): boolean {
+  return columnMap.date !== null && (columnMap.amount !== null || columnMap.useDebitCredit === true);
+}
+
+export function mapRowsToExpenses(
+  rows: string[][],
+  columnMap: ImportColumnMap,
+  headers: string[],
+  filename: string
+): Expense[] {
+  if (!hasRequiredImportMapping(columnMap)) {
+    throw new Error('Please map a Date column and either an Amount column or both Debit/Credit columns.');
   }
 
-  // Parse data rows
+  const normalizedHeaders = headers.map((header) => header.toLowerCase().trim());
   const expenses: Expense[] = [];
-  for (let i = 1; i < rows.length; i++) {
-    const line = rows[i].trim();
-    if (!line) continue;
 
-    const values = parseCSVLine(line);
-    const expense = extractExpense(values, columnMap, headers, filename);
-
+  for (const values of rows) {
+    const expense = extractExpense(values, columnMap, normalizedHeaders, filename);
     if (expense && expense.amount !== 0) {
       expenses.push(expense);
     }
@@ -131,8 +156,8 @@ export function parseCSVLine(line: string): string[] {
 }
 
 /** Detect column positions based on common bank export formats. */
-export function detectColumns(headers: string[]): ColumnMap {
-  const columnMap: ColumnMap = {
+export function detectColumns(headers: string[]): ImportColumnMap {
+  const columnMap: ImportColumnMap = {
     date: null,
     description: null,
     amount: null,
@@ -188,7 +213,7 @@ export function detectColumns(headers: string[]): ColumnMap {
 /** Extract expense data from a parsed CSV row. */
 export function extractExpense(
   values: string[],
-  columnMap: ColumnMap,
+  columnMap: ImportColumnMap,
   _headers: string[],
   filename: string
 ): Expense | null {

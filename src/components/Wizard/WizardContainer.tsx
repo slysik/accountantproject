@@ -1,42 +1,40 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { LuUpload, LuFolderOpen, LuTags, LuDownload } from 'react-icons/lu';
+import { LuUpload, LuListChecks, LuSparkles, LuSave } from 'react-icons/lu';
 import StepUpload from './StepUpload';
-import StepFolders from './StepFolders';
+import StepReview from './StepReview';
 import StepCategorize from './StepCategorize';
-import StepExport from './StepExport';
+import StepCommit from './StepCommit';
 import type { CategorizedExpense } from '@/types';
 
 const STEPS = [
   { label: 'Upload', icon: LuUpload },
-  { label: 'Organize', icon: LuFolderOpen },
-  { label: 'Categorize', icon: LuTags },
-  { label: 'Export', icon: LuDownload },
+  { label: 'Review', icon: LuListChecks },
+  { label: 'AI Map', icon: LuSparkles },
+  { label: 'Commit', icon: LuSave },
 ] as const;
 
 export default function WizardContainer() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [parsedExpenses, setParsedExpenses] = useState<CategorizedExpense[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState('');
-  const [selectedYear, setSelectedYear] = useState('');
+  const [mappedExpenses, setMappedExpenses] = useState<CategorizedExpense[]>([]);
+  const [reviewedExpenses, setReviewedExpenses] = useState<CategorizedExpense[]>([]);
   const [categorizedExpenses, setCategorizedExpenses] = useState<
     CategorizedExpense[]
   >([]);
 
   const handleUploadComplete = useCallback(
     (expenses: CategorizedExpense[]) => {
-      setParsedExpenses(expenses);
-      setCategorizedExpenses(expenses);
+      setMappedExpenses(expenses);
+      setReviewedExpenses(expenses);
       setCurrentStep(1);
     },
     []
   );
 
-  const handleFoldersComplete = useCallback(
-    (companyName: string, year: string, _assigned: Map<string, CategorizedExpense[]>) => {
-      setSelectedCompany(companyName);
-      setSelectedYear(year);
+  const handleReviewComplete = useCallback(
+    (expenses: CategorizedExpense[]) => {
+      setReviewedExpenses(expenses);
       setCurrentStep(2);
     },
     []
@@ -123,19 +121,19 @@ export default function WizardContainer() {
           <StepUpload onComplete={handleUploadComplete} />
         )}
         {currentStep === 1 && (
-          <StepFolders
-            expenses={parsedExpenses}
-            onComplete={handleFoldersComplete}
+          <StepReview
+            expenses={mappedExpenses}
+            onComplete={handleReviewComplete}
           />
         )}
         {currentStep === 2 && (
           <StepCategorize
-            expenses={categorizedExpenses}
+            expenses={reviewedExpenses}
             onComplete={handleCategorizeComplete}
           />
         )}
         {currentStep === 3 && (
-          <StepExport expenses={categorizedExpenses} companyName={selectedCompany} year={selectedYear} />
+          <StepCommit expenses={categorizedExpenses} />
         )}
       </div>
 
@@ -149,7 +147,7 @@ export default function WizardContainer() {
           Back
         </button>
         <span className="text-xs text-text-muted">
-          Step {currentStep + 1} of {STEPS.length}{selectedCompany ? ` · ${selectedCompany}` : ''}
+          Step {currentStep + 1} of {STEPS.length}
         </span>
         {/* Next button only shown as disabled hint; actual progression is via step onComplete */}
         <button

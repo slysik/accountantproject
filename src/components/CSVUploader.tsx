@@ -5,6 +5,7 @@ import { LuUpload, LuFileText, LuCheck, LuX, LuFlaskConical } from 'react-icons/
 import { parseCSV, categorizeAll, formatCurrency, formatDate } from '@/lib/expense-processor';
 import { bulkCreateExpenses } from '@/lib/database';
 import { useAuth } from '@/lib/auth';
+import { createAuditEvent } from '@/lib/audit';
 import { buildCategoryMappingLookup, getCategoryMappings, type CategoryMappingLookup } from '@/lib/category-mappings';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { CategorizedExpense } from '@/types';
@@ -163,8 +164,30 @@ export default function CSVUploader({ companyName, year, month: _month, onUpload
 
     try {
       setSaveProgress(10);
-      const inserted = await bulkCreateExpenses(user.id, companyName, preview);
+      const ownerUserId = effectiveUserId ?? user.id;
+      const inserted = await bulkCreateExpenses(ownerUserId, companyName, preview);
       setSaveProgress(100);
+
+      if (user.email) {
+        try {
+          await createAuditEvent({
+            ownerUserId,
+            actorUserId: user.id,
+            actorEmail: user.email,
+            companyName,
+            eventType: 'import',
+            eventTitle: `Imported ${inserted} transactions into ${companyName}`,
+            details: {
+              submitted_rows: preview.length,
+              inserted_rows: inserted,
+              source_files: filename ? [filename] : [],
+              years: Array.from(new Set(preview.map((expense) => expense.year ?? expense.month.slice(0, 4)))).sort(),
+            },
+          });
+        } catch (auditError) {
+          console.error('Failed to write import audit event:', auditError);
+        }
+      }
 
       if (inserted === 0) {
         setInfo('No new expenses were inserted because every row already exists for this account and year.');
@@ -184,7 +207,7 @@ export default function CSVUploader({ companyName, year, month: _month, onUpload
       setSaving(false);
       setSaveProgress(0);
     }
-  }, [preview, user, companyName, onUploadComplete]);
+  }, [preview, user, companyName, onUploadComplete, effectiveUserId, filename]);
 
   const handleCancel = useCallback(() => {
     setPreview(null);

@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { supabase } from './supabase';
 import type { User } from '@supabase/supabase-js';
+import { createAuditEvent } from './audit';
+import { findOwnerAccountUserId } from './subscription';
 
 const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 const IDLE_WARNING_MS = 4 * 60 * 1000;
@@ -75,6 +77,10 @@ function hasRecentMfaCookie(userId: string) {
   return true;
 }
 
+function getLoginAuditStorageKey(userId: string, accessToken: string) {
+  return `abf-login-audit:${userId}:${accessToken.slice(-12)}`;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,6 +99,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [showIdleWarning]);
 
   useEffect(() => {
+    const recordLoginAudit = async (currentUser: User, accessToken: string) => {
+      if (typeof window === 'undefined') return;
+      const email = currentUser.email?.trim().toLowerCase();
+      if (!email) return;
+
+      const storageKey = getLoginAuditStorageKey(currentUser.id, accessToken);
+      if (window.sessionStorage.getItem(storageKey)) return;
+
+      try {
+        const ownerUserId = await findOwnerAccountUserId(email);
+        const effectiveOwnerUserId = ownerUserId ?? currentUser.id;
+
+        await createAuditEvent({
+          ownerUserId: effectiveOwnerUserId,
+          actorUserId: currentUser.id,
+          actorEmail: email,
+          eventType: 'login',
+          eventTitle:
+            effectiveOwnerUserId === currentUser.id
+              ? 'User signed in'
+              : 'Team member signed in',
+          details: {
+            session_scope: effectiveOwnerUserId === currentUser.id ? 'owner' : 'team-member',
+          },
+        });
+
+        window.sessionStorage.setItem(storageKey, '1');
+      } catch (error) {
+        console.error('Failed to record login audit event:', error);
+      }
+    };
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
       await refreshMFAState(session?.user ?? null);
@@ -106,6 +144,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void refreshMFAState(session?.user ?? null).finally(() => {
         setLoading(false);
       });
+      if (event === 'SIGNED_IN' && session?.user && session.access_token) {
+        void recordLoginAudit(session.user, session.access_token);
+      }
       // Auto-mark team member enrollment on first sign-in
       if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
         void (async () => {

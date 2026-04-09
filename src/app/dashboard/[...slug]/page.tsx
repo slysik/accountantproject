@@ -33,6 +33,7 @@ import MonthlyChart from '@/components/MonthlyChart';
 import SummaryCards from '@/components/SummaryCards';
 import { SkeletonCard, SkeletonSection } from '@/components/Skeleton';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
+import { getCategoryName } from '@/lib/categories';
 import type { CategorizedExpense, MonthNode, Receipt, SubfolderNode } from '@/types';
 
 const MONTH_NAMES: Record<string, string> = {
@@ -90,6 +91,7 @@ export default function DashboardSlugPage() {
   const [years, setYears] = useState<string[]>([]);
   const [months, setMonths] = useState<MonthNode[]>([]);
   const [subfolders, setSubfolders] = useState<SubfolderNode[]>([]);
+  const [companyExpenses, setCompanyExpenses] = useState<CategorizedExpense[]>([]);
   const [yearExpenses, setYearExpenses] = useState<CategorizedExpense[]>([]);
   const [expenses, setExpenses] = useState<CategorizedExpense[]>([]);
   const [receiptsByExpenseId, setReceiptsByExpenseId] = useState<Record<string, Receipt[]>>({});
@@ -122,10 +124,13 @@ export default function DashboardSlugPage() {
   useEffect(() => {
     if (!effectiveUserId || !isCompanyView) return;
     setLoading(true);
-    getUserFolders(effectiveUserId)
-      .then((companies) => {
+    Promise.all([getUserFolders(effectiveUserId), getAllExpenses(effectiveUserId)])
+      .then(([companies, allExpenses]) => {
         const company = companies.find((item) => item.companyName === companyName);
         setYears(company?.years.map((folder) => folder.year) ?? []);
+        setCompanyExpenses(
+          allExpenses.filter((expense) => expense.companyName === companyName)
+        );
       })
       .catch((err) => console.error('Failed to load company data:', err))
       .finally(() => setLoading(false));
@@ -302,6 +307,31 @@ export default function DashboardSlugPage() {
     [subfolderName, subfolders]
   );
 
+  const companySummary = useMemo(() => {
+    if (!isCompanyView) return null;
+
+    const total = companyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const transactionCount = companyExpenses.length;
+    const activeYears = new Set(companyExpenses.map((expense) => expense.year ?? expense.month.slice(0, 4))).size;
+    const activeMonths = new Set(companyExpenses.map((expense) => expense.month)).size;
+
+    const topCategoryMap = new Map<string, number>();
+    for (const expense of companyExpenses) {
+      topCategoryMap.set(expense.category, (topCategoryMap.get(expense.category) ?? 0) + expense.amount);
+    }
+
+    const topCategory = Array.from(topCategoryMap.entries())
+      .sort((a, b) => b[1] - a[1])[0] ?? null;
+
+    return {
+      total,
+      transactionCount,
+      activeYears,
+      activeMonths,
+      topCategory,
+    };
+  }, [companyExpenses, isCompanyView]);
+
   if (isLegacyYearRoute || isLegacyMonthRoute) return null;
 
   if (isCompanyView) {
@@ -311,7 +341,9 @@ export default function DashboardSlugPage() {
           <div className="bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.22),_transparent_34%),linear-gradient(135deg,var(--bg-secondary),var(--bg-primary))] px-6 py-7">
             <p className="section-kicker mb-3">Company Workspace</p>
             <h1 className="font-display text-4xl font-bold text-text-primary">{companyName}</h1>
-            <p className="mt-3 max-w-2xl text-sm text-text-secondary">Choose a year folder to review trends, imports, and exported reports for this company.</p>
+            <p className="mt-3 max-w-2xl text-sm text-text-secondary">
+              Company-level dashboard with spend totals, category visibility, month-to-month movement, and quick access into each year workspace.
+            </p>
           </div>
         </section>
         {loading ? (
@@ -321,20 +353,111 @@ export default function DashboardSlugPage() {
         ) : years.length === 0 ? (
           <p className="text-sm text-text-muted">Use the sidebar to add a year folder for this company.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {years.map((companyYear) => (
-              <button
-                key={companyYear}
-                onClick={() => router.push(`/dashboard/${encodeCompanySlug(companyName)}/${companyYear}`)}
-                className="shell-panel p-5 text-left transition-all hover:-translate-y-0.5 hover:border-accent-primary/40"
-              >
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-accent-primary/12 ring-1 ring-accent-primary/18">
-                  <LuFolderOpen className="h-5 w-5 text-accent-primary" />
+          <div className="space-y-6">
+            {companyExpenses.length > 0 && (
+              <>
+                <section className="grid gap-3 sm:grid-cols-4">
+                  <div className="rounded-2xl border border-border-primary/70 bg-bg-secondary p-4">
+                    <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-text-muted">
+                      <LuTrendingUp className="h-3.5 w-3.5 text-accent-primary" />
+                      Company Spend
+                    </div>
+                    <p className="text-2xl font-bold text-text-primary">
+                      {formatCurrency(companySummary?.total ?? 0)}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border-primary/70 bg-bg-secondary p-4">
+                    <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-text-muted">
+                      <LuReceipt className="h-3.5 w-3.5 text-accent-primary" />
+                      Transactions
+                    </div>
+                    <p className="text-2xl font-bold text-text-primary">
+                      {(companySummary?.transactionCount ?? 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border-primary/70 bg-bg-secondary p-4">
+                    <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-text-muted">
+                      <LuCalendar className="h-3.5 w-3.5 text-accent-primary" />
+                      Active Years
+                    </div>
+                    <p className="text-2xl font-bold text-text-primary">{companySummary?.activeYears ?? 0}</p>
+                    <p className="mt-1 text-xs text-text-muted">
+                      {companySummary?.activeMonths ?? 0} active month{companySummary?.activeMonths === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border-primary/70 bg-bg-secondary p-4">
+                    <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-text-muted">
+                      <LuChartPie className="h-3.5 w-3.5 text-accent-primary" />
+                      Top Category
+                    </div>
+                    <p className="text-base font-bold text-text-primary">
+                      {companySummary?.topCategory ? getCategoryName(companySummary.topCategory[0]) : 'No data yet'}
+                    </p>
+                  </div>
+                </section>
+
+                <div className="grid gap-6 xl:grid-cols-2">
+                  <DashboardPanel title="Company Snapshot" icon={<LuInbox className="h-4 w-4" />}>
+                    <SummaryCards expenses={companyExpenses} />
+                  </DashboardPanel>
+
+                  <DashboardPanel title="Spend Trend" icon={<LuChartLine className="h-4 w-4" />}>
+                    <MonthlyChart expenses={companyExpenses} />
+                  </DashboardPanel>
+
+                  <DashboardPanel title="Expense by Category" icon={<LuChartPie className="h-4 w-4" />}>
+                    <CategoryBreakdown expenses={companyExpenses} />
+                  </DashboardPanel>
+
+                  <DashboardPanel title="Year Workspaces" icon={<LuFolderOpen className="h-4 w-4" />}>
+                    <div className="grid grid-cols-2 gap-3">
+                      {years.map((companyYear) => (
+                        <button
+                          key={companyYear}
+                          onClick={() => router.push(`/dashboard/${encodeCompanySlug(companyName)}/${companyYear}`)}
+                          className="rounded-xl border border-border-primary bg-bg-tertiary px-4 py-4 text-left transition-all hover:-translate-y-0.5 hover:border-accent-primary/40"
+                        >
+                          <div className="font-display text-xl font-bold text-text-primary">{companyYear}</div>
+                          <div className="mt-1 text-xs text-text-muted">Open year workspace</div>
+                        </button>
+                      ))}
+                    </div>
+                  </DashboardPanel>
                 </div>
-                <div className="font-display text-2xl font-bold text-text-primary">{companyYear}</div>
-                <div className="mt-1 text-xs text-text-muted">Open year workspace</div>
-              </button>
-            ))}
+              </>
+            )}
+
+            {companyExpenses.length === 0 && (
+              <section className="rounded-2xl border border-border-primary bg-bg-secondary px-6 py-16 text-center">
+                <div className="mx-auto max-w-sm">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-bg-tertiary">
+                    <LuFolderOpen className="h-6 w-6 text-text-muted" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-text-primary">No company data yet</h2>
+                  <p className="mt-2 text-sm text-text-muted">
+                    Use the year folders below to start importing transactions and building the company dashboard.
+                  </p>
+                </div>
+              </section>
+            )}
+
+            {years.length > 0 && companyExpenses.length === 0 && (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                {years.map((companyYear) => (
+                  <button
+                    key={companyYear}
+                    onClick={() => router.push(`/dashboard/${encodeCompanySlug(companyName)}/${companyYear}`)}
+                    className="shell-panel p-5 text-left transition-all hover:-translate-y-0.5 hover:border-accent-primary/40"
+                  >
+                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-accent-primary/12 ring-1 ring-accent-primary/18">
+                      <LuFolderOpen className="h-5 w-5 text-accent-primary" />
+                    </div>
+                    <div className="font-display text-2xl font-bold text-text-primary">{companyYear}</div>
+                    <div className="mt-1 text-xs text-text-muted">Open year workspace</div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

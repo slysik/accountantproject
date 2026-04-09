@@ -202,7 +202,7 @@ export default function ExpenseChat() {
       // Greeting on first open
       setMessages([{
         role: 'assistant',
-        content: `Hi, I'm Alladin. I can answer questions about your expenses in ${scopeLabel}. What would you like to know?`,
+        content: `Hi, I'm Alladin AI. I can answer questions about your expenses in ${scopeLabel}. What would you like to know?`,
       }]);
     }
   }, [open, messages.length, scopeLabel]);
@@ -317,12 +317,16 @@ export default function ExpenseChat() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-4 right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-accent-primary text-bg-primary shadow-[0_18px_45px_rgba(0,0,0,0.28)] transition-all hover:scale-105 hover:bg-accent-dark md:bottom-6 md:right-6"
-          title="Open Alladin"
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-accent-primary px-4 py-3 text-bg-primary shadow-[0_18px_45px_rgba(0,0,0,0.28)] transition-all hover:scale-105 hover:bg-accent-dark md:bottom-6 md:right-6"
+          title="Open Alladin AI"
         >
           <div className="relative flex items-center justify-center">
             <AlladinMark className="h-7 w-7" />
             <LuSparkles className="absolute -right-2 -top-2 h-3.5 w-3.5" />
+          </div>
+          <div className="text-left leading-tight">
+            <p className="text-xs font-semibold">Alladin AI</p>
+            <p className="text-[10px] opacity-90">Assistant</p>
           </div>
         </button>
       )}
@@ -341,9 +345,9 @@ export default function ExpenseChat() {
                 <LuSparkles className="absolute -right-1 -top-1 h-3 w-3 text-accent-primary" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-text-primary">Alladin</p>
+                <p className="text-xs font-semibold text-text-primary">Alladin AI</p>
                 <p className="text-[10px] text-text-muted">
-                  Genie for {scopeLabel}
+                  AI Assistant for {scopeLabel}
                 </p>
               </div>
             </div>

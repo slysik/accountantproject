@@ -9,6 +9,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.2.10 — Guided Imports, Audit Trail & Portal Help (2026-04-09)
+Imports are now more guided and easier to trust. Users can upload a CSV, map columns using sample rows, delete unwanted entries before import, watch Alladin AI Assistant categorize the file with a short progress step, and then explicitly confirm whether those transactions should be committed to a company. The portal also now includes a Help area for menus, dashboards, and workflows, plus a new Audit area where account owners and team admins can track sign-ins and imports by company. Company links now open into a company-level dashboard view, and the public site and assistant launcher have been updated to call the assistant **Alladin AI Assistant**.
+
+### v2.2.9 — Team Access Scoping & Shared Account Reliability (2026-04-09)
+Team accounts are now more flexible and reliable. Account owners or team admins can reset passwords for enrolled team members directly from Team Settings, shared members now resolve into the owner account workspace more consistently even if they also have their own trial, and the latest update adds the groundwork for limiting a member to only selected companies instead of giving account-wide access. The top toolbar was also refreshed with larger, easier-to-read controls and a more readable font stack.
+
 ### v2.2.8 — Invite Activation, Reset Cleanup & Alladin Scope (2026-04-09)
 Invited users can now complete enrollment more reliably: invite emails carry single-use tokens, invite-based signups activate the account immediately, and successful enrollment returns the user to the sign-in page instead of leaving the flow in an uncertain state. Password reset now ends cleanly on the login page with a success message instead of dropping users into the dashboard, and Alladin now includes a selectable company scope so users can choose exactly which company they want to ask about.
 
@@ -73,6 +79,64 @@ Attach receipts (images, PDFs, Office docs) to any expense from a gallery modal 
 Migrated from a vanilla JS proof-of-concept to a full Next.js 14 application backed by Supabase. Added authentication, cloud storage, a 4-step import wizard, and exports to Excel, CSV, and QuickBooks (QBO/OFX).
 
 ---
+
+## [2.2.10] — 2026-04-09
+
+### Added
+
+#### Guided Import Flow
+- Rebuilt the import wizard into a staged workflow with field mapping, row review, AI category mapping, and final company commit confirmation
+- Added sample-data-first column mapping so users can preview raw rows and map CSV fields before any expenses are created
+- Added a row review step with inline delete support before categorization
+- Added an Alladin AI Assistant progress step with a short timed categorization experience before final review
+- Added a final commit step where users choose the destination company and explicitly confirm saving the entries
+
+#### Audit Area
+- Added a new `Audit` section inside Settings for account owners and team admins
+- Added account audit event storage through migration `019_add_account_audit_events.sql`
+- Added audit logging for successful sign-ins and imports, including actor email, company, row counts, and file details
+
+#### Help Area
+- Added a portal Help area covering dashboards, imports, categories, team tools, exports, security, and Alladin AI Assistant
+
+### Changed
+
+#### Company Experience
+- Updated company clicks to open a company-specific dashboard with company-only metrics, trends, and category breakdowns
+
+#### Branding
+- Updated the public homepage and in-app assistant launcher/header to call the assistant `Alladin AI Assistant`
+
+### Notes
+- Audit history requires running migration `019_add_account_audit_events.sql` in Supabase before login and import events will appear
+- The new guided importer is CSV-first; PDFs should still be attached afterward as supporting documentation
+
+## [2.2.9] — 2026-04-09
+
+### Added
+
+#### Team Access Control
+- Added account-owner and team-admin password reset for enrolled team members from Team Settings
+- Added a protected `/api/team/change-password` route for account-level password changes using the server-side Supabase admin API
+- Added company-scoped team access groundwork with migration `018_add_company_scoped_team_access.sql`
+- Added support for per-member company access selection so a team member can be limited to selected companies instead of the full account
+
+### Fixed
+
+#### Shared Account Access
+- Fixed shared member account resolution so enrolled members enter the owner account workspace more reliably
+- Prevented members with their own active trial or subscription from incorrectly falling back to their personal workspace when they should see the shared account's companies
+
+### Changed
+
+#### Top Toolbar
+- Increased the size of top toolbar controls for easier reading and clicking
+- Enlarged breadcrumb text, the Import Wizard button, the theme toggle, and the signed-in email display
+- Switched the app typography to a cleaner, easier-to-read font stack
+
+### Notes
+- Team and admin password reset actions require `SUPABASE_SERVICE_ROLE_KEY` on the live server
+- Selective company access also requires running migration `018_add_company_scoped_team_access.sql` in Supabase before it will work in production
 
 ## [2.2.8] — 2026-04-09
 

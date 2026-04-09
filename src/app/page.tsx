@@ -44,7 +44,7 @@ const capabilities = [
   },
   {
     icon: LuBot,
-    title: 'Alladin assistance',
+    title: 'Alladin AI Assistant',
     description: 'Ask the built-in AI bot for summaries, patterns, and data explanations across your accounting records.',
   },
   {
@@ -81,7 +81,7 @@ const featureBands = [
   },
   {
     title: 'Built to answer questions quickly',
-    body: 'Alladin stays available inside the product, and exported answers can be saved to files or Excel when the response is tabular.',
+    body: 'Alladin AI Assistant stays available inside the product, and exported answers can be saved to files or Excel when the response is tabular.',
     points: ['Persistent in-app chatbot', 'Download assistant output to file', 'Excel export for table-style answers'],
   },
   {
