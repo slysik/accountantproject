@@ -5,6 +5,9 @@ import { usePathname } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import { LuChevronDown, LuDownload, LuFileSpreadsheet, LuLoader, LuSend, LuSparkles, LuTriangle } from 'react-icons/lu';
 import { decodeCompanySlug, isMonthSegment, isYearSegment } from '@/lib/company';
+import { useAuth } from '@/lib/auth';
+import { getUserFolders } from '@/lib/database';
+import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 
 function AlladinMark({ className = 'h-5 w-5' }: { className?: string }) {
   return (
@@ -136,7 +139,26 @@ function getRouteContext(pathname: string) {
 
 export default function ExpenseChat() {
   const pathname = usePathname();
-  const { companyName, year, month, scopeLabel, scopeKey } = getRouteContext(pathname);
+  const routeContext = getRouteContext(pathname);
+  const { user } = useAuth();
+  const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
+  const [companyOptions, setCompanyOptions] = useState<string[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<string>(routeContext.companyName ?? '__all__');
+  const selectedCompanyName = selectedCompany === '__all__' ? undefined : selectedCompany;
+  const companyName = selectedCompanyName ?? routeContext.companyName;
+  const year = selectedCompanyName && selectedCompanyName !== routeContext.companyName ? undefined : routeContext.year;
+  const month =
+    selectedCompanyName && selectedCompanyName !== routeContext.companyName
+      ? undefined
+      : routeContext.month;
+  const scopeLabel = month && year
+    ? `${companyName} • ${year}-${month}`
+    : year
+      ? `${companyName} • ${year}`
+      : companyName
+        ? companyName
+        : 'All expenses';
+  const scopeKey = `${companyName ?? 'all'}-${year ?? 'all'}-${month ?? 'all'}`;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -146,6 +168,34 @@ export default function ExpenseChat() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastScopeKeyRef = useRef(scopeKey);
+
+  useEffect(() => {
+    setSelectedCompany(routeContext.companyName ?? '__all__');
+  }, [routeContext.scopeKey, routeContext.companyName]);
+
+  useEffect(() => {
+    if (!effectiveUserId) return;
+    const userId = effectiveUserId;
+
+    let cancelled = false;
+
+    async function loadCompanies() {
+      try {
+        const folders = await getUserFolders(userId);
+        if (!cancelled) {
+          setCompanyOptions(folders.map((company) => company.companyName));
+        }
+      } catch (err) {
+        console.error('Failed to load chat company options:', err);
+      }
+    }
+
+    void loadCompanies();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveUserId]);
 
   useEffect(() => {
     if (open && messages.length === 0) {
@@ -297,12 +347,29 @@ export default function ExpenseChat() {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              className="rounded p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
-            >
-              <LuChevronDown className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-1 rounded-md border border-border-primary bg-bg-tertiary px-2 py-1 text-[10px] text-text-muted">
+                <span>Company</span>
+                <select
+                  value={selectedCompany}
+                  onChange={(e) => setSelectedCompany(e.target.value)}
+                  className="max-w-[112px] bg-transparent text-[10px] font-medium text-text-primary outline-none"
+                >
+                  <option value="__all__">All</option>
+                  {companyOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                onClick={() => setOpen(false)}
+                className="rounded p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+              >
+                <LuChevronDown className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {/* Messages */}

@@ -361,6 +361,22 @@ function LoginForm() {
           {error && <p className="text-sm text-error">{error}</p>}
           {success && <p className="text-sm text-success">{success}</p>}
 
+          {mode === 'forgot' && (
+            <div className="rounded-lg border border-border-primary bg-bg-tertiary px-4 py-3">
+              <p className="text-xs font-medium text-text-primary">Can&apos;t access the email on file?</p>
+              <p className="mt-1 text-xs text-text-muted">
+                For security, password recovery links are still sent to the account email address.
+                If you no longer have access to that inbox, contact your administrator for a direct password reset.
+              </p>
+              <Link
+                href="/contact"
+                className="mt-2 inline-flex text-xs font-medium text-accent-primary transition-colors hover:text-accent-dark"
+              >
+                Contact support
+              </Link>
+            </div>
+          )}
+
           {pendingConfirmationEmail && mode === 'signin' && (
             <button
               type="button"
