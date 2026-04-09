@@ -38,12 +38,12 @@ export default function Sidebar() {
       style={{ borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
     >
       <div
-        className="flex h-32 flex-shrink-0 items-center justify-center border-b px-4 py-4"
+        className="flex h-16 flex-shrink-0 items-center justify-center border-b px-4 py-2"
         style={{ borderColor: 'var(--border-primary)' }}
       >
-        <div className="flex w-full max-w-[176px] flex-col items-center gap-3 text-center">
+        <div className="flex w-full max-w-[208px] items-center justify-center gap-3 text-left">
           <div
-            className="flex h-16 w-16 items-center justify-center rounded-2xl border p-2"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border p-1.5"
             style={{
               borderColor: 'color-mix(in srgb, var(--accent-primary) 26%, var(--border-primary))',
               backgroundColor: 'color-mix(in srgb, var(--accent-primary) 10%, var(--bg-primary))',
@@ -55,7 +55,7 @@ export default function Sidebar() {
               alt="Accountant's Best Friend"
               width={800}
               height={800}
-              className="h-12 w-12 rounded-xl object-contain flex-shrink-0 opacity-95"
+              className="h-7 w-7 rounded-lg object-contain opacity-95"
               style={{
                 filter: theme === 'dark'
                   ? 'saturate(0.9) contrast(1.02)'
@@ -64,8 +64,8 @@ export default function Sidebar() {
               unoptimized
             />
           </div>
-          <div className="space-y-1">
-            <p className="text-sm font-semibold leading-none text-text-primary">Accountant&apos;s Best Friend</p>
+          <div className="min-w-0 space-y-0.5">
+            <p className="truncate text-sm font-semibold leading-none text-text-primary">Accountant&apos;s Best Friend</p>
             <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-text-muted">ABF</p>
           </div>
         </div>
