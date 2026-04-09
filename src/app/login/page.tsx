@@ -23,6 +23,7 @@ function LoginForm() {
   const inviteEmail = searchParams.get('email') ?? '';
   const inviteToken = searchParams.get('token') ?? '';
   const inviteEnrolled = searchParams.get('enrolled') === '1';
+  const passwordResetComplete = searchParams.get('reset') === '1';
 
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>(isInvite ? 'signup' : 'signin');
   const [email, setEmail] = useState(inviteEmail);
@@ -47,6 +48,13 @@ function LoginForm() {
       setSuccess('Account created and activated. Sign in with your email and password to continue.');
     }
   }, [inviteEnrolled]);
+
+  useEffect(() => {
+    if (passwordResetComplete) {
+      setMode('signin');
+      setSuccess('Password updated successfully. Sign in with your new password.');
+    }
+  }, [passwordResetComplete]);
 
   useEffect(() => {
     if (!isInvite || !inviteToken) {

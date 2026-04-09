@@ -89,8 +89,9 @@ export default function ResetPasswordPage() {
     setLoading(true);
     try {
       await updatePassword(password);
+      await supabase.auth.signOut({ scope: 'local' });
       setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 2000);
+      setTimeout(() => router.push('/login?reset=1'), 1600);
     } catch (err: unknown) {
       const e = err as { message?: string };
       setError(e.message ?? 'Failed to update password.');
@@ -142,7 +143,7 @@ export default function ResetPasswordPage() {
               <LuCheck className="h-6 w-6 text-success" />
             </div>
             <p className="text-sm font-medium text-text-primary">Password updated!</p>
-            <p className="text-xs text-text-muted">Redirecting you to the dashboard...</p>
+            <p className="text-xs text-text-muted">Redirecting you to sign in...</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
