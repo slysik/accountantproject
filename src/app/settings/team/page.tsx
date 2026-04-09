@@ -156,7 +156,11 @@ export default function TeamSettingsPage() {
       await fetch('/api/team/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberEmail: member.member_email, ownerEmail: user?.email ?? '' }),
+        body: JSON.stringify({
+          memberEmail: member.member_email,
+          ownerEmail: user?.email ?? '',
+          inviteToken: member.invite_token,
+        }),
       });
       setSuccess(`Invitation resent to ${member.member_email}.`);
       await refresh();

@@ -246,7 +246,11 @@ export async function addAccountMember(
     await fetch('/api/team/invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ memberEmail: email.toLowerCase().trim(), ownerEmail: ownerEmail ?? '' }),
+      body: JSON.stringify({
+        memberEmail: email.toLowerCase().trim(),
+        ownerEmail: ownerEmail ?? '',
+        inviteToken: (data as AccountMember).invite_token,
+      }),
     });
   } catch {
     // ignore email errors
