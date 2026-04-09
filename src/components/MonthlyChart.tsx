@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { formatCurrency } from '@/lib/expense-processor';
 import type { CategorizedExpense } from '@/types';
 
@@ -11,6 +11,8 @@ interface MonthlyChartProps {
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function MonthlyChart({ expenses }: MonthlyChartProps) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   const monthlyData = useMemo(() => {
     if (expenses.length === 0) return [];
 
@@ -64,6 +66,8 @@ export default function MonthlyChart({ expenses }: MonthlyChartProps) {
     return { x, y, ...d };
   });
 
+  const hoveredPoint = hoveredIndex !== null ? points[hoveredIndex] : null;
+
   // SVG line path
   const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 
@@ -115,12 +119,70 @@ export default function MonthlyChart({ expenses }: MonthlyChartProps) {
         {/* Line */}
         <path d={linePath} fill="none" stroke="url(#chartStroke)" strokeWidth={3} strokeLinejoin="round" strokeLinecap="round" />
 
+        {hoveredPoint ? (
+          <g pointerEvents="none">
+            <line
+              x1={hoveredPoint.x}
+              y1={paddingTop}
+              x2={hoveredPoint.x}
+              y2={paddingTop + chartHeight}
+              stroke="var(--accent-primary)"
+              strokeOpacity={0.2}
+              strokeWidth={1}
+              strokeDasharray="4 4"
+            />
+            <g transform={`translate(${Math.min(Math.max(hoveredPoint.x - 58, paddingLeft), width - paddingRight - 116)}, ${Math.max(hoveredPoint.y - 48, paddingTop + 4)})`}>
+              <rect
+                x={0}
+                y={0}
+                width={116}
+                height={40}
+                rx={10}
+                fill="var(--bg-secondary)"
+                stroke="var(--border-primary)"
+              />
+              <text
+                x={58}
+                y={16}
+                textAnchor="middle"
+                fill="var(--text-muted)"
+                fontSize={10}
+                fontFamily="var(--font-sans), sans-serif"
+              >
+                {hoveredPoint.month}
+              </text>
+              <text
+                x={58}
+                y={29}
+                textAnchor="middle"
+                fill="var(--text-primary)"
+                fontSize={12}
+                fontWeight="600"
+                fontFamily="var(--font-sans), sans-serif"
+              >
+                {formatCurrency(hoveredPoint.total)}
+              </text>
+            </g>
+          </g>
+        ) : null}
+
         {/* Data points and X-axis labels */}
         {points.map((p, i) => (
-          <g key={i}>
+          <g
+            key={i}
+            onMouseEnter={() => setHoveredIndex(i)}
+            onMouseLeave={() => setHoveredIndex(null)}
+          >
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={13}
+              fill="transparent"
+            />
             {/* Dot */}
             <circle cx={p.x} cy={p.y} r={5} fill="var(--bg-secondary)" stroke="var(--accent-primary)" strokeWidth={2.5} />
             <circle cx={p.x} cy={p.y} r={2} fill="var(--accent-primary)" />
+            <title>{`${p.month}: ${formatCurrency(p.total)}`}</title>
             {/* X label */}
             <text
               x={p.x}
