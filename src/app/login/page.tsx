@@ -1,17 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { FcGoogle } from 'react-icons/fc';
+import { LuUsers } from 'react-icons/lu';
 import PublicFooter from '@/components/PublicFooter';
 import SiteLogo from '@/components/SiteLogo';
 
-export default function LoginPage() {
-  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
-  const [email, setEmail] = useState('');
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const isInvite = searchParams.get('invite') === '1';
+  const inviteEmail = searchParams.get('email') ?? '';
+
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>(isInvite ? 'signup' : 'signin');
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
+
+  // If query params change after mount (e.g. hydration), sync once
+  useEffect(() => {
+    if (isInvite && inviteEmail) {
+      setEmail(inviteEmail);
+      setMode('signup');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -46,10 +60,14 @@ export default function LoginPage() {
 
         if (result.sessionCreated) {
           setPendingConfirmationEmail('');
-          router.push('/mfa/setup');
+          router.push(isInvite ? '/dashboard' : '/mfa/setup');
         } else {
           setPendingConfirmationEmail(email);
-          setSuccess('Account created. Check your email to confirm your address, then sign in to finish two-factor setup.');
+          setSuccess(
+            isInvite
+              ? 'Account created! Check your email to confirm your address, then sign back in to access the dashboard.'
+              : 'Account created. Check your email to confirm your address, then sign in to finish two-factor setup.'
+          );
           setMode('signin');
           setPassword('');
         }
@@ -124,6 +142,19 @@ export default function LoginPage() {
               : 'Create a new account'}
           </p>
         </div>
+
+        {/* Invite banner */}
+        {isInvite && (
+          <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-accent-primary/30 bg-accent-primary/10 px-4 py-3">
+            <LuUsers className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent-primary" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">You&apos;ve been invited to a team</p>
+              <p className="mt-0.5 text-xs text-text-muted">
+                Create an account (or sign in) with <strong>{inviteEmail}</strong> to get access.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Mode Toggle — hidden on forgot password screen */}
         {mode !== 'forgot' && (
@@ -256,5 +287,13 @@ export default function LoginPage() {
 
       <PublicFooter />
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

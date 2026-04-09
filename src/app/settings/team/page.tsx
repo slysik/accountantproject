@@ -13,7 +13,7 @@ import {
   type Subscription,
 } from '@/lib/subscription';
 
-const INVITE_EXPIRY_MS = 24 * 60 * 60 * 1000;
+const INVITE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
 function enrollmentStatus(m: AccountMember): 'enrolled' | 'pending' | 'expired' {
   if (m.member_user_id) return 'enrolled';

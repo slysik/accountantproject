@@ -257,7 +257,7 @@ export async function removeAccountMember(memberId: string): Promise<void> {
   if (error) throw error;
 }
 
-const INVITE_EXPIRY_MS = 24 * 60 * 60 * 1000;
+const INVITE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
 async function listOwnerAccountUserIds(memberEmail: string): Promise<string[]> {
   const normalizedEmail = memberEmail.toLowerCase().trim();

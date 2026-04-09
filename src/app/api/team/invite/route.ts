@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     }
 
     const siteUrl = getSiteUrl();
-    const loginUrl = `${siteUrl}/login`;
+    const loginUrl = `${siteUrl}/login?invite=1&email=${encodeURIComponent(memberEmail.toLowerCase().trim())}`;
 
     const htmlBody = `
 <!DOCTYPE html>
@@ -55,11 +55,10 @@ export async function POST(req: NextRequest) {
     </p>
     <a href="${loginUrl}" class="btn">Accept Invitation →</a>
     <p>
-      If you already have an account, just sign in normally at
-      <a href="${loginUrl}">${loginUrl}</a>.
+      If you already have an account with this email, the button above will sign you straight in.
     </p>
     <div class="note">
-      This invitation expires in <strong>24 hours</strong>. If you did not expect
+      This invitation expires in <strong>1 hour</strong>. If you did not expect
       this email you can safely ignore it.
     </div>
   </div>
@@ -72,7 +71,7 @@ export async function POST(req: NextRequest) {
       `Sign in or create an account with this email address to accept the invitation:`,
       loginUrl,
       '',
-      'This invitation expires in 24 hours.',
+      'This invitation expires in 1 hour.',
     ].join('\n');
 
     const response = await fetch('https://api.smtp2go.com/v3/email/send', {
