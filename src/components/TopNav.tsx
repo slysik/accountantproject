@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { decodeCompanySlug, decodeFolderSlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import { useTheme } from '@/lib/theme';
-import { LuChevronRight, LuSun, LuMoon } from 'react-icons/lu';
+import { LuChevronRight, LuSun, LuMoon, LuLogOut } from 'react-icons/lu';
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr',
@@ -85,7 +85,7 @@ function Breadcrumbs() {
 }
 
 export default function TopNav() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -102,6 +102,14 @@ export default function TopNav() {
 
       {/* Right: actions */}
       <div className="flex items-center gap-2">
+        <button
+          onClick={() => signOut()}
+          className="inline-flex items-center gap-2 rounded-lg border border-border-primary px-3 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-error"
+        >
+          <LuLogOut className="h-4 w-4" />
+          <span>Sign Out</span>
+        </button>
+
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}

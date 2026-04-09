@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { LuTrash2, LuSettings, LuLayoutDashboard, LuLogOut, LuTags, LuCircleHelp, LuClipboardList } from 'react-icons/lu';
+import { LuTrash2, LuSettings, LuLayoutDashboard, LuTags, LuCircleHelp, LuClipboardList } from 'react-icons/lu';
 import FolderTree from './FolderTree';
 import { APP_VERSION } from '@/lib/version';
 import { useTheme } from '@/lib/theme';
@@ -14,7 +14,7 @@ import { PLANS } from '@/lib/subscription';
 export default function Sidebar() {
   const { theme } = useTheme();
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { sub } = useSubscription(user?.id, user?.email);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
@@ -172,14 +172,6 @@ export default function Sidebar() {
             <span className="text-sm font-medium text-text-primary">{formattedLicenseExpiry}</span>
           </div>
         </div>
-
-        <button
-          onClick={() => signOut()}
-          className="mt-2 flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-error"
-        >
-          <LuLogOut className="h-4.5 w-4.5 flex-shrink-0" />
-          <span>Sign Out</span>
-        </button>
       </div>
     </aside>
   );
