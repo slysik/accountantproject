@@ -31,7 +31,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
           <div className="flex items-center gap-3">
             <button
               onClick={() => signOut()}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border-primary px-3 py-1.5 text-xs font-semibold text-text-primary transition-colors hover:bg-bg-tertiary"
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-error"
             >
               Sign Out
             </button>

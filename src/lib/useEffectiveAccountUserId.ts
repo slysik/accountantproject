@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { findOwnerAccountUserId } from './subscription';
+import { findOwnerAccountUserId, getSubscription, isAccessAllowed } from './subscription';
 
 export function useEffectiveAccountUserId(userId: string | undefined, email?: string) {
   const [effectiveUserId, setEffectiveUserId] = useState<string | null>(userId ?? null);
@@ -15,6 +15,15 @@ export function useEffectiveAccountUserId(userId: string | undefined, email?: st
     let cancelled = false;
 
     async function resolveEffectiveUserId() {
+      // If the user has their own active subscription, always use their own ID.
+      // Only fall back to looking up an owner when the user is a pure team member
+      // with no subscription of their own (e.g. an invited collaborator).
+      const ownSub = await getSubscription(userId!);
+      if (ownSub && isAccessAllowed(ownSub)) {
+        if (!cancelled) setEffectiveUserId(userId ?? null);
+        return;
+      }
+
       if (!email) {
         if (!cancelled) setEffectiveUserId(userId ?? null);
         return;

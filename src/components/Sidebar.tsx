@@ -30,19 +30,36 @@ export default function Sidebar() {
       style={{ borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
     >
       <div
-        className="flex h-28 flex-shrink-0 items-center justify-center border-b px-4 py-3"
+        className="flex h-32 flex-shrink-0 items-center justify-center border-b px-4 py-4"
         style={{ borderColor: 'var(--border-primary)' }}
       >
-        <div className="flex flex-col items-center gap-3">
-          <Image
-            src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
-            alt="Accountant's Best Friend"
-            width={800}
-            height={800}
-            className="h-20 w-20 rounded-xl object-contain flex-shrink-0"
-            unoptimized
-          />
-          <span className="text-sm font-semibold text-text-primary truncate">ABF</span>
+        <div className="flex w-full max-w-[176px] flex-col items-center gap-3 text-center">
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-2xl border p-2"
+            style={{
+              borderColor: 'color-mix(in srgb, var(--accent-primary) 26%, var(--border-primary))',
+              backgroundColor: 'color-mix(in srgb, var(--accent-primary) 10%, var(--bg-primary))',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+            }}
+          >
+            <Image
+              src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
+              alt="Accountant's Best Friend"
+              width={800}
+              height={800}
+              className="h-12 w-12 rounded-xl object-contain flex-shrink-0 opacity-95"
+              style={{
+                filter: theme === 'dark'
+                  ? 'saturate(0.9) contrast(1.02)'
+                  : 'saturate(0.82) contrast(0.96)',
+              }}
+              unoptimized
+            />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold leading-none text-text-primary">Accountant&apos;s Best Friend</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-text-muted">ABF</p>
+          </div>
         </div>
       </div>
 
@@ -100,32 +117,24 @@ export default function Sidebar() {
           <span>Settings</span>
         </Link>
 
-        <div className="mt-4 px-2">
-          <p className="mt-3 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
-            Current Plan
-          </p>
-          <p className="mt-1 text-[12px] font-semibold leading-tight text-text-primary">
-            {planLabel}
-          </p>
-          <p className="mt-3 text-[10px] font-semibold uppercase tracking-widest text-text-muted">
-            Version
-          </p>
-          <p className="mt-1 text-[12px] font-semibold leading-tight text-text-primary">
-            v{APP_VERSION}
-          </p>
+        <div className="mt-1 px-2">
+          <div className="flex items-center justify-between py-1">
+            <span className="text-xs text-text-muted">Plan</span>
+            <span className="text-xs font-medium text-text-primary">{planLabel}</span>
+          </div>
+          <div className="flex items-center justify-between py-1">
+            <span className="text-xs text-text-muted">Version</span>
+            <span className="text-xs font-medium text-text-primary">v{APP_VERSION}</span>
+          </div>
         </div>
 
-        <div className="mt-4 px-2">
-          <button
-            onClick={() => signOut()}
-            title="Sign out"
-            className="flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs font-semibold text-text-primary transition-colors hover:border-accent-primary/50 hover:bg-accent-primary/10"
-            style={{ borderColor: 'var(--border-primary)' }}
-          >
-            <LuLogOut className="h-3.5 w-3.5 flex-shrink-0" />
-            <span>Sign Out</span>
-          </button>
-        </div>
+        <button
+          onClick={() => signOut()}
+          className="mt-1 flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-xs text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-error"
+        >
+          <LuLogOut className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>Sign Out</span>
+        </button>
       </div>
     </aside>
   );
