@@ -63,7 +63,7 @@ export async function uploadReceipt(
     const fileType = getFileType(file);
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('expense-receipts')
       .upload(storagePath, file, {
         cacheControl: '3600',

@@ -8,7 +8,7 @@ import type { CategorizedExpense } from '@/types';
 
 interface StepCategorizeProps {
   expenses: CategorizedExpense[];
-  onComplete: (expenses: CategorizedExpense[]) => void;
+  onComplete: (_expenses: CategorizedExpense[]) => void;
 }
 
 const allCategories = getAllCategories();

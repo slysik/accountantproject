@@ -9,10 +9,10 @@ import type { CategorizedExpense, TrashCompanyItem } from '@/types';
 interface TrashBinProps {
   companies: TrashCompanyItem[];
   items: CategorizedExpense[];
-  onRestoreCompany: (company: TrashCompanyItem) => void;
-  onPermanentDeleteCompany: (company: TrashCompanyItem) => void;
-  onRestore: (expense: CategorizedExpense) => void;
-  onPermanentDelete: (expense: CategorizedExpense) => void;
+  onRestoreCompany: (_company: TrashCompanyItem) => void;
+  onPermanentDeleteCompany: (_company: TrashCompanyItem) => void;
+  onRestore: (_expense: CategorizedExpense) => void;
+  onPermanentDelete: (_expense: CategorizedExpense) => void;
   onEmptyTrash: () => void;
 }
 

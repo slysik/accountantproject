@@ -230,7 +230,7 @@ export default function ExpenseChat() {
     await runChatRequest(nextMessages, {
       confirmDelete: Boolean(pendingDelete) && trimmed.toLowerCase() === 'i agree',
     });
-  }, [messages, loading, runChatRequest]);
+  }, [messages, loading, runChatRequest, pendingDelete]);
 
   const cancelDelete = useCallback(() => {
     setPendingDelete(null);

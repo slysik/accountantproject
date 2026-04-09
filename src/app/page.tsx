@@ -7,7 +7,6 @@ import {
   LuChartBar,
   LuCheck,
   LuChevronRight,
-  LuDownload,
   LuFileSpreadsheet,
   LuFolderTree,
   LuLockKeyhole,

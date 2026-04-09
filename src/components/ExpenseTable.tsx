@@ -11,9 +11,9 @@ interface ExpenseTableProps {
   expenses: CategorizedExpense[];
   receiptsByExpenseId?: Record<string, Receipt[]>;
   userId?: string;
-  onCategoryChange: (id: string, category: string) => void;
-  onDelete: (id: string) => void;
-  onReceiptsUpdated?: (expenseId: string, receipts: Receipt[]) => void;
+  onCategoryChange: (_id: string, _category: string) => void;
+  onDelete: (_id: string) => void;
+  onReceiptsUpdated?: (_expenseId: string, _receipts: Receipt[]) => void;
 }
 
 type SortField = 'date' | 'description' | 'amount' | 'category';

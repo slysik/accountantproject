@@ -6,7 +6,7 @@ import { parseCSV, categorizeAll, formatCurrency, formatDate } from '@/lib/expen
 import type { CategorizedExpense } from '@/types';
 
 interface StepUploadProps {
-  onComplete: (expenses: CategorizedExpense[]) => void;
+  onComplete: (_expenses: CategorizedExpense[]) => void;
 }
 
 export default function StepUpload({ onComplete }: StepUploadProps) {

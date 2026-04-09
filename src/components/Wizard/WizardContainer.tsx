@@ -59,7 +59,6 @@ export default function WizardContainer() {
         {STEPS.map((step, index) => {
           const isActive = index === currentStep;
           const isCompleted = index < currentStep;
-          const Icon = step.icon;
 
           return (
             <div key={step.label} className="flex items-center">

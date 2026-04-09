@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { LuFileText, LuFile, LuImage, LuDownload } from 'react-icons/lu';
+import Image from 'next/image';
+import { LuFileText, LuFile, LuDownload } from 'react-icons/lu';
 import { getReceiptUrl } from '@/lib/receipt-handler';
 import type { Receipt } from '@/types';
 
@@ -80,10 +81,12 @@ export default function ReceiptThumbnail({
   if (isImage) {
     return (
       <div className={`group relative ${sizeClass} overflow-hidden rounded-lg border border-border-primary`}>
-        <img
+        <Image
           src={url}
           alt={receipt.filename}
-          className="h-full w-full object-cover"
+          fill
+          className="object-cover"
+          unoptimized
           onError={() => setError(true)}
         />
         {showDownload && (

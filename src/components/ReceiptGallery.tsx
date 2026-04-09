@@ -12,8 +12,8 @@ interface ReceiptGalleryProps {
   receipts: Receipt[];
   expenseId: string;
   userId: string;
-  onReceiptDeleted?: (receiptId: string) => void;
-  onReceiptsUploaded?: (receipts: Receipt[]) => void;
+  onReceiptDeleted?: (_receiptId: string) => void;
+  onReceiptsUploaded?: (_receipts: Receipt[]) => void;
   onClose: () => void;
 }
 

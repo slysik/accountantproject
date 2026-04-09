@@ -11,7 +11,7 @@ import type { CategorizedExpense } from '@/types';
 
 interface StepFoldersProps {
   expenses: CategorizedExpense[];
-  onComplete: (companyName: string, year: string, assignedExpenses: Map<string, CategorizedExpense[]>) => void;
+  onComplete: (_companyName: string, _year: string, _assignedExpenses: Map<string, CategorizedExpense[]>) => void;
 }
 
 export default function StepFolders({ expenses, onComplete }: StepFoldersProps) {

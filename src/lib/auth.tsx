@@ -21,22 +21,22 @@ interface AuthContextType {
   loading: boolean;
   mfaRequired: boolean;
   mfaSetupRequired: boolean;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithEmail: (_email: string, _password: string) => Promise<void>;
   signUpWithEmail: (
-    email: string,
-    password: string
+    _email: string,
+    _password: string
   ) => Promise<{ sessionCreated: boolean; emailConfirmationRequired: boolean }>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  sendPasswordReset: (email: string) => Promise<void>;
-  resendSignupConfirmation: (email: string) => Promise<void>;
-  updatePassword: (newPassword: string) => Promise<void>;
+  sendPasswordReset: (_email: string) => Promise<void>;
+  resendSignupConfirmation: (_email: string) => Promise<void>;
+  updatePassword: (_newPassword: string) => Promise<void>;
   // MFA
   listMFAFactors: () => Promise<MFAFactor[]>;
   enrollTOTP: () => Promise<{ factorId: string; qrCode: string; secret: string }>;
-  verifyTOTPEnrollment: (factorId: string, code: string) => Promise<void>;
-  challengeAndVerifyMFA: (factorId: string, code: string) => Promise<void>;
-  unenrollMFA: (factorId: string) => Promise<void>;
+  verifyTOTPEnrollment: (_factorId: string, _code: string) => Promise<void>;
+  challengeAndVerifyMFA: (_factorId: string, _code: string) => Promise<void>;
+  unenrollMFA: (_factorId: string) => Promise<void>;
   sendEmailOTP: () => Promise<void>;
 }
 

@@ -8,7 +8,7 @@ import type { Receipt } from '@/types';
 
 interface ReceiptUploadProps {
   expenseId: string;
-  onUploadComplete: (receipts: Receipt[]) => void;
+  onUploadComplete: (_receipts: Receipt[]) => void;
 }
 
 export default function ReceiptUpload({
