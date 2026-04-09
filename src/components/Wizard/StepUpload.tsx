@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { LuUpload, LuFlaskConical } from 'react-icons/lu';
 import { parseCSV, categorizeAll, formatCurrency, formatDate } from '@/lib/expense-processor';
-import { buildCategoryMappingLookup, getCategoryMappings } from '@/lib/category-mappings';
+import { buildCategoryMappingLookup, getCategoryMappings, type CategoryMappingLookup } from '@/lib/category-mappings';
 import { useAuth } from '@/lib/auth';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { CategorizedExpense } from '@/types';
@@ -20,7 +20,10 @@ export default function StepUpload({ onComplete }: StepUploadProps) {
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<CategorizedExpense[] | null>(null);
-  const [mappingLookup, setMappingLookup] = useState<Record<string, string>>({});
+  const [mappingLookup, setMappingLookup] = useState<CategoryMappingLookup>({
+    sourceCategories: {},
+    retailers: [],
+  });
 
   useEffect(() => {
     if (!effectiveUserId) return;

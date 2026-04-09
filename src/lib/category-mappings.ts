@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
 
+export type MappingMatchType = 'source_category' | 'retailer';
+
 export interface CategoryMapping {
   id: string;
   user_id: string;
@@ -9,8 +11,50 @@ export interface CategoryMapping {
   updated_at: string;
 }
 
+export interface CategoryMappingLookup {
+  sourceCategories: Record<string, string>;
+  retailers: Array<{ label: string; categoryId: string }>;
+}
+
+const SOURCE_CATEGORY_PREFIX = 'source_category:';
+const RETAILER_PREFIX = 'retailer:';
+
 function normalizeSourceLabel(value: string) {
-  return value.trim();
+  return value.trim().replace(/\s+/g, ' ');
+}
+
+function encodeMappingKey(matchType: MappingMatchType, value: string) {
+  const normalizedValue = normalizeSourceLabel(value).toLowerCase();
+  return `${matchType === 'retailer' ? RETAILER_PREFIX : SOURCE_CATEGORY_PREFIX}${normalizedValue}`;
+}
+
+function decodeMappingKey(storedValue: string): { matchType: MappingMatchType; label: string } {
+  if (storedValue.startsWith(RETAILER_PREFIX)) {
+    return {
+      matchType: 'retailer',
+      label: storedValue.slice(RETAILER_PREFIX.length),
+    };
+  }
+
+  if (storedValue.startsWith(SOURCE_CATEGORY_PREFIX)) {
+    return {
+      matchType: 'source_category',
+      label: storedValue.slice(SOURCE_CATEGORY_PREFIX.length),
+    };
+  }
+
+  return {
+    matchType: 'source_category',
+    label: storedValue,
+  };
+}
+
+export function getMappingDisplayLabel(mapping: CategoryMapping) {
+  return decodeMappingKey(mapping.source_label).label;
+}
+
+export function getMappingMatchType(mapping: CategoryMapping): MappingMatchType {
+  return decodeMappingKey(mapping.source_label).matchType;
 }
 
 export async function getCategoryMappings(userId: string): Promise<CategoryMapping[]> {
@@ -27,7 +71,8 @@ export async function getCategoryMappings(userId: string): Promise<CategoryMappi
 export async function saveCategoryMapping(
   userId: string,
   sourceLabel: string,
-  categoryId: string
+  categoryId: string,
+  matchType: MappingMatchType = 'source_category'
 ): Promise<CategoryMapping> {
   const normalizedSourceLabel = normalizeSourceLabel(sourceLabel);
   if (!normalizedSourceLabel) throw new Error('Source category label is required.');
@@ -37,7 +82,7 @@ export async function saveCategoryMapping(
     .upsert(
       {
         user_id: userId,
-        source_label: normalizedSourceLabel,
+        source_label: encodeMappingKey(matchType, normalizedSourceLabel),
         category_id: categoryId,
       },
       { onConflict: 'user_id,source_label' }
@@ -81,31 +126,50 @@ export async function getDistinctOriginalCategories(userId: string): Promise<str
 export async function applyCategoryMappingToExistingExpenses(
   userId: string,
   sourceLabel: string,
-  categoryId: string
+  categoryId: string,
+  matchType: MappingMatchType = 'source_category'
 ): Promise<number> {
   const normalizedSourceLabel = normalizeSourceLabel(sourceLabel);
 
-  const { data: existingRows, error: fetchError } = await supabase
+  const fetchQuery = supabase
     .from('expenses')
     .select('id')
-    .eq('user_id', userId)
-    .ilike('original_category', normalizedSourceLabel);
+    .eq('user_id', userId);
 
-  if (fetchError) throw fetchError;
-
-  const { error } = await supabase
+  const updateQuery = supabase
     .from('expenses')
     .update({ category: categoryId })
-    .eq('user_id', userId)
-    .ilike('original_category', normalizedSourceLabel);
+    .eq('user_id', userId);
 
+  if (matchType === 'retailer') {
+    fetchQuery.ilike('description', `%${normalizedSourceLabel}%`);
+    updateQuery.ilike('description', `%${normalizedSourceLabel}%`);
+  } else {
+    fetchQuery.ilike('original_category', normalizedSourceLabel);
+    updateQuery.ilike('original_category', normalizedSourceLabel);
+  }
+
+  const { data: existingRows, error: fetchError } = await fetchQuery;
+  if (fetchError) throw fetchError;
+
+  const { error } = await updateQuery;
   if (error) throw error;
   return existingRows?.length ?? 0;
 }
 
-export function buildCategoryMappingLookup(mappings: CategoryMapping[]): Record<string, string> {
-  return mappings.reduce<Record<string, string>>((acc, mapping) => {
-    acc[mapping.source_label.trim().toLowerCase()] = mapping.category_id;
+export function buildCategoryMappingLookup(mappings: CategoryMapping[]): CategoryMappingLookup {
+  return mappings.reduce<CategoryMappingLookup>((acc, mapping) => {
+    const decoded = decodeMappingKey(mapping.source_label.trim().toLowerCase());
+
+    if (decoded.matchType === 'retailer') {
+      acc.retailers.push({
+        label: decoded.label,
+        categoryId: mapping.category_id,
+      });
+    } else {
+      acc.sourceCategories[decoded.label] = mapping.category_id;
+    }
+
     return acc;
-  }, {});
+  }, { sourceCategories: {}, retailers: [] });
 }

@@ -1,16 +1,19 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LuCheck, LuRefreshCw, LuTags, LuTrash2 } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import {
   applyCategoryMappingToExistingExpenses,
   deleteCategoryMapping,
+  getMappingDisplayLabel,
+  getMappingMatchType,
   getCategoryMappings,
   getDistinctOriginalCategories,
   saveCategoryMapping,
   type CategoryMapping,
+  type MappingMatchType,
 } from '@/lib/category-mappings';
 import { getAllCategories, getCategoryName } from '@/lib/categories';
 
@@ -24,13 +27,14 @@ export default function CategorySettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sourceLabel, setSourceLabel] = useState('');
+  const [matchType, setMatchType] = useState<MappingMatchType>('source_category');
   const [categoryId, setCategoryId] = useState(allCategories[0]?.id ?? 'uncategorized');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [applyingSource, setApplyingSource] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     if (!effectiveUserId) return;
     setLoading(true);
     try {
@@ -45,11 +49,11 @@ export default function CategorySettingsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [effectiveUserId]);
 
   useEffect(() => {
     void refresh();
-  }, [effectiveUserId]);
+  }, [effectiveUserId, refresh]);
 
   const mappedLabels = useMemo(
     () => new Set(mappings.map((mapping) => mapping.source_label.trim().toLowerCase())),
@@ -74,8 +78,8 @@ export default function CategorySettingsPage() {
     setSuccess('');
 
     try {
-      await saveCategoryMapping(effectiveUserId, nextLabel, categoryId);
-      const updatedCount = await applyCategoryMappingToExistingExpenses(effectiveUserId, nextLabel, categoryId);
+      await saveCategoryMapping(effectiveUserId, nextLabel, categoryId, matchType);
+      const updatedCount = await applyCategoryMappingToExistingExpenses(effectiveUserId, nextLabel, categoryId, matchType);
       setSuccess(`Saved mapping for "${nextLabel}" and updated ${updatedCount} existing expense${updatedCount === 1 ? '' : 's'}.`);
       setSourceLabel('');
       await refresh();
@@ -135,14 +139,25 @@ export default function CategorySettingsPage() {
           </div>
         )}
 
-        <div className="grid gap-4 md:grid-cols-[1.4fr_1fr_auto]">
+        <div className="grid gap-4 md:grid-cols-[1fr_1.4fr_1fr_auto]">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-text-secondary">Map Based On</label>
+            <select
+              value={matchType}
+              onChange={(e) => setMatchType(e.target.value as MappingMatchType)}
+              className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+            >
+              <option value="source_category">Imported Category Label</option>
+              <option value="retailer">Retailer / Merchant Name</option>
+            </select>
+          </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-text-secondary">Source Label</label>
             <input
               type="text"
               value={sourceLabel}
               onChange={(e) => setSourceLabel(e.target.value)}
-              placeholder="e.g. Meals & Entertainment"
+              placeholder={matchType === 'retailer' ? 'e.g. Starbucks or McDonalds' : 'e.g. Meals & Entertainment'}
               className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
             />
           </div>
@@ -171,6 +186,11 @@ export default function CategorySettingsPage() {
             </button>
           </div>
         </div>
+        <p className="mt-3 text-xs text-text-muted">
+          {matchType === 'retailer'
+            ? 'Retailer mappings check the expense description, so "Starbucks" can map directly to Meals.'
+            : 'Source category mappings use the original category column from imported files.'}
+        </p>
       </section>
 
       <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
@@ -226,8 +246,10 @@ export default function CategorySettingsPage() {
             {mappings.map((mapping) => (
               <div key={mapping.id} className="flex items-center justify-between rounded-lg bg-bg-tertiary px-4 py-3">
                 <div>
-                  <p className="text-sm font-medium text-text-primary">{mapping.source_label}</p>
-                  <p className="text-xs text-text-muted">Maps to {getCategoryName(mapping.category_id)}</p>
+                  <p className="text-sm font-medium text-text-primary">{getMappingDisplayLabel(mapping)}</p>
+                  <p className="text-xs text-text-muted">
+                    {getMappingMatchType(mapping) === 'retailer' ? 'Retailer / Merchant' : 'Imported Category'} to {getCategoryName(mapping.category_id)}
+                  </p>
                 </div>
                 <button
                   onClick={() => void handleDelete(mapping)}

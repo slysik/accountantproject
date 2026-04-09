@@ -5,7 +5,7 @@ import { LuUpload, LuFileText, LuCheck, LuX, LuFlaskConical } from 'react-icons/
 import { parseCSV, categorizeAll, formatCurrency, formatDate } from '@/lib/expense-processor';
 import { bulkCreateExpenses } from '@/lib/database';
 import { useAuth } from '@/lib/auth';
-import { buildCategoryMappingLookup, getCategoryMappings } from '@/lib/category-mappings';
+import { buildCategoryMappingLookup, getCategoryMappings, type CategoryMappingLookup } from '@/lib/category-mappings';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { CategorizedExpense } from '@/types';
 
@@ -33,7 +33,10 @@ export default function CSVUploader({ companyName, year, month: _month, onUpload
   const [info, setInfo] = useState<string | null>(null);
   const [preview, setPreview] = useState<CategorizedExpense[] | null>(null);
   const [filename, setFilename] = useState<string>('');
-  const [mappingLookup, setMappingLookup] = useState<Record<string, string>>({});
+  const [mappingLookup, setMappingLookup] = useState<CategoryMappingLookup>({
+    sourceCategories: {},
+    retailers: [],
+  });
 
   useEffect(() => {
     if (!effectiveUserId) return;

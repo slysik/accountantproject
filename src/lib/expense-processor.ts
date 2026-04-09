@@ -1,6 +1,7 @@
 import type { Expense, CategorizedExpense, AggregationResult, ExpenseSummary } from '@/types';
 import { categorizeExpense } from './categories';
 import { getYearMonth } from './date-utils';
+import type { CategoryMappingLookup } from './category-mappings';
 
 interface ColumnMap {
   date: number | null;
@@ -292,12 +293,27 @@ export function parseDate(dateStr: string): Date | null {
 }
 
 function resolveMappedCategory(
+  description: string | undefined,
   originalCategory: string | undefined,
-  mappings?: Record<string, string>
+  mappings?: CategoryMappingLookup
 ) {
-  const key = (originalCategory ?? '').trim().toLowerCase();
-  if (!key || !mappings) return null;
-  return mappings[key] ?? null;
+  if (!mappings) return null;
+
+  const sourceKey = (originalCategory ?? '').trim().toLowerCase();
+  if (sourceKey && mappings.sourceCategories[sourceKey]) {
+    return mappings.sourceCategories[sourceKey];
+  }
+
+  const descriptionKey = (description ?? '').trim().toLowerCase();
+  if (!descriptionKey) return null;
+
+  for (const retailerMapping of mappings.retailers) {
+    if (descriptionKey.includes(retailerMapping.label)) {
+      return retailerMapping.categoryId;
+    }
+  }
+
+  return null;
 }
 
 /** Parse an amount string to a number, handling currency symbols, commas, and parentheses. */
@@ -323,11 +339,11 @@ export function parseAmount(amountStr: string | undefined): number {
 /** Categorize all expenses using saved category mappings first, then IRS keyword matching. */
 export function categorizeAll(
   expenses: Expense[],
-  mappings?: Record<string, string>
+  mappings?: CategoryMappingLookup
 ): CategorizedExpense[] {
   return expenses.map(expense => ({
     ...expense,
-    category: resolveMappedCategory(expense.originalCategory, mappings) ?? categorizeExpense(expense.description)
+    category: resolveMappedCategory(expense.description, expense.originalCategory, mappings) ?? categorizeExpense(expense.description)
   }));
 }
 
