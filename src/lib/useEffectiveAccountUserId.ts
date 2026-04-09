@@ -11,27 +11,24 @@ export function useEffectiveAccountUserId(userId: string | undefined, email?: st
       setEffectiveUserId(null);
       return;
     }
+    const currentUserId = userId;
 
     let cancelled = false;
 
     async function resolveEffectiveUserId() {
-      // If the user has their own active subscription, always use their own ID.
-      // Only fall back to looking up an owner when the user is a pure team member
-      // with no subscription of their own (e.g. an invited collaborator).
-      const ownSub = await getSubscription(userId!);
-      if (ownSub && isAccessAllowed(ownSub)) {
-        if (!cancelled) setEffectiveUserId(userId ?? null);
-        return;
+      // If this user is enrolled in another active owner's account, prefer that
+      // account context even when the user also has their own trial row.
+      if (email) {
+        const ownerUserId = await findOwnerAccountUserId(email);
+        if (ownerUserId && ownerUserId !== currentUserId) {
+          if (!cancelled) setEffectiveUserId(ownerUserId);
+          return;
+        }
       }
 
-      if (!email) {
-        if (!cancelled) setEffectiveUserId(userId ?? null);
-        return;
-      }
-
-      const ownerUserId = await findOwnerAccountUserId(email);
+      const ownSub = await getSubscription(currentUserId);
       if (!cancelled) {
-        setEffectiveUserId(ownerUserId ?? userId ?? null);
+        setEffectiveUserId(ownSub && isAccessAllowed(ownSub) ? currentUserId : currentUserId);
       }
     }
 

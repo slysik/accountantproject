@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { findOwnerSubscription, getSubscription, type Subscription } from './subscription';
+import { findOwnerAccountUserId, findOwnerSubscription, getSubscription, type Subscription } from './subscription';
 
 export function useSubscription(userId: string | undefined, email?: string) {
   const [sub, setSub] = useState<Subscription | null>(null);
@@ -13,6 +13,19 @@ export function useSubscription(userId: string | undefined, email?: string) {
     let cancelled = false;
 
     async function loadSubscription() {
+      if (email) {
+        const ownerUserId = await findOwnerAccountUserId(email);
+        if (cancelled) return;
+
+        if (ownerUserId && ownerUserId !== currentUserId) {
+          const ownerSub = await findOwnerSubscription(email);
+          if (!cancelled) {
+            setSub(ownerSub);
+          }
+          return;
+        }
+      }
+
       const directSub = await getSubscription(currentUserId);
       if (cancelled) return;
 
