@@ -67,14 +67,14 @@ function Breadcrumbs() {
   }
 
   return (
-    <nav className="flex items-center gap-1 text-sm">
+    <nav className="flex items-center gap-1.5 text-sm">
       {crumbs.map((crumb, index) => (
         <span key={crumb.href} className="flex items-center gap-1">
           {index > 0 && <LuChevronRight className="h-3 w-3 text-text-muted" />}
           {index === crumbs.length - 1 ? (
-            <span className="text-xs font-medium text-text-primary">{crumb.label}</span>
+            <span className="text-sm font-semibold text-text-primary">{crumb.label}</span>
           ) : (
-            <Link href={crumb.href} className="text-xs text-text-muted transition-colors hover:text-text-secondary">
+            <Link href={crumb.href} className="text-sm font-medium text-text-muted transition-colors hover:text-text-secondary">
               {crumb.label}
             </Link>
           )}
@@ -90,7 +90,7 @@ export default function TopNav() {
 
   return (
     <header
-      className="flex h-14 flex-shrink-0 items-center justify-between border-b px-4"
+      className="flex h-16 flex-shrink-0 items-center justify-between border-b px-5"
       style={{ borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
     >
       {/* Left: breadcrumbs */}
@@ -105,24 +105,24 @@ export default function TopNav() {
         {/* Import wizard */}
         <Link
           href="/dashboard/wizard"
-          className="flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-dark"
+          className="flex items-center gap-2 rounded-lg bg-accent-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-dark"
         >
-          <LuWand className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Import</span>
+          <LuWand className="h-4.5 w-4.5" />
+          <span className="hidden sm:inline">Import Wizard</span>
         </Link>
 
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
           title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
+          className="rounded-lg border border-border-primary p-2.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-secondary"
         >
-          {theme === 'dark' ? <LuSun className="h-4 w-4" /> : <LuMoon className="h-4 w-4" />}
+          {theme === 'dark' ? <LuSun className="h-5 w-5" /> : <LuMoon className="h-5 w-5" />}
         </button>
 
         {/* User */}
         {user?.email && (
-          <span className="hidden text-[11px] text-text-muted lg:block">{user.email}</span>
+          <span className="hidden text-sm font-medium text-text-muted lg:block">{user.email}</span>
         )}
       </div>
     </header>

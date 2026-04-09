@@ -185,6 +185,7 @@ export function maxUsersForSubscription(sub: Subscription | null): number {
 // ── Team / account members ────────────────────────────────────────────────
 
 export type TeamRole = 'admin' | 'contributor' | 'viewer';
+export type AccessScope = 'all' | 'selected';
 
 export interface AccountMember {
   id: string;
@@ -196,6 +197,12 @@ export interface AccountMember {
   invite_token: string | null;
   invite_token_used_at: string | null;
   role: TeamRole;
+  access_scope: AccessScope;
+}
+
+export interface AccountMemberCompanyAccess {
+  member_id: string;
+  company_name: string;
 }
 
 /** Returns members the current user (as owner) has added. */
@@ -275,6 +282,59 @@ export async function updateMemberRole(memberId: string, role: TeamRole): Promis
     .update({ role })
     .eq('id', memberId);
   if (error) throw error;
+}
+
+export async function updateMemberAccessScope(memberId: string, accessScope: AccessScope): Promise<void> {
+  const { error } = await supabase
+    .from('account_members')
+    .update({ access_scope: accessScope })
+    .eq('id', memberId);
+  if (error) throw error;
+}
+
+export async function getAccountMemberCompanyAccess(ownerUserId: string): Promise<AccountMemberCompanyAccess[]> {
+  const { data, error } = await supabase
+    .from('account_member_companies')
+    .select('member_id, company_name')
+    .eq('owner_user_id', ownerUserId)
+    .order('company_name', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as AccountMemberCompanyAccess[];
+}
+
+export async function replaceMemberCompanyAccess(
+  ownerUserId: string,
+  memberId: string,
+  companyNames: string[]
+): Promise<void> {
+  const normalizedNames = Array.from(
+    new Set(
+      companyNames
+        .map((name) => name.trim())
+        .filter(Boolean)
+    )
+  );
+
+  const { error: deleteError } = await supabase
+    .from('account_member_companies')
+    .delete()
+    .eq('owner_user_id', ownerUserId)
+    .eq('member_id', memberId);
+  if (deleteError) throw deleteError;
+
+  if (normalizedNames.length === 0) return;
+
+  const { error: insertError } = await supabase
+    .from('account_member_companies')
+    .insert(
+      normalizedNames.map((companyName) => ({
+        owner_user_id: ownerUserId,
+        member_id: memberId,
+        company_name: companyName,
+      }))
+    );
+  if (insertError) throw insertError;
 }
 
 /** Returns the current user's role within an owner's account, or null if not a member. */

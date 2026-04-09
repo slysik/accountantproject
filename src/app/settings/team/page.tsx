@@ -5,14 +5,20 @@ import { LuUsers, LuPlus, LuTrash2, LuCheck, LuInfo, LuRefreshCw, LuKeyRound, Lu
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
+import { getUserFolders } from '@/lib/database';
 import {
+  getAccountMemberCompanyAccess,
   getSubscription,
   getAccountMembers,
   addAccountMember,
   removeAccountMember,
+  replaceMemberCompanyAccess,
   updateMemberRole,
+  updateMemberAccessScope,
   maxUsersForSubscription,
   type AccountMember,
+  type AccessScope,
+  type AccountMemberCompanyAccess,
   type Subscription,
   type TeamRole,
 } from '@/lib/subscription';
@@ -57,6 +63,8 @@ export default function TeamSettingsPage() {
   const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
   const [sub, setSub] = useState<Subscription | null>(null);
   const [members, setMembers] = useState<AccountMember[]>([]);
+  const [memberCompanyAccess, setMemberCompanyAccess] = useState<AccountMemberCompanyAccess[]>([]);
+  const [companyOptions, setCompanyOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [newRole, setNewRole] = useState<TeamRole>('contributor');
@@ -73,17 +81,22 @@ export default function TeamSettingsPage() {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState('');
+  const [updatingAccess, setUpdatingAccess] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!user || !effectiveUserId) return;
     setLoading(true);
     try {
-      const [s, m] = await Promise.all([
+      const [s, m, companyAccess, folders] = await Promise.all([
         getSubscription(effectiveUserId),
         getAccountMembers(effectiveUserId),
+        getAccountMemberCompanyAccess(effectiveUserId),
+        getUserFolders(effectiveUserId),
       ]);
       setSub(s);
       setMembers(m);
+      setMemberCompanyAccess(companyAccess);
+      setCompanyOptions(folders.map((company) => company.companyName));
     } catch {
       // ignore
     } finally {
@@ -106,6 +119,12 @@ export default function TeamSettingsPage() {
   const totalUsers = members.length + 1;
   const canAddMore = canManageTeam && totalUsers < maxUsers;
   const planBlocked = sub?.plan === 'trial' || sub?.plan === 'personal' || sub?.plan === 'lite';
+
+  const getSelectedCompaniesForMember = useCallback((memberId: string) => {
+    return memberCompanyAccess
+      .filter((item) => item.member_id === memberId)
+      .map((item) => item.company_name);
+  }, [memberCompanyAccess]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,6 +181,54 @@ export default function TeamSettingsPage() {
       setError((err as { message?: string }).message ?? 'Failed to update role.');
     } finally {
       setUpdatingRole(null);
+    }
+  };
+
+  const handleAccessScopeChange = async (member: AccountMember, accessScope: AccessScope) => {
+    setError('');
+    setSuccess('');
+    setUpdatingAccess(member.id);
+    try {
+      await updateMemberAccessScope(member.id, accessScope);
+      if (accessScope === 'all') {
+        await replaceMemberCompanyAccess(effectiveUserId!, member.id, []);
+      }
+      setSuccess(
+        accessScope === 'all'
+          ? `${member.member_email} can now access all companies.`
+          : `${member.member_email} is now limited to selected companies.`
+      );
+      await refresh();
+    } catch (err: unknown) {
+      setError((err as { message?: string }).message ?? 'Failed to update company access.');
+    } finally {
+      setUpdatingAccess(null);
+    }
+  };
+
+  const handleToggleCompanyAccess = async (member: AccountMember, companyName: string) => {
+    if (!effectiveUserId) return;
+    setError('');
+    setSuccess('');
+    setUpdatingAccess(member.id);
+    try {
+      const existing = getSelectedCompaniesForMember(member.id);
+      const hasCompany = existing.includes(companyName);
+      const nextCompanies = hasCompany
+        ? existing.filter((name) => name !== companyName)
+        : [...existing, companyName];
+
+      await replaceMemberCompanyAccess(effectiveUserId, member.id, nextCompanies);
+      setSuccess(
+        hasCompany
+          ? `Removed ${companyName} from ${member.member_email}.`
+          : `Granted ${member.member_email} access to ${companyName}.`
+      );
+      await refresh();
+    } catch (err: unknown) {
+      setError((err as { message?: string }).message ?? 'Failed to update company access.');
+    } finally {
+      setUpdatingAccess(null);
     }
   };
 
@@ -305,6 +372,7 @@ export default function TeamSettingsPage() {
 
             {members.map((m) => {
               const status = enrollmentStatus(m);
+              const selectedCompanies = getSelectedCompaniesForMember(m.id);
               return (
                 <div key={m.id} className="mb-2 rounded-lg bg-bg-tertiary px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
@@ -389,6 +457,60 @@ export default function TeamSettingsPage() {
                         {ROLE_LABELS[role]}
                       </button>
                     ))}
+                  </div>
+
+                  <div className="mt-3 rounded-lg border border-border-primary bg-bg-secondary px-3 py-3">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="text-xs text-text-muted">Company Access:</span>
+                      <button
+                        onClick={() => m.access_scope !== 'all' && handleAccessScopeChange(m, 'all')}
+                        disabled={!canManageTeam || updatingAccess === m.id}
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                          m.access_scope === 'all'
+                            ? 'bg-accent-primary/10 text-accent-primary'
+                            : 'bg-bg-tertiary text-text-muted hover:bg-bg-primary disabled:opacity-50'
+                        }`}
+                      >
+                        All Companies
+                      </button>
+                      <button
+                        onClick={() => m.access_scope !== 'selected' && handleAccessScopeChange(m, 'selected')}
+                        disabled={!canManageTeam || updatingAccess === m.id}
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                          m.access_scope === 'selected'
+                            ? 'bg-accent-primary/10 text-accent-primary'
+                            : 'bg-bg-tertiary text-text-muted hover:bg-bg-primary disabled:opacity-50'
+                        }`}
+                      >
+                        Selected Companies
+                      </button>
+                    </div>
+
+                    {m.access_scope === 'selected' && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {companyOptions.length === 0 ? (
+                          <p className="text-xs text-text-muted">No companies available yet.</p>
+                        ) : (
+                          companyOptions.map((companyName) => {
+                            const active = selectedCompanies.includes(companyName);
+                            return (
+                              <button
+                                key={companyName}
+                                onClick={() => handleToggleCompanyAccess(m, companyName)}
+                                disabled={!canManageTeam || updatingAccess === m.id}
+                                className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                                  active
+                                    ? 'border-accent-primary bg-accent-primary/10 text-accent-primary'
+                                    : 'border-border-primary bg-bg-tertiary text-text-muted hover:bg-bg-primary disabled:opacity-50'
+                                }`}
+                              >
+                                {companyName}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
