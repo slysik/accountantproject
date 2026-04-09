@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { LuUsers, LuPlus, LuTrash2, LuCheck, LuInfo, LuRefreshCw } from 'react-icons/lu';
+import { LuUsers, LuPlus, LuTrash2, LuCheck, LuInfo, LuRefreshCw, LuKeyRound, LuX } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import {
   getSubscription,
   getAccountMembers,
@@ -48,8 +50,11 @@ const ROLE_DESCRIPTIONS: Record<TeamRole, string> = {
   viewer: 'Read-only access to companies and expenses. No modifications.',
 };
 
+type PasswordModal = { userId: string; email: string } | null;
+
 export default function TeamSettingsPage() {
   const { user } = useAuth();
+  const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
   const [sub, setSub] = useState<Subscription | null>(null);
   const [members, setMembers] = useState<AccountMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,13 +67,20 @@ export default function TeamSettingsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const [pwModal, setPwModal] = useState<PasswordModal>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState('');
+
   const refresh = useCallback(async () => {
-    if (!user) return;
+    if (!user || !effectiveUserId) return;
     setLoading(true);
     try {
       const [s, m] = await Promise.all([
-        getSubscription(user.id),
-        getAccountMembers(user.id),
+        getSubscription(effectiveUserId),
+        getAccountMembers(effectiveUserId),
       ]);
       setSub(s);
       setMembers(m);
@@ -77,20 +89,30 @@ export default function TeamSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, effectiveUserId]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const currentMembership = members.find((m) => m.member_user_id === user?.id);
+  const canManageTeam = Boolean(
+    user?.id &&
+    effectiveUserId &&
+    (user.id === effectiveUserId || currentMembership?.role === 'admin')
+  );
 
   const maxUsers = maxUsersForSubscription(sub);
   const totalUsers = members.length + 1;
-  const canAddMore = totalUsers < maxUsers;
+  const canAddMore = canManageTeam && totalUsers < maxUsers;
   const planBlocked = sub?.plan === 'trial' || sub?.plan === 'personal' || sub?.plan === 'lite';
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); setSuccess('');
+    setError('');
+    setSuccess('');
     const trimmed = email.trim().toLowerCase();
-    if (!trimmed || !user) return;
+    if (!trimmed || !user || !effectiveUserId) return;
     if (trimmed === user.email?.toLowerCase()) {
       setError('You cannot add yourself as a team member.');
       return;
@@ -101,7 +123,7 @@ export default function TeamSettingsPage() {
     }
     setAdding(true);
     try {
-      await addAccountMember(user.id, trimmed, user.email, newRole);
+      await addAccountMember(effectiveUserId, trimmed, user.email, newRole);
       setEmail('');
       setNewRole('contributor');
       setSuccess(`Invitation sent to ${trimmed} as ${ROLE_LABELS[newRole]}.`);
@@ -114,7 +136,8 @@ export default function TeamSettingsPage() {
   };
 
   const handleRemove = async (member: AccountMember) => {
-    setError(''); setSuccess('');
+    setError('');
+    setSuccess('');
     setRemoving(member.id);
     try {
       await removeAccountMember(member.id);
@@ -128,7 +151,8 @@ export default function TeamSettingsPage() {
   };
 
   const handleRoleChange = async (member: AccountMember, role: TeamRole) => {
-    setError(''); setSuccess('');
+    setError('');
+    setSuccess('');
     setUpdatingRole(member.id);
     try {
       await updateMemberRole(member.id, role);
@@ -142,15 +166,14 @@ export default function TeamSettingsPage() {
   };
 
   const handleResend = async (member: AccountMember) => {
-    setError(''); setSuccess('');
+    setError('');
+    setSuccess('');
     setResending(member.id);
     try {
-      const { error: updateErr } = await import('@/lib/supabase').then(({ supabase }) =>
-        supabase
-          .from('account_members')
-          .update({ invited_at: new Date().toISOString() })
-          .eq('id', member.id)
-      );
+      const { error: updateErr } = await supabase
+        .from('account_members')
+        .update({ invited_at: new Date().toISOString() })
+        .eq('id', member.id);
       if (updateErr) throw updateErr;
 
       await fetch('/api/team/invite', {
@@ -171,10 +194,48 @@ export default function TeamSettingsPage() {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pwModal || !effectiveUserId) return;
+    setPwError('');
+    setPwSuccess('');
+
+    if (newPassword.length < 6) {
+      setPwError('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwError('Passwords do not match.');
+      return;
+    }
+
+    setPwLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? '';
+      const res = await fetch('/api/team/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          ownerUserId: effectiveUserId,
+          targetUserId: pwModal.userId,
+          newPassword,
+        }),
+      });
+      const payload = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(payload.error ?? 'Failed to update password.');
+      setPwSuccess('Password updated successfully.');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: unknown) {
+      setPwError((err as { message?: string }).message ?? 'Failed to update password.');
+    } finally {
+      setPwLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
-
-      {/* ── Role legend ──────────────────────────────────────── */}
       <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
         <h2 className="mb-3 text-sm font-semibold text-text-primary">Team Roles</h2>
         <div className="flex flex-col gap-2">
@@ -189,7 +250,6 @@ export default function TeamSettingsPage() {
         </div>
       </section>
 
-      {/* ── Current team ─────────────────────────────────────── */}
       <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -200,6 +260,13 @@ export default function TeamSettingsPage() {
             {totalUsers} / {maxUsers === Infinity ? '∞' : maxUsers} user{maxUsers !== 1 ? 's' : ''}
           </span>
         </div>
+
+        {!canManageTeam && (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-accent-primary/30 bg-accent-primary/10 px-3 py-2.5 text-xs text-text-secondary">
+            <LuInfo className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-accent-primary" />
+            Only the account owner or a team member with the Admin role can manage this team and reset member passwords.
+          </div>
+        )}
 
         {planBlocked && (
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-accent-primary/30 bg-accent-primary/10 px-3 py-2.5 text-xs text-text-secondary">
@@ -224,25 +291,22 @@ export default function TeamSettingsPage() {
           <p className="text-sm text-text-muted">Loading...</p>
         ) : (
           <>
-            {/* Owner row */}
             <div className="mb-2 flex items-center justify-between rounded-lg bg-bg-tertiary px-4 py-3">
               <div>
-                <p className="text-sm font-medium text-text-primary">{user?.email}</p>
-                <p className="text-xs text-text-muted">Account owner</p>
+                <p className="text-sm font-medium text-text-primary">
+                  {user?.id === effectiveUserId ? user?.email : 'Account owner'}
+                </p>
+                <p className="text-xs text-text-muted">Owner account</p>
               </div>
               <span className="rounded-full bg-accent-primary/15 px-2.5 py-0.5 text-xs font-medium text-accent-primary">
                 Owner
               </span>
             </div>
 
-            {/* Member rows */}
             {members.map((m) => {
               const status = enrollmentStatus(m);
               return (
-                <div
-                  key={m.id}
-                  className="mb-2 rounded-lg bg-bg-tertiary px-4 py-3"
-                >
+                <div key={m.id} className="mb-2 rounded-lg bg-bg-tertiary px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-text-primary truncate">{m.member_email}</p>
@@ -252,7 +316,6 @@ export default function TeamSettingsPage() {
                     </div>
 
                     <div className="flex flex-shrink-0 items-center gap-2">
-                      {/* Enrollment status */}
                       {status === 'enrolled' && (
                         <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success">
                           Enrolled
@@ -268,36 +331,55 @@ export default function TeamSettingsPage() {
                           <span className="rounded-full bg-error/10 px-2.5 py-0.5 text-xs font-medium text-error">
                             Expired
                           </span>
-                          <button
-                            onClick={() => handleResend(m)}
-                            disabled={resending === m.id}
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-accent-primary transition-colors hover:bg-accent-primary/10 disabled:opacity-50"
-                          >
-                            <LuRefreshCw className="h-3 w-3" />
-                            {resending === m.id ? 'Sending...' : 'Resend'}
-                          </button>
+                          {canManageTeam && (
+                            <button
+                              onClick={() => handleResend(m)}
+                              disabled={resending === m.id}
+                              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-accent-primary transition-colors hover:bg-accent-primary/10 disabled:opacity-50"
+                            >
+                              <LuRefreshCw className="h-3 w-3" />
+                              {resending === m.id ? 'Sending...' : 'Resend'}
+                            </button>
+                          )}
                         </>
                       )}
 
-                      <button
-                        onClick={() => handleRemove(m)}
-                        disabled={removing === m.id}
-                        className="flex items-center gap-1 rounded px-2 py-1 text-xs text-error transition-colors hover:bg-error/10 disabled:opacity-50"
-                      >
-                        <LuTrash2 className="h-3.5 w-3.5" />
-                        {removing === m.id ? 'Removing...' : 'Remove'}
-                      </button>
+                      {canManageTeam && m.member_user_id && (
+                        <button
+                          onClick={() => {
+                            setPwModal({ userId: m.member_user_id!, email: m.member_email });
+                            setPwError('');
+                            setPwSuccess('');
+                            setNewPassword('');
+                            setConfirmPassword('');
+                          }}
+                          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-accent-primary transition-colors hover:bg-accent-primary/10"
+                        >
+                          <LuKeyRound className="h-3.5 w-3.5" />
+                          Reset Password
+                        </button>
+                      )}
+
+                      {canManageTeam && (
+                        <button
+                          onClick={() => handleRemove(m)}
+                          disabled={removing === m.id}
+                          className="flex items-center gap-1 rounded px-2 py-1 text-xs text-error transition-colors hover:bg-error/10 disabled:opacity-50"
+                        >
+                          <LuTrash2 className="h-3.5 w-3.5" />
+                          {removing === m.id ? 'Removing...' : 'Remove'}
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  {/* Role selector */}
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-xs text-text-muted">Role:</span>
                     {(['admin', 'contributor', 'viewer'] as TeamRole[]).map((role) => (
                       <button
                         key={role}
                         onClick={() => m.role !== role && handleRoleChange(m, role)}
-                        disabled={updatingRole === m.id}
+                        disabled={!canManageTeam || updatingRole === m.id}
                         className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
                           m.role === role
                             ? ROLE_COLORS[role]
@@ -319,14 +401,90 @@ export default function TeamSettingsPage() {
         )}
       </section>
 
-      {/* ── Add member ────────────────────────────────────────── */}
+      {pwModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border-primary bg-bg-secondary p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <LuKeyRound className="h-5 w-5 text-accent-primary" />
+                <h3 className="text-base font-semibold text-text-primary">Reset Team Member Password</h3>
+              </div>
+              <button
+                onClick={() => setPwModal(null)}
+                className="rounded p-1 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+              >
+                <LuX className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="mb-4 text-sm text-text-muted">
+              Set a new password for <span className="font-medium text-text-primary">{pwModal.email}</span>.
+            </p>
+
+            {pwError && (
+              <div className="mb-3 rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-sm text-error">
+                {pwError}
+              </div>
+            )}
+            {pwSuccess && (
+              <div className="mb-3 rounded-lg border border-success/20 bg-success/10 px-4 py-3 text-sm text-success">
+                {pwSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-text-secondary">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-text-secondary">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPwModal(null)}
+                  className="rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={pwLoading}
+                  className="rounded-lg bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:opacity-50"
+                >
+                  {pwLoading ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
         <h2 className="mb-1 text-sm font-semibold text-text-primary">Add Team Member</h2>
         <p className="mb-5 text-xs text-text-muted">
           Enter their email and choose a role. They&apos;ll receive an invitation link valid for 1 hour.
         </p>
 
-        {!canAddMore && !planBlocked && (
+        {!canManageTeam && (
+          <div className="mb-4 rounded-lg border border-accent-primary/30 bg-accent-primary/10 px-4 py-3 text-sm text-text-secondary">
+            You need the Admin role on this account to invite team members.
+          </div>
+        )}
+
+        {!canAddMore && !planBlocked && canManageTeam && (
           <div className="mb-4 rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-sm text-error">
             You&apos;ve reached the user limit for your plan ({maxUsers} users). Upgrade to add more.
           </div>
