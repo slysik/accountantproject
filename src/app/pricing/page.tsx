@@ -78,9 +78,9 @@ export default function PricingPage() {
 
       {/* Hero */}
       <section className="mx-auto max-w-3xl px-6 py-16 text-center">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-accent-primary/30 bg-accent-primary/10 px-4 py-1.5 text-xs font-medium text-accent-primary">
-          <LuZap className="h-3 w-3" />
-          Start free for 30 days — no credit card required
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-accent-primary/30 bg-accent-primary/10 px-5 py-2 text-sm font-semibold text-accent-primary">
+          <LuZap className="h-4 w-4" />
+          Start FREE for 30 days – no credit card required
         </div>
         <h1 className="mb-4 text-4xl font-bold tracking-tight text-text-primary">
           Simple, transparent pricing

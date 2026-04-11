@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.2.11 — Pricing Page Layout & Readability Fixes (2026-04-11)
+The pricing page cards no longer suffer from word-wrap issues on plan names, badges, or misaligned INCLUDES labels. The grid container was widened from `max-w-5xl` to `max-w-7xl` so all five columns have breathing room, multi-word badges like "Most Popular" and "Private Server" now use `whitespace-nowrap` to stay on one line, and the name/price block uses a fixed height so the INCLUDES heading aligns horizontally across all cards. The hero banner text was updated to "Start FREE for 30 days" with a larger font size and bolder weight for better visibility.
+
 ### v2.2.10 — Guided Imports, Audit Trail & Portal Help (2026-04-09)
 Imports are now more guided and easier to trust. Users can upload a CSV, map columns using sample rows, delete unwanted entries before import, watch Alladin AI Assistant categorize the file with a short progress step, and then explicitly confirm whether those transactions should be committed to a company. The portal also now includes a Help area for menus, dashboards, and workflows, plus a new Audit area where account owners and team admins can track sign-ins and imports by company. Company links now open into a company-level dashboard view, the dashboard spend trend now shows real dollar values on hover, the header and sidebar were simplified and enlarged for readability, and the public site and assistant launcher have been updated to call the assistant **Alladin AI Assistant**.
 
