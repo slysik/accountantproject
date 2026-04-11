@@ -91,7 +91,7 @@ export default function PricingPage() {
       </section>
 
       {/* Plan cards */}
-      <section className="mx-auto max-w-5xl px-6 pb-24">
+      <section className="mx-auto max-w-7xl px-6 pb-24">
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
           {plans.map(({ key, badge, highlight }) => {
             const plan = PLANS[key];
@@ -106,13 +106,13 @@ export default function PricingPage() {
               >
                 {badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="rounded-full bg-accent-primary px-3 py-1 text-xs font-semibold text-bg-primary">
+                    <span className="whitespace-nowrap rounded-full bg-accent-primary px-3 py-1 text-xs font-semibold text-bg-primary">
                       {badge}
                     </span>
                   </div>
                 )}
 
-                <div className="mb-6">
+                <div className="mb-6 h-20">
                   <h2 className="mb-1 text-lg font-bold text-text-primary">{plan.name}</h2>
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-bold text-text-primary">${plan.price}</span>
@@ -120,7 +120,7 @@ export default function PricingPage() {
                   </div>
                 </div>
 
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
                   Includes
                 </div>
                 <ul className="mb-8 flex flex-col gap-2.5">
