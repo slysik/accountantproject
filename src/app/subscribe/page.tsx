@@ -17,7 +17,7 @@ import {
 } from '@/lib/subscription';
 
 const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? '';
-const PLAN_ORDER: Exclude<Plan, 'trial'>[] = ['personal', 'lite', 'business', 'elite', 'vps'];
+const PLAN_ORDER: Exclude<Plan, 'trial'>[] = ['individual', 'business', 'elite', 'vps'];
 
 export default function SubscribePage() {
   const { user, signOut } = useAuth();
@@ -122,7 +122,7 @@ export default function SubscribePage() {
         <PayPalScriptProvider
           options={paypalConfigured ? { clientId: PAYPAL_CLIENT_ID, currency: 'USD' } : { clientId: 'disabled' }}
         >
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {PLAN_ORDER.map((key) => {
               const plan = PLANS[key];
               const isPopular = key === 'business';

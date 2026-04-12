@@ -13,7 +13,7 @@ import {
 import { supabase } from '@/lib/supabase';
 
 // Pages accessible even when trial/subscription has expired
-const SUBSCRIPTION_EXEMPT = ['/subscribe', '/settings/security', '/settings/admin', '/mfa/verify', '/mfa/setup'];
+const SUBSCRIPTION_EXEMPT = ['/subscribe', '/settings/security', '/settings/admin', '/mfa/verify', '/mfa/setup', '/onboard'];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading, mfaRequired, mfaSetupRequired } = useAuth();
@@ -47,15 +47,57 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     const checkSub = async () => {
       try {
-        let sub = await getSubscription(user.id);
+        // Resolve user's account via account_users table (graceful if table doesn't exist yet)
+        let resolvedAccountId: string | undefined;
+        try {
+          const { data: accountUser } = await supabase
+            .from('account_users')
+            .select('account_id')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .limit(1)
+            .maybeSingle();
+          resolvedAccountId = accountUser?.account_id as string | undefined;
+        } catch {
+          // account_users table may not exist yet (pre-migration) — fall through to legacy flow
+        }
+
+        // Check if account needs onboarding (name is a fallback value)
+        if (resolvedAccountId && !SUBSCRIPTION_EXEMPT.some((p) => pathname.startsWith(p))) {
+          try {
+            const { data: account } = await supabase
+              .from('accounts')
+              .select('name, domain')
+              .eq('id', resolvedAccountId)
+              .single();
+
+            if (account) {
+              const name = (account.name as string) ?? '';
+              const domain = (account.domain as string) ?? '';
+              if (!name || name === 'Unknown' || name === domain) {
+                if (pathname !== '/onboard') {
+                  router.push('/onboard');
+                  setSubLoading(false);
+                  return;
+                }
+              }
+            }
+          } catch {
+            // accounts table may not exist yet — skip onboard check
+          }
+        }
+
+        let sub = resolvedAccountId
+          ? await getSubscription(user.id, resolvedAccountId)
+          : await getSubscription(user.id);
         let shouldSeedSampleData = false;
 
         // Team members can inherit access from the account owner without creating
         // their own subscription row first. Run enrollment first so member_user_id
         // is set before the expiry check in findOwnerSubscription runs.
-        if (!sub && user.email) {
+        if (!sub) {
           try { await supabase.rpc('mark_team_member_enrolled'); } catch { /* ignore */ }
-          const ownerSub = await findOwnerSubscription(user.email);
+          const ownerSub = await findOwnerSubscription(user.id);
           if (ownerSub && isAccessAllowed(ownerSub)) {
             setSubBlocked(false);
             setSubLoading(false);
@@ -63,9 +105,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // New user — create trial
+        // New user — create trial (defensive edge case for users with no account)
         if (!sub) {
-          sub = await createTrialSubscription(user.id);
+          sub = await createTrialSubscription(user.id, resolvedAccountId);
           shouldSeedSampleData = true;
         }
 
@@ -84,9 +126,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         }
 
         // Own subscription expired — check if they're a member of another active account
-        if (user.email) {
+        {
           try { await supabase.rpc('mark_team_member_enrolled'); } catch { /* ignore */ }
-          const ownerSub = await findOwnerSubscription(user.email);
+          const ownerSub = await findOwnerSubscription(user.id);
           if (ownerSub && isAccessAllowed(ownerSub)) {
             setSubBlocked(false);
             setSubLoading(false);

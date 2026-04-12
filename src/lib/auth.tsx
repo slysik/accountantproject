@@ -27,8 +27,17 @@ interface AuthContextType {
   signUpWithEmail: (
     _email: string,
     _password: string,
-    _inviteToken?: string
-  ) => Promise<{ sessionCreated: boolean; emailConfirmationRequired: boolean; inviteActivated?: boolean }>;
+    _options?: { firstName?: string; lastName?: string; companyName?: string; inviteToken?: string; confirmTenantId?: string }
+  ) => Promise<{
+    sessionCreated: boolean;
+    emailConfirmationRequired: boolean;
+    inviteActivated?: boolean;
+    tenantMatch?: boolean;
+    matchedAccountName?: string;
+    matchedAccountId?: string;
+    accountId?: string;
+    accountName?: string;
+  }>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   sendPasswordReset: (_email: string) => Promise<void>;
@@ -108,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (window.sessionStorage.getItem(storageKey)) return;
 
       try {
-        const ownerUserId = await findOwnerAccountUserId(email);
+        const ownerUserId = await findOwnerAccountUserId(currentUser.id);
         const effectiveOwnerUserId = ownerUserId ?? currentUser.id;
 
         await createAuditEvent({
@@ -314,7 +323,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await markTeamMemberEnrolled();
   };
 
-  const signUpWithEmail = async (email: string, password: string, inviteToken?: string) => {
+  const signUpWithEmail = async (
+    email: string,
+    password: string,
+    options?: { firstName?: string; lastName?: string; companyName?: string; inviteToken?: string; confirmTenantId?: string }
+  ) => {
     // Prevent a stale session from surviving a sign-up attempt and making the
     // app appear to log into the previously authenticated user.
     await supabase.auth.signOut({ scope: 'local' });
@@ -327,7 +340,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({
         email,
         password,
-        inviteToken,
+        inviteToken: options?.inviteToken,
+        firstName: options?.firstName,
+        lastName: options?.lastName,
+        companyName: options?.companyName,
+        confirmTenantId: options?.confirmTenantId,
       }),
     });
 
@@ -348,6 +365,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionCreated: !!payload.sessionCreated,
       emailConfirmationRequired: !!payload.emailConfirmationRequired,
       inviteActivated: !!payload.inviteActivated,
+      tenantMatch: payload.tenantMatch ?? undefined,
+      matchedAccountName: payload.matchedAccountName ?? undefined,
+      matchedAccountId: payload.matchedAccountId ?? undefined,
+      accountId: payload.accountId ?? undefined,
+      accountName: payload.accountName ?? undefined,
     };
   };
 

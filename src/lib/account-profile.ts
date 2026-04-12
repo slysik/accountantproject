@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 
 export interface AccountProfile {
   user_id: string;
+  account_id?: string;
   account_name: string;
   first_name: string;
   last_name: string;
@@ -19,6 +20,7 @@ export interface AccountProfile {
 
 export const EMPTY_ACCOUNT_PROFILE: AccountProfile = {
   user_id: '',
+  account_id: undefined,
   account_name: '',
   first_name: '',
   last_name: '',
@@ -37,6 +39,7 @@ export const EMPTY_ACCOUNT_PROFILE: AccountProfile = {
 function normalizeProfileRow(row: Partial<AccountProfile> | null, userId: string): AccountProfile {
   return {
     user_id: userId,
+    account_id: row?.account_id ?? undefined,
     account_name: row?.account_name ?? '',
     first_name: row?.first_name ?? '',
     last_name: row?.last_name ?? '',
@@ -57,7 +60,7 @@ export async function getAccountProfile(userId: string): Promise<AccountProfile>
   const { data, error } = await supabase
     .from('account_profiles')
     .select(
-      'user_id, account_name, first_name, last_name, business_name, contact_email, phone, address_line_1, address_line_2, city, state_region, postal_code, country, website'
+      'user_id, account_id, account_name, first_name, last_name, business_name, contact_email, phone, address_line_1, address_line_2, city, state_region, postal_code, country, website'
     )
     .eq('user_id', userId)
     .maybeSingle();
@@ -73,7 +76,7 @@ export async function saveAccountProfile(profile: AccountProfile): Promise<Accou
       onConflict: 'user_id',
     })
     .select(
-      'user_id, account_name, first_name, last_name, business_name, contact_email, phone, address_line_1, address_line_2, city, state_region, postal_code, country, website'
+      'user_id, account_id, account_name, first_name, last_name, business_name, contact_email, phone, address_line_1, address_line_2, city, state_region, postal_code, country, website'
     )
     .single();
 

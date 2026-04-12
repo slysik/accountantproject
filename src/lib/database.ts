@@ -4,6 +4,26 @@ import { DEFAULT_COMPANY_NAME } from './company';
 import { buildSampleExpenses, SAMPLE_COMPANY_NAME } from './sample-data';
 import type { CategorizedExpense, CompanyNode, FolderNode, MonthNode, Receipt, SubfolderNode, TrashCompanyItem } from '@/types';
 
+/**
+ * Resolves the active account_id for a user via the account_users junction table.
+ * Returns undefined if no account is found. Used to scope queries by account_id.
+ */
+async function getUserAccountId(userId: string): Promise<string | undefined> {
+  const { data, error } = await supabase
+    .from('account_users')
+    .select('account_id')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return undefined;
+  return data.account_id as string;
+}
+
+/** Exported version for use by other modules. */
+export { getUserAccountId };
+
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -61,22 +81,27 @@ export async function createExpense(
   // Ensure the year folder exists so the expense is visible in the sidebar
   await createYearFolders(userId, companyName, year);
 
+  const accountId = await getUserAccountId(userId);
+
+  const insertPayload: Record<string, unknown> = {
+    user_id: userId,
+    company_name: companyName,
+    date: dateStr,
+    month,
+    year,
+    description: expense.description,
+    amount: expense.amount,
+    original_category: expense.originalCategory,
+    category: expense.category,
+    filename: expense.filename,
+    raw_data: expense.rawData,
+    deleted_at: null,
+  };
+  if (accountId) insertPayload.account_id = accountId;
+
   const { data, error } = await supabase
     .from('expenses')
-    .insert({
-      user_id: userId,
-      company_name: companyName,
-      date: dateStr,
-      month,
-      year,
-      description: expense.description,
-      amount: expense.amount,
-      original_category: expense.originalCategory,
-      category: expense.category,
-      filename: expense.filename,
-      raw_data: expense.rawData,
-      deleted_at: null,
-    })
+    .insert(insertPayload)
     .select('id')
     .single();
 
@@ -107,9 +132,11 @@ export async function bulkCreateExpenses(
 ): Promise<number> {
   if (expenses.length === 0) return 0;
 
+  const accountId = await getUserAccountId(userId);
+
   const rows = expenses.map((expense) => {
     const { dateStr, year, month } = canonicalize(expense);
-    return {
+    const row: Record<string, unknown> = {
       user_id: userId,
       company_name: companyName,
       date: dateStr,
@@ -123,10 +150,12 @@ export async function bulkCreateExpenses(
       raw_data: expense.rawData,
       deleted_at: null,
     };
+    if (accountId) row.account_id = accountId;
+    return row;
   });
 
   // ── Client-side dedup: fetch existing keys for the affected years ──
-  const years = Array.from(new Set(rows.map((r) => r.year)));
+  const years = Array.from(new Set(rows.map((r) => r.year as string)));
 
   // Ensure folder records exist for all affected years so expenses are visible
   for (const year of years) {
@@ -159,7 +188,7 @@ export async function bulkCreateExpenses(
 
   // Filter out duplicates
   const deduped = rows.filter((r) => {
-    const key = deduplicationKey({ date: r.date, description: r.description, amount: r.amount, filename: r.filename });
+    const key = deduplicationKey({ date: r.date as string, description: r.description as string, amount: r.amount as number, filename: (r.filename as string) ?? '' });
     if (existingKeys.has(key)) return false;
     // Also dedup within the batch itself
     existingKeys.add(key);
@@ -212,27 +241,32 @@ export async function getExpenses(
   year: string,
   month: string
 ): Promise<CategorizedExpense[]> {
-  const { data: companyRow, error: companyError } = await supabase
+  const accountId = await getUserAccountId(userId);
+
+  let companyQuery = supabase
     .from('companies')
     .select('deleted_at')
-    .eq('user_id', userId)
-    .eq('name', companyName)
-    .maybeSingle();
+    .eq('name', companyName);
+  companyQuery = accountId ? companyQuery.eq('account_id', accountId) : companyQuery.eq('user_id', userId);
+
+  const { data: companyRow, error: companyError } = await companyQuery.maybeSingle();
 
   if (companyError) throw companyError;
   if (companyRow?.deleted_at) return [];
 
   const monthKey = month.includes('-') ? month : `${year}-${month}`;
 
-  const { data, error } = await supabase
+  let expenseQuery = supabase
     .from('expenses')
     .select('*')
-    .eq('user_id', userId)
     .eq('company_name', companyName)
     .eq('year', year)
     .eq('month', monthKey)
     .is('deleted_at', null)
     .order('date', { ascending: true });
+  expenseQuery = accountId ? expenseQuery.eq('account_id', accountId) : expenseQuery.eq('user_id', userId);
+
+  const { data, error } = await expenseQuery;
 
   if (error) throw error;
   return (data ?? []).map(rowToExpense);
@@ -329,22 +363,28 @@ export async function permanentDeleteExpense(
  * Fetches all soft-deleted expenses for a user.
  */
 export async function getTrash(userId: string): Promise<CategorizedExpense[]> {
-  const { data: activeCompanies, error: companiesError } = await supabase
+  const accountId = await getUserAccountId(userId);
+
+  let companiesQuery = supabase
     .from('companies')
     .select('name')
-    .eq('user_id', userId)
     .is('deleted_at', null);
+  companiesQuery = accountId ? companiesQuery.eq('account_id', accountId) : companiesQuery.eq('user_id', userId);
+
+  const { data: activeCompanies, error: companiesError } = await companiesQuery;
 
   if (companiesError) throw companiesError;
 
   const activeCompanyNames = new Set((activeCompanies ?? []).map((row) => row.name as string));
 
-  const { data, error } = await supabase
+  let expensesQuery = supabase
     .from('expenses')
     .select('*')
-    .eq('user_id', userId)
     .not('deleted_at', 'is', null)
     .order('deleted_at', { ascending: false });
+  expensesQuery = accountId ? expensesQuery.eq('account_id', accountId) : expensesQuery.eq('user_id', userId);
+
+  const { data, error } = await expensesQuery;
 
   if (error) throw error;
   return (data ?? [])
@@ -356,22 +396,28 @@ export async function getTrash(userId: string): Promise<CategorizedExpense[]> {
  * Fetches all non-deleted expenses across the user's account.
  */
 export async function getAllExpenses(userId: string): Promise<CategorizedExpense[]> {
-  const { data: activeCompanies, error: companiesError } = await supabase
+  const accountId = await getUserAccountId(userId);
+
+  let companiesQuery = supabase
     .from('companies')
     .select('name')
-    .eq('user_id', userId)
     .is('deleted_at', null);
+  companiesQuery = accountId ? companiesQuery.eq('account_id', accountId) : companiesQuery.eq('user_id', userId);
+
+  const { data: activeCompanies, error: companiesError } = await companiesQuery;
 
   if (companiesError) throw companiesError;
 
   const activeCompanyNames = new Set((activeCompanies ?? []).map((row) => row.name as string));
 
-  const { data, error } = await supabase
+  let expensesQuery = supabase
     .from('expenses')
     .select('*')
-    .eq('user_id', userId)
     .is('deleted_at', null)
     .order('date', { ascending: false });
+  expensesQuery = accountId ? expensesQuery.eq('account_id', accountId) : expensesQuery.eq('user_id', userId);
+
+  const { data, error } = await expensesQuery;
 
   if (error) throw error;
   return (data ?? [])
@@ -386,12 +432,13 @@ export async function createCompany(userId: string, companyName: string): Promis
   const normalized = companyName.trim();
   if (!normalized) throw new Error('Company name is required.');
 
+  const accountId = await getUserAccountId(userId);
+  const upsertPayload: Record<string, unknown> = { user_id: userId, name: normalized, deleted_at: null };
+  if (accountId) upsertPayload.account_id = accountId;
+
   const { error } = await supabase
     .from('companies')
-    .upsert(
-      { user_id: userId, name: normalized, deleted_at: null },
-      { onConflict: 'user_id,name' }
-    );
+    .upsert(upsertPayload, { onConflict: 'user_id,name' });
 
   if (error) throw error;
 }
@@ -473,12 +520,13 @@ export async function renameCompany(
 export async function createYearFolders(userId: string, companyName: string, year: string): Promise<void> {
   await createCompany(userId, companyName);
 
+  const accountId = await getUserAccountId(userId);
+  const upsertPayload: Record<string, unknown> = { user_id: userId, company_name: companyName, year };
+  if (accountId) upsertPayload.account_id = accountId;
+
   const { error } = await supabase
     .from('folders')
-    .upsert(
-      { user_id: userId, company_name: companyName, year },
-      { onConflict: 'user_id,company_name,year' }
-    );
+    .upsert(upsertPayload, { onConflict: 'user_id,company_name,year' });
 
   if (error) throw error;
 }
@@ -494,17 +542,18 @@ export async function createCustomerSubfolder(
 
   await createYearFolders(userId, companyName, year);
 
+  const accountId = await getUserAccountId(userId);
+  const upsertPayload: Record<string, unknown> = {
+    user_id: userId,
+    company_name: companyName,
+    year,
+    name: normalizedName,
+  };
+  if (accountId) upsertPayload.account_id = accountId;
+
   const { error } = await supabase
     .from('customer_subfolders')
-    .upsert(
-      {
-        user_id: userId,
-        company_name: companyName,
-        year,
-        name: normalizedName,
-      },
-      { onConflict: 'user_id,company_name,year,name' }
-    );
+    .upsert(upsertPayload, { onConflict: 'user_id,company_name,year,name' });
 
   if (error) throw error;
 }
@@ -517,12 +566,19 @@ export async function createCompanyRootFolder(
 ): Promise<void> {
   const normalizedName = name.trim();
   if (!normalizedName) throw new Error('Folder name is required.');
+
+  const accountId = await getUserAccountId(userId);
+  const upsertPayload: Record<string, unknown> = {
+    user_id: userId,
+    company_name: companyName,
+    year: '__root__',
+    name: normalizedName,
+  };
+  if (accountId) upsertPayload.account_id = accountId;
+
   const { error } = await supabase
     .from('customer_subfolders')
-    .upsert(
-      { user_id: userId, company_name: companyName, year: '__root__', name: normalizedName },
-      { onConflict: 'user_id,company_name,year,name' }
-    );
+    .upsert(upsertPayload, { onConflict: 'user_id,company_name,year,name' });
   if (error) throw error;
 }
 
@@ -547,12 +603,16 @@ export async function deleteCustomerSubfolder(
  * Fetches all companies, years, and month-level stats.
  */
 export async function getUserFolders(userId: string): Promise<CompanyNode[]> {
-  const { data: companyRowsByUser, error: companiesError } = await supabase
+  const accountId = await getUserAccountId(userId);
+
+  let companyQueryByUser = supabase
     .from('companies')
     .select('user_id, name')
-    .eq('user_id', userId)
     .is('deleted_at', null)
     .order('name', { ascending: true });
+  companyQueryByUser = accountId ? companyQueryByUser.eq('account_id', accountId) : companyQueryByUser.eq('user_id', userId);
+
+  const { data: companyRowsByUser, error: companiesError } = await companyQueryByUser;
 
   if (companiesError) throw companiesError;
 
@@ -693,18 +753,23 @@ export async function createReceipt(
   fileType: string,
   sizeBytes: number
 ): Promise<Receipt> {
+  const accountId = await getUserAccountId(userId);
+
+  const insertPayload: Record<string, unknown> = {
+    expense_id: expenseId,
+    user_id: userId,
+    filename,
+    storage_path: storagePath,
+    file_type: fileType,
+    size_bytes: sizeBytes,
+    uploaded_by: userId,
+    deleted_at: null,
+  };
+  if (accountId) insertPayload.account_id = accountId;
+
   const { data, error } = await supabase
     .from('receipts')
-    .insert({
-      expense_id: expenseId,
-      user_id: userId,
-      filename,
-      storage_path: storagePath,
-      file_type: fileType,
-      size_bytes: sizeBytes,
-      uploaded_by: userId,
-      deleted_at: null,
-    })
+    .insert(insertPayload)
     .select()
     .single();
 
@@ -910,12 +975,16 @@ export async function getDeletedExpensesByYear(
 }
 
 export async function getDeletedCompanies(userId: string): Promise<TrashCompanyItem[]> {
-  const { data: deletedCompanies, error: deletedCompaniesError } = await supabase
+  const accountId = await getUserAccountId(userId);
+
+  let query = supabase
     .from('companies')
     .select('id, name, deleted_at')
-    .eq('user_id', userId)
     .not('deleted_at', 'is', null)
     .order('deleted_at', { ascending: false });
+  query = accountId ? query.eq('account_id', accountId) : query.eq('user_id', userId);
+
+  const { data: deletedCompanies, error: deletedCompaniesError } = await query;
 
   if (deletedCompaniesError) throw deletedCompaniesError;
   if (!deletedCompanies || deletedCompanies.length === 0) return [];

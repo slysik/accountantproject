@@ -9,12 +9,7 @@ import SiteLogo from '@/components/SiteLogo';
 
 const plans = [
   {
-    key: 'personal' as const,
-    badge: 'New',
-    highlight: false,
-  },
-  {
-    key: 'lite' as const,
+    key: 'individual' as const,
     badge: null,
     highlight: false,
   },
@@ -92,7 +87,7 @@ export default function PricingPage() {
 
       {/* Plan cards */}
       <section className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {plans.map(({ key, badge, highlight }) => {
             const plan = PLANS[key];
             return (
@@ -163,7 +158,7 @@ export default function PricingPage() {
                   </Link>
                   {/* Free trial secondary option */}
                   <Link
-                    href="/login"
+                    href="/login?mode=signup"
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-border-primary px-6 py-2.5 text-xs font-medium text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
                   >
                     Start free trial
@@ -192,7 +187,7 @@ export default function PricingPage() {
               },
               {
                 q: 'What counts as a transaction?',
-                a: 'Each imported expense row counts as one transaction. Personal includes 500 transactions, while Lite and above include unlimited transactions.',
+                a: 'Each imported expense row counts as one transaction. Individual includes unlimited transactions.',
               },
               {
                 q: 'Is there a contract or commitment?',

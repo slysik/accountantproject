@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.3.0 — Multi-Tenant Account Model & Registration Overhaul (2026-04-12)
+All data is now scoped to an **account** rather than a single user. Signing up captures your company name and either matches you to an existing account or creates a new one with a 30-day Business trial (4 users). Existing users were automatically migrated — each got an account created from their business profile, and all their companies, expenses, folders, receipts, and subscriptions were linked to it. Team members are now managed through an `account_users` table with proper role-based access. Row-Level Security policies across every data table now enforce account-scoped access instead of user-id-only checks. The "Personal" and "Lite" plans have been consolidated into a single **Individual** plan. An onboarding page guides migrated users whose account name needs updating. Google OAuth is hidden during signup to ensure company name capture. Utility scripts were added for managing test users and running migrations.
+
 ### v2.2.12 — Vendor Auto-Mapping & Dashboard Wizard Launchers (2026-04-11)
 Category mapping is now faster and more consistent across imports and hand-entered transactions. If a saved retailer or vendor label matches the description or imported label, ABF now automatically applies that category during manual entry and the import workflow uses the same shared mapping logic. The guided Import Wizard can also now be launched directly from both the company-level and year-level dashboard views, with the current company carried into the commit step automatically.
 
@@ -85,6 +88,65 @@ Attach receipts (images, PDFs, Office docs) to any expense from a gallery modal 
 Migrated from a vanilla JS proof-of-concept to a full Next.js 14 application backed by Supabase. Added authentication, cloud storage, a 4-step import wizard, and exports to Excel, CSV, and QuickBooks (QBO/OFX).
 
 ---
+
+## [2.3.0] — 2026-04-12
+
+### Added
+
+#### Multi-Tenant Account Model
+- Created `accounts` table as the canonical tenant entity with name, domain, and creator reference
+- Created `account_users` junction table linking users to accounts with role (owner/member/admin) and status
+- Added nullable `account_id` FK column to all 9 data tables (subscriptions, companies, expenses, folders, receipts, account_profiles, account_members, customer_subfolders, category_mappings)
+- Added `is_account_member()` helper function for RLS policy evaluation
+- Added account-scoped RLS policies with user_id fallback for backward compatibility on all data tables
+- Added indexes on all new `account_id` columns
+
+#### Enhanced Signup Flow
+- Added company name, first name, and last name capture during signup
+- Added fuzzy company name matching (Levenshtein distance, 0.8 threshold) to detect existing tenants
+- Added two-call signup flow: first call checks for tenant match, second confirms join or creates new
+- Added tenant match confirmation UI with "Yes, join" / "No, create new" buttons
+- Added `createAuthUser` helper with admin API (instant confirmation) and public API fallback
+- Added per-email 60-second cooldown to avoid Supabase email rate limits
+- Added server-side re-verification of tenant match to prevent unauthorized account joins
+- Hidden Google OAuth in signup mode to ensure company name capture
+
+#### Data Migration (020-023)
+- Migration 020: Backfilled accounts from existing subscriptions using business_name or email prefix
+- Migration 020: Populated account_users from account creators and enrolled team members
+- Migration 020: Backfilled account_id on all 9 data tables
+- Migration 021a: Added account-scoped RLS policies alongside legacy policies (with user_id fallback)
+- Migration 021b: Dropped all legacy user_id/email-based RLS policies
+- Migration 022: Renamed personal/lite plans to individual, updated CHECK constraint
+- Migration 023: Rewrote admin functions for account model
+
+#### Onboarding & Utilities
+- Added `/onboard` page for migrated users whose account name needs updating
+- Added `scripts/delete-user.ts` for full user cleanup including accounts and audit events
+- Added `scripts/check-user.ts` for inspecting user data across all tables
+- Added `scripts/run-migration.ts` for running SQL migrations via session pooler
+- Added `restart.sh` for quick dev server restart
+
+### Changed
+
+#### Subscription & Plan Updates
+- Removed "Personal" plan, renamed "Lite" to "Individual"
+- Business plan `maxYears` changed from limited to unlimited
+- `createTrialSubscription` now provisions 4-user Business trial when account_id is present
+- `getSubscription` resolves via account_id first, falls back to user_id
+- `findOwnerSubscription` uses account_users with fallback to account_members email lookup
+
+#### Auth & Security
+- Signup IP rate limit changed from 5/24hrs to 20/1hr
+- Friendly error messages for duplicate users and rate limits
+- Auth redirect fallback changed from localhost:3000 to production URL
+- `signUpWithEmail` accepts options object with firstName, lastName, companyName, inviteToken, confirmTenantId
+
+#### AuthGuard & Session
+- AuthGuard resolves user's account via account_users table with pre-migration fallback
+- Subscription resolution uses account_id when available
+- Theme preference now persists correctly across pages via synchronous localStorage read
+- "Start Free" links now navigate to `/login?mode=signup`
 
 ## [2.2.12] — 2026-04-11
 

@@ -1,10 +1,11 @@
 import { supabase } from './supabase';
 
-export type Plan = 'trial' | 'personal' | 'lite' | 'business' | 'elite' | 'vps';
+export type Plan = 'trial' | 'individual' | 'business' | 'elite' | 'vps';
 
 export interface Subscription {
   id: string;
   user_id: string;
+  account_id?: string;
   plan: Plan;
   status: 'active' | 'cancelled';
   trial_ends_at: string;
@@ -24,24 +25,8 @@ export interface PlanDetails {
 }
 
 export const PLANS: Record<Exclude<Plan, 'trial'>, PlanDetails> = {
-  personal: {
-    name: 'Personal',
-    price: 5,
-    maxUsers: 1,
-    maxTransactions: 500,
-    maxYears: null,
-    features: [
-      'Single user',
-      'Up to 500 transactions',
-      'Unlimited years',
-      'CSV import & export',
-      'IRS Schedule C categories',
-      'Receipt attachments',
-      'Excel & QBO export',
-    ],
-  },
-  lite: {
-    name: 'Lite',
+  individual: {
+    name: 'Individual',
     price: 10,
     maxUsers: 1,
     maxTransactions: null,
@@ -61,11 +46,11 @@ export const PLANS: Record<Exclude<Plan, 'trial'>, PlanDetails> = {
     price: 25,
     maxUsers: 4,
     maxTransactions: null,
-    maxYears: 5,
+    maxYears: null,
     features: [
       'Up to 4 users',
       'Unlimited transactions',
-      'Up to 5 years of data',
+      'Unlimited years',
       'CSV import & export',
       'IRS Schedule C categories',
       'Receipt attachments',
@@ -108,7 +93,16 @@ export const PLANS: Record<Exclude<Plan, 'trial'>, PlanDetails> = {
   },
 };
 
-export async function getSubscription(userId: string): Promise<Subscription | null> {
+export async function getSubscription(userId: string, accountId?: string): Promise<Subscription | null> {
+  if (accountId) {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('account_id', accountId)
+      .maybeSingle();
+    if (!error && data) return data as Subscription;
+  }
+
   const { data, error } = await supabase
     .from('subscriptions')
     .select('*')
@@ -118,43 +112,66 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
   return data as Subscription;
 }
 
-export async function createTrialSubscription(userId: string): Promise<Subscription> {
+export async function createTrialSubscription(userId: string, accountId?: string): Promise<Subscription> {
   const trialEndsAt = new Date();
   trialEndsAt.setDate(trialEndsAt.getDate() + 30);
 
-  const { data, error } = await supabase
+  const insertPayload: Record<string, unknown> = {
+    user_id: userId,
+    plan: 'trial',
+    status: 'active',
+    trial_ends_at: trialEndsAt.toISOString(),
+    plan_expires_at: trialEndsAt.toISOString(),
+    allowed_active_users: accountId ? 4 : 1,
+  };
+  if (accountId) insertPayload.account_id = accountId;
+
+  let { data, error } = await supabase
     .from('subscriptions')
-    .insert({
-      user_id: userId,
-      plan: 'trial',
-      status: 'active',
-      trial_ends_at: trialEndsAt.toISOString(),
-      plan_expires_at: trialEndsAt.toISOString(),
-      allowed_active_users: 1,
-    })
+    .insert(insertPayload)
     .select()
     .single();
+
+  // If account_id column doesn't exist yet (pre-migration), retry without it
+  if (error && accountId) {
+    delete insertPayload.account_id;
+    ({ data, error } = await supabase
+      .from('subscriptions')
+      .insert(insertPayload)
+      .select()
+      .single());
+  }
 
   if (error) throw error;
   return data as Subscription;
 }
 
-export async function selectPlan(userId: string, plan: Exclude<Plan, 'trial'>): Promise<void> {
+export async function selectPlan(userId: string, plan: Exclude<Plan, 'trial'>, accountId?: string): Promise<void> {
   const planStartsAt = new Date();
   const planExpiresAt = new Date(planStartsAt);
   planExpiresAt.setDate(planExpiresAt.getDate() + 30);
 
-  const { error } = await supabase
-    .from('subscriptions')
-    .update({
-      plan,
-      status: 'active',
-      plan_starts_at: planStartsAt.toISOString(),
-      plan_expires_at: planExpiresAt.toISOString(),
-      allowed_active_users: PLANS[plan].maxUsers,
-    })
-    .eq('user_id', userId);
-  if (error) throw error;
+  const updatePayload = {
+    plan,
+    status: 'active',
+    plan_starts_at: planStartsAt.toISOString(),
+    plan_expires_at: planExpiresAt.toISOString(),
+    allowed_active_users: PLANS[plan].maxUsers,
+  };
+
+  if (accountId) {
+    const { error } = await supabase
+      .from('subscriptions')
+      .update(updatePayload)
+      .eq('account_id', accountId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from('subscriptions')
+      .update(updatePayload)
+      .eq('user_id', userId);
+    if (error) throw error;
+  }
 }
 
 export function isTrialExpired(sub: Subscription): boolean {
@@ -206,12 +223,19 @@ export interface AccountMemberCompanyAccess {
 }
 
 /** Returns members the current user (as owner) has added. */
-export async function getAccountMembers(ownerUserId: string): Promise<AccountMember[]> {
-  const { data, error } = await supabase
+export async function getAccountMembers(ownerUserId: string, accountId?: string): Promise<AccountMember[]> {
+  let query = supabase
     .from('account_members')
     .select('*')
-    .eq('owner_user_id', ownerUserId)
     .order('created_at', { ascending: true });
+
+  if (accountId) {
+    query = query.eq('account_id', accountId);
+  } else {
+    query = query.eq('owner_user_id', ownerUserId);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as AccountMember[];
 }
@@ -222,28 +246,32 @@ export async function addAccountMember(
   email: string,
   ownerEmail?: string,
   role: TeamRole = 'contributor',
+  accountId?: string,
 ): Promise<AccountMember> {
-  const sub = await getSubscription(ownerUserId);
+  const sub = await getSubscription(ownerUserId, accountId);
   const maxUsers = maxUsersForSubscription(sub);
 
-  if (!sub || sub.plan === 'trial' || sub.plan === 'personal' || sub.plan === 'lite') {
+  if (!sub || sub.plan === 'trial' || sub.plan === 'individual') {
     throw new Error('Your current plan does not include team members.');
   }
 
-  const members = await getAccountMembers(ownerUserId);
+  const members = await getAccountMembers(ownerUserId, accountId);
   if (members.length + 1 >= maxUsers) {
     throw new Error(`You have reached the ${maxUsers}-user limit for your plan.`);
   }
 
   const now = new Date().toISOString();
+  const insertPayload: Record<string, unknown> = {
+    owner_user_id: ownerUserId,
+    member_email: email.toLowerCase().trim(),
+    invited_at: now,
+    role,
+  };
+  if (accountId) insertPayload.account_id = accountId;
+
   const { data, error } = await supabase
     .from('account_members')
-    .insert({
-      owner_user_id: ownerUserId,
-      member_email: email.toLowerCase().trim(),
-      invited_at: now,
-      role,
-    })
+    .insert(insertPayload)
     .select()
     .single();
   if (error) throw error;
@@ -349,73 +377,107 @@ export async function getMyTeamRole(memberEmail: string): Promise<TeamRole | nul
   return data.role as TeamRole;
 }
 
-const INVITE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
-
-async function listOwnerAccountUserIds(memberEmail: string): Promise<string[]> {
-  const normalizedEmail = memberEmail.toLowerCase().trim();
-
-  const { data, error } = await supabase
-    .from('account_members')
-    .select('owner_user_id, member_user_id, invited_at, created_at')
-    .eq('member_email', normalizedEmail)
-    .order('created_at', { ascending: false });
-
-  if (error || !data) return [];
-
-  const now = Date.now();
-  const seen = new Set<string>();
-  const ownerIds: string[] = [];
-
-  for (const row of data) {
-    const ownerUserId = row.owner_user_id as string | null;
-    if (!ownerUserId || seen.has(ownerUserId)) continue;
-
-    // Already enrolled — always allowed
-    if (row.member_user_id) {
-      seen.add(ownerUserId);
-      ownerIds.push(ownerUserId);
-      continue;
-    }
-
-    // Not yet enrolled — only allow within the 24-hour invite window
-    const invitedAt = new Date(row.invited_at ?? row.created_at).getTime();
-    if (now - invitedAt <= INVITE_EXPIRY_MS) {
-      seen.add(ownerUserId);
-      ownerIds.push(ownerUserId);
-    }
-  }
-
-  return ownerIds;
-}
-
 /**
  * Checks if the current user is a member of another active account.
  * Used by AuthGuard to grant access to invited users who have no subscription of their own.
+ * Uses account_users table for multi-tenant lookup.
  */
-export async function findOwnerSubscription(memberEmail: string): Promise<Subscription | null> {
-  const ownerUserIds = await listOwnerAccountUserIds(memberEmail);
-  if (ownerUserIds.length === 0) return null;
+export async function findOwnerSubscription(userId: string): Promise<Subscription | null> {
+  // Try account_users first (post-migration path)
+  const { data: accountUsers, error } = await supabase
+    .from('account_users')
+    .select('account_id')
+    .eq('user_id', userId)
+    .eq('status', 'active');
 
-  let fallback: Subscription | null = null;
+  if (!error && accountUsers && accountUsers.length > 0) {
+    let fallback: Subscription | null = null;
 
-  for (const ownerUserId of ownerUserIds) {
-    const sub = await getSubscription(ownerUserId);
-    if (!sub) continue;
-    if (sub.status === 'active') return sub;
-    if (!fallback) fallback = sub;
+    for (const au of accountUsers) {
+      const { data: sub, error: subError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('account_id', au.account_id)
+        .maybeSingle();
+
+      if (subError || !sub) continue;
+      if ((sub as Subscription).status === 'active') return sub as Subscription;
+      if (!fallback) fallback = sub as Subscription;
+    }
+
+    if (fallback) return fallback;
   }
 
-  return fallback;
+  // Fallback: check account_members by email (pre-migration or pending members)
+  const { data: { user } } = await supabase.auth.getUser();
+  const email = user?.email;
+  if (!email) return null;
+
+  const { data: membership, error: memberError } = await supabase
+    .from('account_members')
+    .select('owner_user_id')
+    .eq('member_email', email.toLowerCase().trim())
+    .limit(1)
+    .maybeSingle();
+
+  if (memberError || !membership) return null;
+
+  const { data: ownerSub, error: ownerSubError } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', membership.owner_user_id as string)
+    .maybeSingle();
+
+  if (ownerSubError || !ownerSub) return null;
+  return ownerSub as Subscription;
 }
 
-export async function findOwnerAccountUserId(memberEmail: string): Promise<string | null> {
-  const ownerUserIds = await listOwnerAccountUserIds(memberEmail);
-  if (ownerUserIds.length === 0) return null;
+/**
+ * Finds the owner user_id for the account the given user belongs to.
+ * Uses account_users table for multi-tenant lookup.
+ */
+export async function findOwnerAccountUserId(userId: string): Promise<string | null> {
+  // Try account_users first (post-migration path)
+  const { data: accountUsers, error } = await supabase
+    .from('account_users')
+    .select('account_id')
+    .eq('user_id', userId)
+    .eq('status', 'active');
 
-  for (const ownerUserId of ownerUserIds) {
-    const sub = await getSubscription(ownerUserId);
-    if (sub?.status === 'active') return ownerUserId;
+  if (!error && accountUsers && accountUsers.length > 0) {
+    for (const au of accountUsers) {
+      const { data: sub, error: subError } = await supabase
+        .from('subscriptions')
+        .select('user_id, status')
+        .eq('account_id', au.account_id)
+        .maybeSingle();
+
+      if (subError || !sub) continue;
+      if (sub.status === 'active') return sub.user_id as string;
+    }
+
+    // Fallback: look up the account creator
+    const { data: account, error: accountError } = await supabase
+      .from('accounts')
+      .select('created_by_user_id')
+      .eq('id', accountUsers[0].account_id)
+      .single();
+
+    if (!accountError && account) return account.created_by_user_id as string;
   }
 
-  return ownerUserIds[0] ?? null;
+  // Fallback: check account_members by email (pre-migration or pending members)
+  const { data: { user } } = await supabase.auth.getUser();
+  const email = user?.email;
+  if (!email) return null;
+
+  const { data: membership, error: memberError } = await supabase
+    .from('account_members')
+    .select('owner_user_id')
+    .eq('member_email', email.toLowerCase().trim())
+    .limit(1)
+    .maybeSingle();
+
+  if (memberError || !membership) return null;
+  return membership.owner_user_id as string;
 }

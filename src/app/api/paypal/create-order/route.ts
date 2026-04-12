@@ -6,16 +6,14 @@ const PAYPAL_API =
     : 'https://api-m.paypal.com';
 
 const PLAN_PRICES: Record<string, string> = {
-  personal: '5.00',
-  lite: '10.00',
+  individual: '10.00',
   business: '25.00',
   elite: '100.00',
   vps: '250.00',
 };
 
 const PLAN_LABELS: Record<string, string> = {
-  personal: 'Personal',
-  lite: 'Lite',
+  individual: 'Individual',
   business: 'Business',
   elite: 'Elite',
   vps: 'Virtual Private Server',

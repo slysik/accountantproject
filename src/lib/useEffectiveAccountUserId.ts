@@ -18,8 +18,8 @@ export function useEffectiveAccountUserId(userId: string | undefined, email?: st
     async function resolveEffectiveUserId() {
       // If this user is enrolled in another active owner's account, prefer that
       // account context even when the user also has their own trial row.
-      if (email) {
-        const ownerUserId = await findOwnerAccountUserId(email);
+      {
+        const ownerUserId = await findOwnerAccountUserId(currentUserId);
         if (ownerUserId && ownerUserId !== currentUserId) {
           if (!cancelled) setEffectiveUserId(ownerUserId);
           return;

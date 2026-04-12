@@ -25,7 +25,8 @@ function LoginForm() {
   const inviteEnrolled = searchParams.get('enrolled') === '1';
   const passwordResetComplete = searchParams.get('reset') === '1';
 
-  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>(isInvite ? 'signup' : 'signin');
+  const initialMode = isInvite || searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>(initialMode);
   const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -105,6 +106,15 @@ function LoginForm() {
     };
   }, [inviteToken, isInvite]);
 
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+
+  const [tenantMatchPending, setTenantMatchPending] = useState<{
+    matchedAccountName: string;
+    matchedAccountId: string;
+  } | null>(null);
+
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -149,23 +159,38 @@ function LoginForm() {
         await signInWithEmail(email, password);
         router.push('/mfa/setup');
       } else {
-        const result = await signUpWithEmail(email, password, inviteToken || undefined);
+        const result = await signUpWithEmail(email, password, {
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          companyName: companyName || undefined,
+          inviteToken: inviteToken || undefined,
+        });
 
-        if (result.inviteActivated) {
+        if (result.tenantMatch && result.matchedAccountName && result.matchedAccountId) {
+          setTenantMatchPending({
+            matchedAccountName: result.matchedAccountName,
+            matchedAccountId: result.matchedAccountId,
+          });
+        } else if (result.inviteActivated) {
           setPendingConfirmationEmail('');
           setMode('signin');
           setPassword('');
           setConfirmPassword('');
           router.replace(`/login?invite=1&email=${encodeURIComponent(email)}&enrolled=1`);
-        } else if (result.sessionCreated) {
+        } else if (!result.emailConfirmationRequired) {
+          // Account created and confirmed (admin API) — sign them in directly
           setPendingConfirmationEmail('');
-          router.push(isInvite ? '/dashboard' : '/mfa/setup');
+          const successMessage = result.accountName
+            ? `You've been added to ${result.accountName}'s account`
+            : 'Your account has been created with a 30-day Business trial. Please sign in.';
+          setSuccess(successMessage);
+          setMode('signin');
+          setPassword('');
+          setConfirmPassword('');
         } else {
           setPendingConfirmationEmail(email);
           setSuccess(
-            isInvite
-              ? 'Account created! Check your email to confirm your address, then sign back in to access the dashboard.'
-              : 'Account created. Check your email to confirm your address, then sign in to finish two-factor setup.'
+            'Account created. Check your email to confirm your address, then sign in.'
           );
           setMode('signin');
           setPassword('');
@@ -174,6 +199,40 @@ function LoginForm() {
       }
     } catch (err: unknown) {
       const supabaseError = err as { message?: string; status?: number };
+      setError(supabaseError.message ?? 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTenantConfirm = async (confirmTenantId: string) => {
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      const result = await signUpWithEmail(email, password, {
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        companyName: companyName || undefined,
+        inviteToken: inviteToken || undefined,
+        confirmTenantId,
+      });
+      setTenantMatchPending(null);
+      if (result.sessionCreated) {
+        const successMessage = result.accountName
+          ? `You've been added to ${result.accountName}'s account`
+          : 'Your account has been created with a 30-day Business trial';
+        setSuccess(successMessage);
+        router.push(isInvite ? '/dashboard' : '/mfa/setup');
+      } else {
+        setPendingConfirmationEmail(email);
+        setSuccess('Account created. Check your email to confirm your address, then sign in.');
+        setMode('signin');
+        setPassword('');
+        setConfirmPassword('');
+      }
+    } catch (err: unknown) {
+      const supabaseError = err as { message?: string };
       setError(supabaseError.message ?? 'An unexpected error occurred.');
     } finally {
       setLoading(false);
@@ -280,7 +339,7 @@ function LoginForm() {
             </button>
             <button
               type="button"
-              onClick={() => { if (inviteSignUpAllowed) { setMode('signup'); setError(''); setSuccess(''); } }}
+              onClick={() => { if (!isInvite || inviteSignUpAllowed) { setMode('signup'); setError(''); setSuccess(''); } }}
               disabled={isInvite && !inviteSignUpAllowed}
               className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                 mode === 'signup'
@@ -358,6 +417,82 @@ function LoginForm() {
             </div>
           )}
 
+          {mode === 'signup' && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="firstName" className="mb-1.5 block text-sm font-medium text-text-secondary">
+                    First Name
+                  </label>
+                  <input
+                    id="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Jane"
+                    required
+                    className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary placeholder-text-muted outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lastName" className="mb-1.5 block text-sm font-medium text-text-secondary">
+                    Last Name
+                  </label>
+                  <input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Smith"
+                    required
+                    className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary placeholder-text-muted outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="companyName" className="mb-1.5 block text-sm font-medium text-text-secondary">
+                  Company Name
+                </label>
+                <input
+                  id="companyName"
+                  type="text"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="Acme LLC"
+                  required
+                  className="w-full rounded-lg border border-border-primary bg-bg-tertiary px-3 py-2.5 text-sm text-text-primary placeholder-text-muted outline-none transition-colors focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+                />
+                <p className="mt-1 text-xs text-text-muted">We&apos;ll check if your company already has an account</p>
+              </div>
+            </>
+          )}
+
+          {tenantMatchPending && (
+            <div className="rounded-lg border border-accent-primary/30 bg-accent-primary/5 px-4 py-4">
+              <p className="text-sm text-text-primary">
+                We found an existing account for <strong>{tenantMatchPending.matchedAccountName}</strong>. Would you like to join it?
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleTenantConfirm(tenantMatchPending.matchedAccountId)}
+                  disabled={loading}
+                  className="rounded-lg bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:opacity-50"
+                >
+                  {loading ? 'Please wait...' : `Yes, join ${tenantMatchPending.matchedAccountName}`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTenantConfirm('new')}
+                  disabled={loading}
+                  className="rounded-lg border border-border-primary px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-tertiary disabled:opacity-50"
+                >
+                  {loading ? 'Please wait...' : 'No, create a new account'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {error && <p className="text-sm text-error">{error}</p>}
           {success && <p className="text-sm text-success">{success}</p>}
 
@@ -417,23 +552,26 @@ function LoginForm() {
           )}
         </form>
 
-        {/* Divider */}
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-border-primary" />
-          <span className="text-xs text-text-muted">Or continue with</span>
-          <div className="h-px flex-1 bg-border-primary" />
-        </div>
+        {/* Divider + Google Sign-In (signin mode only) */}
+        {mode !== 'signup' && (
+          <>
+            <div className="my-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border-primary" />
+              <span className="text-xs text-text-muted">Or continue with</span>
+              <div className="h-px flex-1 bg-border-primary" />
+            </div>
 
-        {/* Google Sign-In */}
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          disabled={googleDisabled}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-border-primary bg-bg-tertiary px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-bg-secondary disabled:opacity-50"
-        >
-          <FcGoogle className="h-5 w-5" />
-          Google
-        </button>
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={googleDisabled}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border-primary bg-bg-tertiary px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-bg-secondary disabled:opacity-50"
+            >
+              <FcGoogle className="h-5 w-5" />
+              Google
+            </button>
+          </>
+        )}
       </div>
       </div>
 

@@ -214,7 +214,7 @@ export default function LandingPage() {
               Sign In
             </Link>
             <Link
-              href="/login"
+              href="/login?mode=signup"
               className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
             >
               Start Free

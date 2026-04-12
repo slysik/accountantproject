@@ -74,6 +74,7 @@ export default function TeamSettingsPage() {
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [accountId, setAccountId] = useState<string | undefined>(undefined);
 
   const [pwModal, setPwModal] = useState<PasswordModal>(null);
   const [newPassword, setNewPassword] = useState('');
@@ -87,9 +88,25 @@ export default function TeamSettingsPage() {
     if (!user || !effectiveUserId) return;
     setLoading(true);
     try {
+      // Resolve account_id for the current user (graceful if table doesn't exist yet)
+      let resolvedAccountId: string | undefined;
+      try {
+        const { data: accountUser } = await supabase
+          .from('account_users')
+          .select('account_id')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+        resolvedAccountId = (accountUser?.account_id as string) ?? undefined;
+      } catch {
+        // pre-migration: account_users table doesn't exist yet
+      }
+      setAccountId(resolvedAccountId);
+
       const [s, m, companyAccess, folders] = await Promise.all([
-        getSubscription(effectiveUserId),
-        getAccountMembers(effectiveUserId),
+        getSubscription(effectiveUserId, resolvedAccountId),
+        getAccountMembers(effectiveUserId, resolvedAccountId),
         getAccountMemberCompanyAccess(effectiveUserId),
         getUserFolders(effectiveUserId),
       ]);
@@ -118,7 +135,7 @@ export default function TeamSettingsPage() {
   const maxUsers = maxUsersForSubscription(sub);
   const totalUsers = members.length + 1;
   const canAddMore = canManageTeam && totalUsers < maxUsers;
-  const planBlocked = sub?.plan === 'trial' || sub?.plan === 'personal' || sub?.plan === 'lite';
+  const planBlocked = sub?.plan === 'trial' || sub?.plan === 'individual';
 
   const getSelectedCompaniesForMember = useCallback((memberId: string) => {
     return memberCompanyAccess
@@ -142,7 +159,7 @@ export default function TeamSettingsPage() {
     }
     setAdding(true);
     try {
-      await addAccountMember(effectiveUserId, trimmed, user.email, newRole);
+      await addAccountMember(effectiveUserId, trimmed, user.email, newRole, accountId);
       setEmail('');
       setNewRole('contributor');
       setSuccess(`Invitation sent to ${trimmed} as ${ROLE_LABELS[newRole]}.`);
