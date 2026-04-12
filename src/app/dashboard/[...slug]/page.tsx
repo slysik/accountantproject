@@ -11,12 +11,14 @@ import {
   LuFolderOpen,
   LuInbox,
   LuReceipt,
+  LuSparkles,
   LuTable,
   LuTrash2,
   LuTrendingUp,
 } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
 import { DEFAULT_COMPANY_NAME, decodeCompanySlug, decodeFolderSlug, encodeCompanySlug, isMonthSegment, isYearSegment } from '@/lib/company';
+import { buildCategoryMappingLookup, getCategoryMappings, type CategoryMappingLookup } from '@/lib/category-mappings';
 import {
   getExpenses,
   getAllExpenses,
@@ -35,8 +37,8 @@ import MonthlyChart from '@/components/MonthlyChart';
 import SummaryCards from '@/components/SummaryCards';
 import { SkeletonCard, SkeletonSection } from '@/components/Skeleton';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
-import { getAllCategories } from '@/lib/categories';
-import { getCategoryName } from '@/lib/categories';
+import { categorizeExpense, getAllCategories, getCategoryName } from '@/lib/categories';
+import { suggestExpenseCategory, resolveMappedCategory } from '@/lib/expense-processor';
 import type { CategorizedExpense, MonthNode, Receipt, SubfolderNode } from '@/types';
 
 const MONTH_NAMES: Record<string, string> = {
@@ -110,6 +112,8 @@ export default function DashboardSlugPage() {
   const [showManualEntryForm, setShowManualEntryForm] = useState(false);
   const [manualSaving, setManualSaving] = useState(false);
   const [manualError, setManualError] = useState<string | null>(null);
+  const [categoryMappings, setCategoryMappings] = useState<CategoryMappingLookup | null>(null);
+  const [manualCategoryOverridden, setManualCategoryOverridden] = useState(false);
   const [manualEntry, setManualEntry] = useState({
     date: '',
     description: '',
@@ -232,12 +236,45 @@ export default function DashboardSlugPage() {
   }, []);
 
   useEffect(() => {
+    if (!effectiveUserId) {
+      setCategoryMappings(null);
+      return;
+    }
+
+    let cancelled = false;
+    const ownerUserId = effectiveUserId;
+
+    async function loadCategoryMappings() {
+      try {
+        const mappings = await getCategoryMappings(ownerUserId);
+        if (!cancelled) {
+          setCategoryMappings(buildCategoryMappingLookup(mappings));
+        }
+      } catch (err) {
+        console.error('Failed to load category mappings for manual entry:', err);
+      }
+    }
+
+    void loadCategoryMappings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveUserId]);
+
+  useEffect(() => {
     if (!isMonthView || !year || !month) return;
     setManualEntry((current) => ({
       ...current,
       date: current.date || toLocalDateInputValue(year, month),
     }));
   }, [isMonthView, month, year]);
+
+  const getSuggestedManualCategory = useCallback(
+    (description: string, originalCategory: string) =>
+      suggestExpenseCategory(description.trim(), originalCategory.trim(), categoryMappings ?? undefined),
+    [categoryMappings]
+  );
 
   const yearSummary = useMemo(() => {
     if (!isYearView) return null;
@@ -336,9 +373,47 @@ export default function DashboardSlugPage() {
 
   const handleManualEntryChange = useCallback(
     (field: 'date' | 'description' | 'amount' | 'category' | 'originalCategory', value: string) => {
-      setManualEntry((current) => ({ ...current, [field]: value }));
+      if (field === 'category') {
+        setManualCategoryOverridden(true);
+        setManualEntry((current) => ({ ...current, category: value }));
+        return;
+      }
+
+      if (field === 'description' || field === 'originalCategory') {
+        const nextDescription = field === 'description' ? value : manualEntry.description;
+        const nextOriginalCategory = field === 'originalCategory' ? value : manualEntry.originalCategory;
+        const mappedCategory = resolveMappedCategory(
+          nextDescription.trim(),
+          nextOriginalCategory.trim(),
+          categoryMappings ?? undefined
+        );
+
+        if (mappedCategory) {
+          setManualCategoryOverridden(false);
+        }
+      }
+
+      setManualEntry((current) => {
+        const next = { ...current, [field]: value };
+
+        if (field === 'description' || field === 'originalCategory') {
+          const mappedCategory = resolveMappedCategory(
+            next.description.trim(),
+            next.originalCategory.trim(),
+            categoryMappings ?? undefined
+          );
+
+          if (mappedCategory) {
+            next.category = mappedCategory;
+          } else if (!manualCategoryOverridden) {
+            next.category = getSuggestedManualCategory(next.description, next.originalCategory);
+          }
+        }
+
+        return next;
+      });
     },
-    []
+    [categoryMappings, getSuggestedManualCategory, manualEntry.description, manualEntry.originalCategory, manualCategoryOverridden]
   );
 
   const handleManualEntrySave = useCallback(async () => {
@@ -356,6 +431,14 @@ export default function DashboardSlugPage() {
     setManualError(null);
 
     try {
+      const trimmedOriginalCategory = manualEntry.originalCategory.trim();
+      const mappedCategory = resolveMappedCategory(
+        trimmedDescription,
+        trimmedOriginalCategory,
+        categoryMappings ?? undefined
+      );
+      const finalCategory = mappedCategory ?? manualEntry.category ?? categorizeExpense(trimmedDescription);
+
       await createExpense(effectiveUserId, companyName, year, month, {
         id: crypto.randomUUID(),
         date: new Date(`${manualEntry.date}T12:00:00`),
@@ -364,8 +447,8 @@ export default function DashboardSlugPage() {
         companyName,
         description: trimmedDescription,
         amount: parsedAmount,
-        originalCategory: manualEntry.originalCategory.trim(),
-        category: manualEntry.category,
+        originalCategory: trimmedOriginalCategory,
+        category: finalCategory,
         filename: 'manual-entry',
         rawData: [],
         deletedAt: null,
@@ -375,9 +458,10 @@ export default function DashboardSlugPage() {
         date: toLocalDateInputValue(year, month),
         description: '',
         amount: '',
-        category: manualEntry.category,
+        category: finalCategory,
         originalCategory: '',
       });
+      setManualCategoryOverridden(false);
       setShowManualEntryForm(false);
       await fetchExpenses();
     } catch (err) {
@@ -385,7 +469,7 @@ export default function DashboardSlugPage() {
     } finally {
       setManualSaving(false);
     }
-  }, [companyName, effectiveUserId, fetchExpenses, manualEntry, month, year]);
+  }, [categoryMappings, companyName, effectiveUserId, fetchExpenses, manualEntry, month, year]);
 
   const companySummary = useMemo(() => {
     if (!isCompanyView) return null;
@@ -434,6 +518,26 @@ export default function DashboardSlugPage() {
           <p className="text-sm text-text-muted">Use the sidebar to add a year folder for this company.</p>
         ) : (
           <div className="space-y-6">
+            <section className="shell-panel p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <LuSparkles className="h-4 w-4 text-accent-primary" />
+                    <h2 className="text-sm font-semibold text-text-primary">Guided Import Wizard</h2>
+                  </div>
+                  <p className="text-sm text-text-muted">
+                    Start the guided importer from this company workspace and keep {companyName} preselected at commit time.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}`)}
+                  className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
+                >
+                  Open Import Wizard
+                </button>
+              </div>
+            </section>
+
             {companyExpenses.length > 0 && (
               <>
                 <section className="grid gap-3 sm:grid-cols-4">
@@ -721,6 +825,26 @@ export default function DashboardSlugPage() {
             </div>
           </section>
         )}
+
+        <section className="shell-panel mb-6 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <LuSparkles className="h-4 w-4 text-accent-primary" />
+                <h2 className="text-sm font-semibold text-text-primary">Guided Import Wizard</h2>
+              </div>
+              <p className="text-sm text-text-muted">
+                Launch the guided importer from the {year} workspace for {companyName}. The wizard opens with this company prefilled and keeps the year context visible during commit.
+              </p>
+            </div>
+            <button
+              onClick={() => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}&year=${encodeURIComponent(year)}`)}
+              className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
+            >
+              Open Import Wizard
+            </button>
+          </div>
+        </section>
 
         {loading ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

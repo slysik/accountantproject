@@ -317,7 +317,7 @@ export function parseDate(dateStr: string): Date | null {
   return null;
 }
 
-function resolveMappedCategory(
+export function resolveMappedCategory(
   description: string | undefined,
   originalCategory: string | undefined,
   mappings?: CategoryMappingLookup
@@ -339,6 +339,14 @@ function resolveMappedCategory(
   }
 
   return null;
+}
+
+export function suggestExpenseCategory(
+  description: string | undefined,
+  originalCategory: string | undefined,
+  mappings?: CategoryMappingLookup
+) {
+  return resolveMappedCategory(description, originalCategory, mappings) ?? categorizeExpense(description ?? '');
 }
 
 /** Parse an amount string to a number, handling currency symbols, commas, and parentheses. */
@@ -368,7 +376,7 @@ export function categorizeAll(
 ): CategorizedExpense[] {
   return expenses.map(expense => ({
     ...expense,
-    category: resolveMappedCategory(expense.description, expense.originalCategory, mappings) ?? categorizeExpense(expense.description)
+    category: suggestExpenseCategory(expense.description, expense.originalCategory, mappings)
   }));
 }
 

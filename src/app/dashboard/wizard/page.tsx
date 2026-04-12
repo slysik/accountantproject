@@ -1,7 +1,17 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import WizardContainer from '@/components/Wizard/WizardContainer';
 
 export default function WizardPage() {
-  return <WizardContainer />;
+  const searchParams = useSearchParams();
+  const initialCompanyName = searchParams.get('company') ?? '';
+  const contextYear = searchParams.get('year') ?? undefined;
+
+  return (
+    <WizardContainer
+      initialCompanyName={initialCompanyName}
+      contextYear={contextYear}
+    />
+  );
 }

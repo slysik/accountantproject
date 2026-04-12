@@ -15,7 +15,12 @@ const STEPS = [
   { label: 'Commit', icon: LuSave },
 ] as const;
 
-export default function WizardContainer() {
+interface WizardContainerProps {
+  initialCompanyName?: string;
+  contextYear?: string;
+}
+
+export default function WizardContainer({ initialCompanyName, contextYear }: WizardContainerProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [mappedExpenses, setMappedExpenses] = useState<CategorizedExpense[]>([]);
   const [reviewedExpenses, setReviewedExpenses] = useState<CategorizedExpense[]>([]);
@@ -133,7 +138,11 @@ export default function WizardContainer() {
           />
         )}
         {currentStep === 3 && (
-          <StepCommit expenses={categorizedExpenses} />
+          <StepCommit
+            expenses={categorizedExpenses}
+            initialCompanyName={initialCompanyName}
+            contextYear={contextYear}
+          />
         )}
       </div>
 

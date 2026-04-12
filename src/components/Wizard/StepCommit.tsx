@@ -13,9 +13,11 @@ import type { CategorizedExpense } from '@/types';
 
 interface StepCommitProps {
   expenses: CategorizedExpense[];
+  initialCompanyName?: string;
+  contextYear?: string;
 }
 
-export default function StepCommit({ expenses }: StepCommitProps) {
+export default function StepCommit({ expenses, initialCompanyName = '', contextYear }: StepCommitProps) {
   const { user } = useAuth();
   const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
   const [companyName, setCompanyName] = useState('');
@@ -39,9 +41,7 @@ export default function StepCommit({ expenses }: StepCommitProps) {
 
         const names = folders.map((folder) => folder.companyName).sort((left, right) => left.localeCompare(right));
         setExistingCompanies(names);
-        if (names.length > 0) {
-          setCompanyName((current) => current || names[0]);
-        }
+        setCompanyName((current) => current || initialCompanyName || names[0] || '');
       } catch (err) {
         console.error('Failed to load company suggestions:', err);
       }
@@ -52,7 +52,7 @@ export default function StepCommit({ expenses }: StepCommitProps) {
     return () => {
       cancelled = true;
     };
-  }, [effectiveUserId]);
+  }, [effectiveUserId, initialCompanyName]);
 
   const years = useMemo(
     () => Array.from(new Set(expenses.map((expense) => expense.year ?? expense.month.slice(0, 4)))).sort(),
@@ -160,6 +160,11 @@ export default function StepCommit({ expenses }: StepCommitProps) {
         <p className="mt-1 text-sm text-text-muted">
           Categories are ready. Confirm the company, then decide whether you want to commit the entries into the ledger.
         </p>
+        {contextYear ? (
+          <p className="mt-2 text-xs text-text-muted">
+            Opened from the {contextYear} workspace for {initialCompanyName || 'this company'}.
+          </p>
+        ) : null}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

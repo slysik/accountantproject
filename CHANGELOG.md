@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.2.12 — Vendor Auto-Mapping & Dashboard Wizard Launchers (2026-04-11)
+Category mapping is now faster and more consistent across imports and hand-entered transactions. If a saved retailer or vendor label matches the description or imported label, ABF now automatically applies that category during manual entry and the import workflow uses the same shared mapping logic. The guided Import Wizard can also now be launched directly from both the company-level and year-level dashboard views, with the current company carried into the commit step automatically.
+
 ### v2.2.11 — Pricing Page Layout & Readability Fixes (2026-04-11)
 The pricing page cards no longer suffer from word-wrap issues on plan names, badges, or misaligned INCLUDES labels. The grid container was widened from `max-w-5xl` to `max-w-7xl` so all five columns have breathing room, multi-word badges like "Most Popular" and "Private Server" now use `whitespace-nowrap` to stay on one line, and the name/price block uses a fixed height so the INCLUDES heading aligns horizontally across all cards. The hero banner text was updated to "Start FREE for 30 days" with a larger font size and bolder weight for better visibility.
 
@@ -82,6 +85,22 @@ Attach receipts (images, PDFs, Office docs) to any expense from a gallery modal 
 Migrated from a vanilla JS proof-of-concept to a full Next.js 14 application backed by Supabase. Added authentication, cloud storage, a 4-step import wizard, and exports to Excel, CSV, and QuickBooks (QBO/OFX).
 
 ---
+
+## [2.2.12] — 2026-04-11
+
+### Added
+
+#### Import Wizard Access
+- Added guided Import Wizard launch panels to both company-level and year-level dashboard views
+- Passed company and year context into the wizard route so imports launched from a workspace stay anchored to that context
+- Prefilled the commit step with the current company when the wizard is opened from a company or year dashboard
+
+### Changed
+
+#### Category Mapping
+- Unified import and manual-entry category suggestions behind the same saved mapping resolver
+- Manual entry now checks saved retailer and vendor label mappings before falling back to keyword-based categorization
+- Direct vendor-label matches now automatically set the category during hand entry so repeated merchants catalog consistently
 
 ## [2.2.10] — 2026-04-09
 
