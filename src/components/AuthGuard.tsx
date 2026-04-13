@@ -13,7 +13,7 @@ import {
 import { supabase } from '@/lib/supabase';
 
 // Pages accessible even when trial/subscription has expired
-const SUBSCRIPTION_EXEMPT = ['/subscribe', '/settings/security', '/settings/admin', '/mfa/verify', '/mfa/setup', '/onboard'];
+const SUBSCRIPTION_EXEMPT = ['/subscribe', '/settings/security', '/settings/admin', '/mfa/verify', '/mfa/setup', '/onboard', '/setup'];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading, mfaRequired, mfaSetupRequired } = useAuth();
@@ -75,8 +75,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
               const name = (account.name as string) ?? '';
               const domain = (account.domain as string) ?? '';
               if (!name || name === 'Unknown' || name === domain) {
-                if (pathname !== '/onboard') {
-                  router.push('/onboard');
+                if (pathname !== '/setup' && pathname !== '/onboard') {
+                  router.push('/setup');
                   setSubLoading(false);
                   return;
                 }

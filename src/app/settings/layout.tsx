@@ -6,17 +6,18 @@ import AppFooter from '@/components/AppFooter';
 import AuthGuard from '@/components/AuthGuard';
 import ExpenseChat from '@/components/ExpenseChat';
 import { useAuth } from '@/lib/auth';
-import { LuUser, LuShield, LuUsers, LuChevronLeft, LuLayoutDashboard, LuTags, LuCircleHelp, LuClipboardList } from 'react-icons/lu';
+import { LuUser, LuShield, LuUsers, LuChevronLeft, LuLayoutDashboard, LuTags, LuCircleHelp, LuClipboardList, LuCreditCard } from 'react-icons/lu';
 import SiteLogo from '@/components/SiteLogo';
 import { isMasterAdminEmail } from '@/lib/admin';
 
 const BASE_NAV = [
-  { href: '/settings/account', icon: LuUser, label: 'Account' },
-  { href: '/settings/team', icon: LuUsers, label: 'Team' },
-  { href: '/settings/security', icon: LuShield, label: 'Security' },
-  { href: '/settings/categories', icon: LuTags, label: 'Categories' },
-  { href: '/settings/audit', icon: LuClipboardList, label: 'Audit' },
-  { href: '/settings/help', icon: LuCircleHelp, label: 'Help' },
+  { href: '/settings/account',  icon: LuUser,        label: 'Spend Details' },
+  { href: '/settings/team',     icon: LuUsers,       label: 'Team'      },
+  { href: '/settings/security', icon: LuShield,      label: 'Security'  },
+  { href: '/settings/accounts', icon: LuCreditCard,  label: 'Accounts'  },
+  { href: '/settings/categories', icon: LuTags,      label: 'Categories' },
+  { href: '/settings/audit',    icon: LuClipboardList, label: 'Audit'   },
+  { href: '/settings/help',     icon: LuCircleHelp,  label: 'Help'      },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {

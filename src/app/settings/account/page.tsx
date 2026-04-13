@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { LuCheck, LuArrowRight } from 'react-icons/lu';
+import { LuCheck, LuArrowRight, LuCopy } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import {
   EMPTY_ACCOUNT_PROFILE,
   getAccountProfile,
@@ -39,6 +40,8 @@ function planExpiry(sub: Subscription): string {
 export default function AccountSettingsPage() {
   const { user, updatePassword } = useAuth();
   const [sub, setSub] = useState<Subscription | null>(null);
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [profile, setProfile] = useState<AccountProfile>(EMPTY_ACCOUNT_PROFILE);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
@@ -55,6 +58,27 @@ export default function AccountSettingsPage() {
   useEffect(() => {
     if (user) getSubscription(user.id).then(setSub);
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('account_users')
+      .select('account_id')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.account_id) setAccountId(data.account_id as string);
+      });
+  }, [user]);
+
+  const handleCopyId = () => {
+    if (!accountId) return;
+    void navigator.clipboard.writeText(accountId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     if (!user) {
@@ -133,15 +157,15 @@ export default function AccountSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
-        <h2 className="mb-1 text-sm font-semibold text-text-primary">Account Details</h2>
+        <h2 className="mb-1 text-sm font-semibold text-text-primary">Spend Details</h2>
         <p className="mb-5 text-xs text-text-muted">
-          Store your business and contact information here so your account details stay organized in one place.
+          Store your business and contact information here so your spend details stay organized in one place.
         </p>
 
         {profileSuccess && (
           <div className="mb-4 flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
             <LuCheck className="h-4 w-4 flex-shrink-0 text-success" />
-            <span className="text-sm text-success">Account details saved successfully.</span>
+            <span className="text-sm text-success">Spend details saved successfully.</span>
           </div>
         )}
         {profileError && (
@@ -318,7 +342,7 @@ export default function AccountSettingsPage() {
               disabled={profileSaving}
               className="self-start rounded-lg bg-accent-primary px-5 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:opacity-50"
             >
-              {profileSaving ? 'Saving...' : 'Save Account Details'}
+              {profileSaving ? 'Saving...' : 'Save Spend Details'}
             </button>
           </form>
         )}
@@ -371,6 +395,22 @@ export default function AccountSettingsPage() {
                 </div>
               </div>
             )}
+
+            <div className="flex items-center justify-between rounded-lg bg-bg-tertiary px-4 py-3">
+              <div>
+                <p className="text-xs text-text-muted">Account (Tenant) ID</p>
+                <p className="mt-0.5 font-mono text-xs text-text-primary">{accountId ?? '—'}</p>
+              </div>
+              {accountId && (
+                <button
+                  onClick={handleCopyId}
+                  className="flex items-center gap-1.5 rounded-lg border border-border-primary bg-bg-secondary px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-accent-primary hover:text-accent-primary"
+                >
+                  <LuCopy className="h-3.5 w-3.5" />
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              )}
+            </div>
 
             {sub.plan !== 'vps' && (
               <Link

@@ -7,7 +7,6 @@ import { useAuth } from '@/lib/auth';
 import { getCategoryName } from '@/lib/categories';
 import { getAllExpenses } from '@/lib/database';
 import { formatCurrency } from '@/lib/expense-processor';
-import { buildSampleExpenses } from '@/lib/sample-data';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import CategoryBreakdown from '@/components/CategoryBreakdown';
 import MonthlyChart from '@/components/MonthlyChart';
@@ -150,9 +149,7 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, [effectiveUserId]);
 
-  const sampleExpenses = useMemo(() => buildSampleExpenses(), []);
   const hasData = expenses.length > 0;
-  const shownExpenses = hasData ? expenses : sampleExpenses;
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -167,7 +164,7 @@ export default function DashboardPage() {
               <p className="mt-3 max-w-3xl text-sm text-text-secondary md:text-base">
                 {hasData
                   ? 'Your live finance pulse across categories, trends, and year-over-year movement.'
-                  : 'A guided preview of the analysis experience, powered by sample data until your real books land.'}
+                  : 'Import a CSV to start tracking expenses. Use the wizard to upload, categorize, and commit transactions to a company.'}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -185,19 +182,19 @@ export default function DashboardPage() {
             <div className="metric-card">
               <p className="metric-label">Live reporting</p>
               <p className="font-display text-2xl font-bold text-text-primary">
-                {hasData ? 'Active' : 'Preview'}
+                {hasData ? 'Active' : '—'}
               </p>
               <p className="mt-2 text-xs text-text-secondary">
-                {hasData ? 'Your analysis reflects current categorized expenses.' : 'Charts stay meaningful even before first import.'}
+                {hasData ? 'Your analysis reflects current categorized expenses.' : 'No expense data yet.'}
               </p>
             </div>
             <div className="metric-card">
               <p className="metric-label">Coverage</p>
               <p className="font-display text-2xl font-bold text-text-primary">
-                {hasData ? `${new Set(expenses.map((item) => item.month)).size} months` : '2 sample years'}
+                {hasData ? `${new Set(expenses.map((item) => item.month)).size} months` : '0 months'}
               </p>
               <p className="mt-2 text-xs text-text-secondary">
-                {hasData ? 'Cross-year visibility for planning and cleanup.' : 'See trends, categories, and annual pacing instantly.'}
+                {hasData ? 'Cross-year visibility for planning and cleanup.' : 'Import expenses to see coverage.'}
               </p>
             </div>
             <div className="metric-card">
@@ -206,7 +203,7 @@ export default function DashboardPage() {
                 {hasData ? 'Review trends' : 'Import data'}
               </p>
               <p className="mt-2 text-xs text-text-secondary">
-                {hasData ? 'Use the year and month views to drill into spend shifts.' : 'The wizard can load sample or production-ready CSVs.'}
+                {hasData ? 'Use the year and month views to drill into spend shifts.' : 'Use the wizard to upload and categorize your first CSV.'}
               </p>
             </div>
           </div>
@@ -221,7 +218,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-          <SummaryCards expenses={shownExpenses} />
+          <SummaryCards expenses={expenses} />
 
           {!hasData && (
             <div className="mt-6 shell-panel p-5">
@@ -254,10 +251,10 @@ export default function DashboardPage() {
                 <LuChartLine className="h-4 w-4 text-accent-primary" />
                 <h2 className="text-sm font-semibold text-text-primary">Spend Trend</h2>
               </div>
-              <MonthlyChart expenses={shownExpenses} />
+              <MonthlyChart expenses={expenses} />
             </section>
 
-            <InsightPanel expenses={shownExpenses} isSample={!hasData} />
+            <InsightPanel expenses={expenses} isSample={!hasData} />
           </div>
 
           <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
@@ -266,7 +263,7 @@ export default function DashboardPage() {
                 <LuTrendingUp className="h-4 w-4 text-accent-primary" />
                 <h2 className="text-sm font-semibold text-text-primary">Year-over-Year</h2>
               </div>
-              <YearBars expenses={shownExpenses} />
+              <YearBars expenses={expenses} />
             </section>
 
             <section className="shell-panel p-6">
@@ -274,7 +271,7 @@ export default function DashboardPage() {
                 <LuFileText className="h-4 w-4 text-accent-primary" />
                 <h2 className="text-sm font-semibold text-text-primary">Expense by Category</h2>
               </div>
-              <CategoryBreakdown expenses={shownExpenses} />
+              <CategoryBreakdown expenses={expenses} />
             </section>
           </div>
         </>

@@ -382,25 +382,50 @@ export default function FolderTree({ collapsed = false }: FolderTreeProps) {
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => toggleCompany(company.companyName)}
-                  className="flex flex-1 items-center gap-2 rounded-2xl border border-transparent px-3 py-2 text-sm font-medium text-text-secondary transition-all hover:border-border-primary/70 hover:bg-bg-tertiary/70 hover:text-text-primary"
-                  title={collapsed ? company.companyName : undefined}
-                >
+                <div className="flex flex-1 items-center min-w-0">
                   {collapsed ? (
-                    <LuBuilding2 className="mx-auto h-4 w-4 text-accent-primary" />
+                    <button
+                      onClick={() => {
+                        toggleCompany(company.companyName);
+                        router.push(`/dashboard/${encodeCompanySlug(company.companyName)}`);
+                      }}
+                      className="flex flex-1 items-center justify-center rounded-2xl border border-transparent px-3 py-2 text-sm font-medium text-text-secondary transition-all hover:border-border-primary/70 hover:bg-bg-tertiary/70 hover:text-text-primary"
+                      title={company.companyName}
+                    >
+                      <LuBuilding2 className="mx-auto h-4 w-4 text-accent-primary" />
+                    </button>
                   ) : (
                     <>
-                      {companyExpanded ? (
-                        <LuChevronDown className="h-3.5 w-3.5 text-text-muted" />
-                      ) : (
-                        <LuChevronRight className="h-3.5 w-3.5 text-text-muted" />
-                      )}
-                      <LuBuilding2 className="h-4 w-4 text-accent-primary" />
-                      <span className="truncate">{company.companyName}</span>
+                      {/* Chevron — toggle expand/collapse only */}
+                      <button
+                        onClick={() => toggleCompany(company.companyName)}
+                        className="flex-shrink-0 rounded-lg p-1.5 text-text-muted transition-colors hover:bg-bg-tertiary hover:text-text-primary"
+                        title={companyExpanded ? 'Collapse' : 'Expand'}
+                      >
+                        {companyExpanded ? (
+                          <LuChevronDown className="h-3.5 w-3.5" />
+                        ) : (
+                          <LuChevronRight className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                      {/* Company name — navigate to company dashboard */}
+                      <button
+                        onClick={() => {
+                          if (!companyExpanded) toggleCompany(company.companyName);
+                          router.push(`/dashboard/${encodeCompanySlug(company.companyName)}`);
+                        }}
+                        className={`flex flex-1 items-center gap-2 min-w-0 rounded-xl border px-2 py-1.5 text-sm font-medium transition-all hover:border-border-primary/70 hover:bg-bg-tertiary/70 hover:text-text-primary ${
+                          pathname === `/dashboard/${encodeCompanySlug(company.companyName)}`
+                            ? 'border-accent-primary/30 bg-accent-primary/10 text-accent-primary'
+                            : 'border-transparent text-text-secondary'
+                        }`}
+                      >
+                        <LuBuilding2 className="h-4 w-4 flex-shrink-0 text-accent-primary" />
+                        <span className="truncate">{company.companyName}</span>
+                      </button>
                     </>
                   )}
-                </button>
+                </div>
               )}
               {!collapsed && editingCompany !== company.companyName && (
                 <>

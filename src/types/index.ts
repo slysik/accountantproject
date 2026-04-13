@@ -11,6 +11,7 @@ export interface Expense {
   rawData: string[];
   deletedAt?: Date | null;
   year?: string;
+  accountLabel?: string; // payment account this import was tagged to
 }
 
 export interface CategorizedExpense extends Expense {

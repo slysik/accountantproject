@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { LuArrowRight, LuFlaskConical, LuInfo, LuUpload } from 'react-icons/lu';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LuArrowRight, LuCreditCard, LuFlaskConical, LuInfo, LuUpload } from 'react-icons/lu';
 import {
   formatCurrency,
   formatDate,
@@ -11,7 +11,17 @@ import {
   type ImportColumnMap,
   type ParsedImportPreview,
 } from '@/lib/expense-processor';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth';
+import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { CategorizedExpense } from '@/types';
+
+interface SavedPaymentAccount {
+  id: string;
+  label: string;
+  account_type: string;
+  last_four: string | null;
+}
 
 interface StepUploadProps {
   onComplete: (_expenses: CategorizedExpense[]) => void;
@@ -58,6 +68,9 @@ function sanitizeSuggestedMapping(mapping: ImportColumnMap): ImportColumnMap {
 }
 
 export default function StepUpload({ onComplete }: StepUploadProps) {
+  const { user } = useAuth();
+  const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [parsing, setParsing] = useState(false);
@@ -65,6 +78,27 @@ export default function StepUpload({ onComplete }: StepUploadProps) {
   const [preview, setPreview] = useState<ParsedImportPreview | null>(null);
   const [mapping, setMapping] = useState<ImportColumnMap | null>(null);
   const [fileName, setFileName] = useState('sample_transactions.csv');
+
+  // Payment account selector
+  const [savedAccounts, setSavedAccounts] = useState<SavedPaymentAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<string>(''); // label value or ''
+
+  useEffect(() => {
+    if (!effectiveUserId) return;
+    const load = async () => {
+      try {
+        const { data } = await supabase
+          .from('payment_accounts')
+          .select('id, label, account_type, last_four')
+          .eq('user_id', effectiveUserId)
+          .order('created_at', { ascending: true });
+        if (data) setSavedAccounts(data as SavedPaymentAccount[]);
+      } catch {
+        // table may not exist yet — fail silently
+      }
+    };
+    void load();
+  }, [effectiveUserId]);
 
   const mappedState = useMemo(() => {
     if (!preview || !mapping) {
@@ -359,9 +393,38 @@ export default function StepUpload({ onComplete }: StepUploadProps) {
             </div>
           )}
 
+          {/* Account selector */}
+          <div className="mt-4 rounded-lg border border-border-primary bg-bg-tertiary/40 px-4 py-4">
+            <div className="flex items-center gap-2 mb-2">
+              <LuCreditCard className="h-3.5 w-3.5 text-accent-primary" />
+              <p className="text-xs font-semibold text-text-primary">Which account is this import from?</p>
+            </div>
+            <p className="text-[11px] text-text-muted mb-3">
+              Tag this CSV to a payment account so you can filter expenses by account later.
+              Manage accounts in <strong>Settings → Accounts</strong>.
+            </p>
+            <select
+              value={selectedAccount}
+              onChange={(e) => setSelectedAccount(e.target.value)}
+              className="w-full rounded-lg border border-border-primary bg-bg-secondary px-3 py-2 text-sm text-text-primary outline-none focus:border-accent-primary focus:ring-1 focus:ring-accent-primary"
+            >
+              <option value="">Not specified</option>
+              {savedAccounts.map((acct) => (
+                <option key={acct.id} value={acct.label}>
+                  {acct.label}{acct.last_four ? ` ···· ${acct.last_four}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="mt-4 flex items-center gap-3">
             <button
-              onClick={() => onComplete(mappedState.expenses)}
+              onClick={() => {
+                const tagged = selectedAccount
+                  ? mappedState.expenses.map((e) => ({ ...e, accountLabel: selectedAccount }))
+                  : mappedState.expenses;
+                onComplete(tagged);
+              }}
               disabled={mappedState.expenses.length === 0 || !!mappedState.errorMessage}
               className="inline-flex items-center gap-2 rounded-lg bg-accent-primary px-4 py-2 text-xs font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-40"
             >

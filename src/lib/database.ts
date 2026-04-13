@@ -98,6 +98,7 @@ export async function createExpense(
     deleted_at: null,
   };
   if (accountId) insertPayload.account_id = accountId;
+  if (expense.accountLabel) insertPayload.payment_account_label = expense.accountLabel;
 
   const { data, error } = await supabase
     .from('expenses')
@@ -151,6 +152,7 @@ export async function bulkCreateExpenses(
       deleted_at: null,
     };
     if (accountId) row.account_id = accountId;
+    if (expense.accountLabel) row.payment_account_label = expense.accountLabel;
     return row;
   });
 

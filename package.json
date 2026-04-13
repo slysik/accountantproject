@@ -1,6 +1,6 @@
 {
   "name": "accountant-dashboard",
-  "version": "2.2.12",
+  "version": "2.3.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -30,6 +30,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^8",
     "eslint-config-next": "^14",
+    "playwright": "^1.59.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.5.0"
