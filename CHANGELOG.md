@@ -9,8 +9,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.3.6 — Settings Label Cleanup (2026-04-13)
+The Settings area now uses clearer labels for finance-related setup. The main Account tab has been renamed to **Spend Details**, while the payment-accounts area is now labeled **Banking Details** in the Settings sidebar and import guidance. This makes it easier to distinguish business profile fields from saved bank-account and card labels used during CSV imports.
+
 ### v2.3.5 — Payment Account Management & Import Tagging (2026-04-13)
-Added full payment account management under Settings → Accounts. Users can add Bank Accounts, Credit Cards, Checking Accounts, and Other/Misc accounts with a label and optional last-4-digits identifier. During CSV import (Step 1 of the Import Wizard), a new "Which account is this from?" selector appears after column mapping so each imported expense can be tagged with its source account. The tag is stored as `payment_account_label` on each expense row and requires migration `migrations/025_expense_account_label.sql`. The payment accounts table itself requires migration `migrations/024_payment_accounts.sql`.
+Added full payment account management under Settings → Banking Details. Users can add Bank Accounts, Credit Cards, Checking Accounts, and Other/Misc accounts with a label and optional last-4-digits identifier. During CSV import (Step 1 of the Import Wizard), a new "Which account is this from?" selector appears after column mapping so each imported expense can be tagged with its source account. The tag is stored as `payment_account_label` on each expense row and requires migration `migrations/025_expense_account_label.sql`. The payment accounts table itself requires migration `migrations/024_payment_accounts.sql`.
 
 ### v2.3.4 — Company Dashboard Navigation (2026-04-13)
 Clicking a company name in the sidebar now navigates to the company-level dashboard instead of only toggling the folder open. The chevron icon (▶/▾) is now a separate control that expands or collapses the year list without navigating. The company name button highlights in accent color when the company dashboard is the active route. The company dashboard (already implemented at `/dashboard/[companySlug]`) shows total spend, transaction count, active years, top category, spend trend chart, category breakdown, and year workspace links scoped to that company.
