@@ -14,7 +14,7 @@ const BASE_NAV = [
   { href: '/settings/account',  icon: LuUser,        label: 'Spend Details' },
   { href: '/settings/team',     icon: LuUsers,       label: 'Team'      },
   { href: '/settings/security', icon: LuShield,      label: 'Security'  },
-  { href: '/settings/accounts', icon: LuCreditCard,  label: 'Accounts'  },
+  { href: '/settings/accounts', icon: LuCreditCard,  label: 'Banking Details' },
   { href: '/settings/categories', icon: LuTags,      label: 'Categories' },
   { href: '/settings/audit',    icon: LuClipboardList, label: 'Audit'   },
   { href: '/settings/help',     icon: LuCircleHelp,  label: 'Help'      },

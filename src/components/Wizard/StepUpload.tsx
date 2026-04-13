@@ -401,7 +401,7 @@ export default function StepUpload({ onComplete }: StepUploadProps) {
             </div>
             <p className="text-[11px] text-text-muted mb-3">
               Tag this CSV to a payment account so you can filter expenses by account later.
-              Manage accounts in <strong>Settings → Accounts</strong>.
+              Manage accounts in <strong>Settings → Banking Details</strong>.
             </p>
             <select
               value={selectedAccount}

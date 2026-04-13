@@ -147,10 +147,10 @@ export default function AccountsSettingsPage() {
       <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
         <div className="flex items-center gap-2 mb-1">
           <LuCreditCard className="h-4 w-4 text-accent-primary" />
-          <h2 className="text-sm font-semibold text-text-primary">Payment Accounts</h2>
+          <h2 className="text-sm font-semibold text-text-primary">Banking Details</h2>
         </div>
         <p className="text-xs text-text-muted mb-5">
-          Manage the bank accounts, credit cards, and other payment accounts you use for business expenses.
+          Manage the bank accounts, credit cards, and other payment methods you use for business expenses.
           When importing a CSV, you&apos;ll be able to tag it to one of these accounts so you always know which statement each expense came from.
         </p>
 
@@ -178,7 +178,7 @@ export default function AccountsSettingsPage() {
             {[1, 2].map((i) => <div key={i} className="h-14 animate-pulse rounded-lg bg-bg-tertiary" />)}
           </div>
         ) : accounts.length === 0 ? (
-          <p className="text-sm text-text-muted mb-4">No accounts added yet.</p>
+          <p className="text-sm text-text-muted mb-4">No banking details added yet.</p>
         ) : (
           <div className="flex flex-col gap-2 mb-4">
             {accounts.map((acct) => {
@@ -218,7 +218,7 @@ export default function AccountsSettingsPage() {
 
       {/* Add account form */}
       <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
-        <h2 className="mb-1 text-sm font-semibold text-text-primary">Add Account</h2>
+        <h2 className="mb-1 text-sm font-semibold text-text-primary">Add Banking Detail</h2>
         <p className="mb-5 text-xs text-text-muted">
           Add a bank account or credit card. The label will appear as a filter option during CSV import.
         </p>
@@ -270,7 +270,7 @@ export default function AccountsSettingsPage() {
             className="flex items-center justify-center gap-2 rounded-lg bg-accent-primary px-4 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:opacity-50"
           >
             <LuPlus className="h-4 w-4" />
-            {saving ? 'Adding...' : 'Add Account'}
+            {saving ? 'Adding...' : 'Add Banking Detail'}
           </button>
         </form>
       </section>
