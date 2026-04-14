@@ -348,6 +348,57 @@ export default function AccountSettingsPage() {
         )}
       </section>
 
+      <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
+        <h2 className="mb-1 text-sm font-semibold text-text-primary">Account Summary Wizard</h2>
+        <p className="mb-5 text-xs text-text-muted">
+          For existing companies, reopen the guided setup flow directly at the follow-up steps you want to revisit.
+        </p>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <Link
+            href="/setup?start=1"
+            className="rounded-xl border border-border-primary bg-bg-tertiary px-4 py-4 transition-colors hover:border-accent-primary hover:bg-accent-primary/5"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-muted">Step 2</p>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-text-primary">Banking Details</p>
+                <p className="mt-1 text-xs text-text-muted">Review saved bank and card labels.</p>
+              </div>
+              <LuArrowRight className="h-4 w-4 flex-shrink-0 text-accent-primary" />
+            </div>
+          </Link>
+
+          <Link
+            href="/setup?start=2"
+            className="rounded-xl border border-border-primary bg-bg-tertiary px-4 py-4 transition-colors hover:border-accent-primary hover:bg-accent-primary/5"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-muted">Step 3</p>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-text-primary">Expense Import</p>
+                <p className="mt-1 text-xs text-text-muted">Jump back into the expense import flow.</p>
+              </div>
+              <LuArrowRight className="h-4 w-4 flex-shrink-0 text-accent-primary" />
+            </div>
+          </Link>
+
+          <Link
+            href="/setup?start=3"
+            className="rounded-xl border border-border-primary bg-bg-tertiary px-4 py-4 transition-colors hover:border-accent-primary hover:bg-accent-primary/5"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-muted">Step 4</p>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-text-primary">Sales Import</p>
+                <p className="mt-1 text-xs text-text-muted">Open the optional income and sales step.</p>
+              </div>
+              <LuArrowRight className="h-4 w-4 flex-shrink-0 text-accent-primary" />
+            </div>
+          </Link>
+        </div>
+      </section>
+
       {/* ── Plan & Billing ─────────────────────────────────── */}
       <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
         <h2 className="mb-4 text-sm font-semibold text-text-primary">Plan &amp; Billing</h2>

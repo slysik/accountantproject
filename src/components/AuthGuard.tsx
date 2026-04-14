@@ -75,7 +75,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
               const name = (account.name as string) ?? '';
               const domain = (account.domain as string) ?? '';
               if (!name || name === 'Unknown' || name === domain) {
-                if (pathname !== '/setup' && pathname !== '/onboard') {
+                const setupSeenKey = resolvedAccountId
+                  ? `abf-setup-wizard-seen:${resolvedAccountId}`
+                  : null;
+                const setupAlreadyShown = setupSeenKey
+                  ? window.localStorage.getItem(setupSeenKey) === 'true'
+                  : false;
+
+                if (!setupAlreadyShown && pathname !== '/setup' && pathname !== '/onboard') {
+                  if (setupSeenKey) window.localStorage.setItem(setupSeenKey, 'true');
                   router.push('/setup');
                   setSubLoading(false);
                   return;

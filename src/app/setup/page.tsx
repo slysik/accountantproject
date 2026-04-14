@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { addAccountMember } from '@/lib/subscription';
@@ -54,39 +54,101 @@ const ROLE_DESCRIPTIONS: Record<TeamRole, string> = {
 };
 
 function StepIndicator({ step }: { step: number }) {
+  const progressPercent = (step / Math.max(STEPS.length - 1, 1)) * 100;
+
   return (
-    <div className="mb-8 flex items-center justify-center">
-      {STEPS.map((s, i) => {
-        const isActive    = i === step;
-        const isCompleted = i < step;
-        return (
-          <div key={s.label} className="flex items-center">
-            <div className="flex flex-col items-center">
-              <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
-                isActive    ? 'bg-accent-primary text-bg-primary' :
-                isCompleted ? 'bg-success text-bg-primary'        :
-                              'bg-bg-tertiary text-text-muted'
-              }`}>
-                {isCompleted ? (
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (i + 1)}
-              </div>
-              <span className={`mt-1 text-[10px] font-medium ${
-                isActive    ? 'text-accent-primary' :
-                isCompleted ? 'text-success'        :
-                              'text-text-muted'
-              }`}>{s.label}</span>
-            </div>
-            {i < STEPS.length - 1 && (
-              <div className={`mx-2 mb-4 h-0.5 w-10 rounded-full transition-colors ${
-                i < step ? 'bg-success' : 'bg-bg-tertiary'
-              }`} />
-            )}
+    <div className="relative mb-8 overflow-hidden rounded-[32px] border border-[#d8c19b] bg-[linear-gradient(180deg,#fff7ec_0%,#fff1d8_100%)] px-4 py-6 shadow-[0_24px_80px_rgba(91,58,17,0.12)]">
+      <div className="pointer-events-none absolute inset-x-8 top-4 h-28 rounded-full bg-[radial-gradient(circle_at_top,_rgba(217,119,6,0.18),_transparent_62%)]" />
+      <div className="relative">
+        <div className="mb-5 flex flex-col items-center text-center">
+          <span className="rounded-full border border-[#d8b27a] bg-white/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#b45309]">
+            Guided Setup Rodeo
+          </span>
+          <h2 className="mt-3 text-xl font-bold text-[#3b2412]">Swing through setup one loop at a time</h2>
+          <p className="mt-1 max-w-2xl text-sm text-[#7b5a3a]">
+            The lasso tracks your progress across account setup, banking details, imports, and team access.
+          </p>
+        </div>
+
+        <div className="relative mx-auto max-w-4xl px-2 pt-10">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 1000 180"
+            className="pointer-events-none absolute inset-x-0 top-0 hidden h-[120px] w-full md:block"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M42 118 C150 20, 270 20, 360 108 S560 170, 650 90 S850 12, 958 112"
+              fill="none"
+              stroke="#e7c48d"
+              strokeWidth="18"
+              strokeLinecap="round"
+              strokeDasharray="1 20"
+            />
+            <path
+              d="M42 118 C150 20, 270 20, 360 108 S560 170, 650 90 S850 12, 958 112"
+              fill="none"
+              stroke="#7c4a19"
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray="18 16"
+              style={{ strokeDashoffset: `${220 - progressPercent * 2.2}` }}
+            />
+            <ellipse
+              cx={84 + progressPercent * 8.3}
+              cy={98 - Math.sin((progressPercent / 100) * Math.PI) * 34}
+              rx="24"
+              ry="18"
+              fill="rgba(217,119,6,0.18)"
+              stroke="#b45309"
+              strokeWidth="4"
+            />
+          </svg>
+
+          <div className="grid gap-3 md:grid-cols-5">
+            {STEPS.map((s, i) => {
+              const isActive = i === step;
+              const isCompleted = i < step;
+              const Icon = s.icon;
+
+              return (
+                <div
+                  key={s.label}
+                  className={`relative flex flex-col items-center rounded-3xl border px-3 py-4 text-center transition-all ${
+                    isActive
+                      ? 'border-[#d97706] bg-white text-[#7c2d12] shadow-[0_18px_40px_rgba(217,119,6,0.18)]'
+                      : isCompleted
+                        ? 'border-[#caa46b] bg-[#fff9ef] text-[#5b3a11]'
+                        : 'border-[#ecdcc2] bg-white/60 text-[#8a755b]'
+                  }`}
+                >
+                  <div
+                    className={`flex h-12 w-12 items-center justify-center rounded-full border-2 ${
+                      isActive
+                        ? 'border-[#d97706] bg-[#fff1db] text-[#b45309]'
+                        : isCompleted
+                          ? 'border-[#16a34a] bg-[#ecfdf3] text-[#15803d]'
+                          : 'border-[#e8d7bf] bg-[#fff8ee] text-[#8a755b]'
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <Icon className="h-5 w-5" />
+                    )}
+                  </div>
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-[0.22em]">
+                    Stop {i + 1}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold">{s.label}</p>
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -94,6 +156,7 @@ function StepIndicator({ step }: { step: number }) {
 function SetupWizard() {
   const { user } = useAuth();
   const router   = useRouter();
+  const searchParams = useSearchParams();
 
   const [step,      setStep]      = useState(0);
   const [accountId, setAccountId] = useState<string | null>(null);
@@ -116,6 +179,17 @@ function SetupWizard() {
   const [teamInvites,  setTeamInvites]  = useState<TeamInvite[]>([]);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError,  setInviteError]  = useState('');
+
+  useEffect(() => {
+    const rawStart = searchParams.get('start');
+    if (!rawStart) return;
+
+    const parsed = Number(rawStart);
+    if (!Number.isFinite(parsed)) return;
+
+    const normalized = Math.min(Math.max(Math.floor(parsed), 0), STEPS.length - 1);
+    setStep(normalized);
+  }, [searchParams]);
 
   // Resolve account ID on mount
   useEffect(() => {
@@ -220,11 +294,11 @@ function SetupWizard() {
         <span className="ml-auto text-xs text-text-muted">Setup · Step {step + 1} of {STEPS.length}</span>
       </header>
 
-      <div className="flex-1 flex flex-col items-center px-4 py-10">
-        <div className="w-full max-w-xl">
+      <div className="flex-1 px-4 py-10">
+        <div className="mx-auto w-full max-w-4xl">
           <StepIndicator step={step} />
 
-          <div className="rounded-xl border border-border-primary bg-bg-secondary p-6">
+          <div className="mx-auto max-w-2xl rounded-[28px] border border-border-primary bg-bg-secondary p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
 
             {/* ── Step 1: Account Identity ── */}
             {step === 0 && (
@@ -510,7 +584,7 @@ function SetupWizard() {
 
           {/* Back */}
           {step > 0 && step < 4 && (
-            <div className="mt-4">
+            <div className="mx-auto mt-4 max-w-2xl">
               <button
                 onClick={() => setStep((s) => s - 1)}
                 className="rounded-lg border border-border-primary px-4 py-2 text-xs font-medium text-text-secondary hover:bg-bg-tertiary transition-colors"
