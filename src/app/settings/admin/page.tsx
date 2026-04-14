@@ -150,7 +150,7 @@ export default function AdminSettingsPage() {
           <div>
             <h1 className="text-lg font-semibold text-text-primary">Site Administration</h1>
             <p className="text-sm text-text-muted">
-              Master account overview for active customer accounts.
+              Master workspace overview for active customer workspaces.
             </p>
           </div>
         </div>
@@ -158,7 +158,7 @@ export default function AdminSettingsPage() {
 
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-border-primary bg-bg-secondary p-5">
-          <p className="text-xs uppercase tracking-[0.16em] text-text-muted">Active Accounts</p>
+          <p className="text-xs uppercase tracking-[0.16em] text-text-muted">Active Workspaces</p>
           <p className="mt-2 text-2xl font-bold text-text-primary">{summary.accountCount}</p>
         </div>
         <div className="rounded-xl border border-border-primary bg-bg-secondary p-5">

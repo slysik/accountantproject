@@ -259,13 +259,13 @@ function SetupWizard() {
               </div>
             )}
 
-            {/* ── Step 2: Payment Accounts ── */}
+            {/* ── Step 2: Banking Details ── */}
             {step === 1 && (
               <div className="flex flex-col gap-5">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <LuCreditCard className="h-5 w-5 text-accent-primary" />
-                    <h2 className="text-base font-semibold text-text-primary">Add payment accounts</h2>
+                    <h2 className="text-base font-semibold text-text-primary">Add banking details</h2>
                   </div>
                   <p className="text-sm text-text-muted">Add the bank accounts and credit cards you use for business expenses. These become labels when you import CSV statements.</p>
                 </div>
