@@ -153,15 +153,15 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <section className="hero-surface mb-8">
-        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.22),_transparent_36%),linear-gradient(135deg,var(--bg-secondary),var(--bg-primary))] px-6 py-7 md:px-8 md:py-8">
-          <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <section className="mb-8 overflow-hidden rounded-2xl border" style={{borderColor:'#e8e4df',background:'linear-gradient(135deg,#faf9f7 0%,#f5f0ea 100%)'}}>
+        <div style={{background:'radial-gradient(900px 500px at 90% -10%,rgba(217,119,6,.08),transparent 60%)',padding:'28px 32px 28px'}}>
+          <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="section-kicker mb-3">Control Center</p>
-              <h1 className="font-display text-4xl font-bold text-text-primary md:text-5xl">
-            Welcome back, {displayName}
+              <p style={{fontSize:11,fontWeight:700,letterSpacing:'.22em',textTransform:'uppercase',color:'#9a8570',marginBottom:10}}>Control Center</p>
+              <h1 style={{fontSize:'clamp(28px,3.6vw,42px)',fontWeight:800,letterSpacing:'-.03em',lineHeight:1.05,color:'#1a1208',margin:0}}>
+                Welcome back, {displayName}
               </h1>
-              <p className="mt-3 max-w-3xl text-sm text-text-secondary md:text-base">
+              <p style={{marginTop:10,maxWidth:600,fontSize:15,color:'#7a6a55',lineHeight:1.55}}>
                 {hasData
                   ? 'Your live finance pulse across categories, trends, and year-over-year movement.'
                   : 'Import a CSV to start tracking expenses. Use the wizard to upload, categorize, and commit transactions to a company.'}
@@ -170,7 +170,8 @@ export default function DashboardPage() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/dashboard/wizard"
-                className="inline-flex items-center gap-2 rounded-full bg-accent-primary px-5 py-3 text-sm font-semibold text-bg-primary shadow-[0_18px_40px_rgba(37,99,235,0.28)] transition-colors hover:bg-accent-dark"
+                className="inline-flex items-center gap-2"
+                style={{background:'#d97706',color:'#fff',padding:'11px 20px',borderRadius:12,fontWeight:700,fontSize:14,boxShadow:'0 10px 28px -10px rgba(217,119,6,.55)',textDecoration:'none'}}
               >
                 <LuWand className="h-4 w-4" />
                 Start Wizard
@@ -179,33 +180,17 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid gap-3 md:grid-cols-3">
-            <div className="metric-card">
-              <p className="metric-label">Live reporting</p>
-              <p className="font-display text-2xl font-bold text-text-primary">
-                {hasData ? 'Active' : '—'}
-              </p>
-              <p className="mt-2 text-xs text-text-secondary">
-                {hasData ? 'Your analysis reflects current categorized expenses.' : 'No expense data yet.'}
-              </p>
-            </div>
-            <div className="metric-card">
-              <p className="metric-label">Coverage</p>
-              <p className="font-display text-2xl font-bold text-text-primary">
-                {hasData ? `${new Set(expenses.map((item) => item.month)).size} months` : '0 months'}
-              </p>
-              <p className="mt-2 text-xs text-text-secondary">
-                {hasData ? 'Cross-year visibility for planning and cleanup.' : 'Import expenses to see coverage.'}
-              </p>
-            </div>
-            <div className="metric-card">
-              <p className="metric-label">Next best move</p>
-              <p className="font-display text-2xl font-bold text-text-primary">
-                {hasData ? 'Review trends' : 'Import data'}
-              </p>
-              <p className="mt-2 text-xs text-text-secondary">
-                {hasData ? 'Use the year and month views to drill into spend shifts.' : 'Use the wizard to upload and categorize your first CSV.'}
-              </p>
-            </div>
+            {[
+              {label:'Live reporting', value: hasData ? 'Active' : '—', sub: hasData ? 'Your analysis reflects current categorized expenses.' : 'No expense data yet.'},
+              {label:'Coverage', value: hasData ? `${new Set(expenses.map((item) => item.month)).size} months` : '0 months', sub: hasData ? 'Cross-year visibility for planning and cleanup.' : 'Import expenses to see coverage.'},
+              {label:'Next best move', value: hasData ? 'Review trends' : 'Import data', sub: hasData ? 'Use the year and month views to drill into spend shifts.' : 'Use the wizard to upload and categorize your first CSV.'},
+            ].map(card => (
+              <div key={card.label} style={{background:'#fff',border:'1px solid #e8e4df',borderRadius:16,padding:'18px 20px'}}>
+                <p style={{fontSize:10,fontWeight:700,letterSpacing:'.2em',textTransform:'uppercase',color:'#9a8570',margin:'0 0 8px'}}>{card.label}</p>
+                <p style={{fontSize:22,fontWeight:800,color:'#1a1208',margin:0,letterSpacing:'-.02em'}}>{card.value}</p>
+                <p style={{marginTop:6,fontSize:12,color:'#7a6a55',lineHeight:1.5}}>{card.sub}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

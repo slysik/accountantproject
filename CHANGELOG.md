@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.3.7 — Landing Page Redesign & Dashboard Refresh (2026-04-18)
+The public landing page has been fully redesigned to match the new warm amber editorial design — soft cream background (`#faf9f7`), bold coffee-brown typography, orange accent (`#d97706`), and a two-column hero layout with a live 3D demo card showing animated transaction categorization, floating badges, and a scrolling bank marquee. The new page includes a 4-step "How it works" section, alternating feature rows (CSV import visual, Alladin AI chat demo, security vault), an IRS Schedule C category cloud, a 6-capability grid, a testimonial, and a 4-plan pricing section (Individual $10/mo, Business $25/mo, Elite $100/mo, Private Server $250/mo). All nav, hero, plan, and footer CTAs are wired to `/login`, `/login?mode=signup`, and `/contact`. The authenticated dashboard hero section has been updated to the same warm amber design tokens — cream card backgrounds, coffee headings, orange accent buttons — so the app and marketing site share a consistent visual identity.
+
 ### v2.3.6 — Settings Label Cleanup (2026-04-13)
 The Settings area now uses clearer labels for finance-related setup. The main Account tab has been renamed to **Spend Details**, while the payment-accounts area is now labeled **Banking Details** in the Settings sidebar, page heading, and import guidance. The setup wizard Step 2 title now says **Add banking details**, and the admin summary card label now reads **Active Workspaces** instead of **Active Accounts**. These wording changes make it easier to distinguish business profile fields from saved bank-account and card labels used during CSV imports.
 
