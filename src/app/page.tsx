@@ -4,39 +4,7 @@ import Link from 'next/link';
 
 export default function LandingPage() {
   useEffect(() => {
-    // Hero live demo
-    const transactions = [
-      {date:'03/14', desc:'SQ *BLUE BOTTLE COFFEE', amt:'$24.50', cat:'Meals'},
-      {date:'03/14', desc:'UBER TRIP HELP.UBER.COM', amt:'$18.22', cat:'Travel'},
-      {date:'03/15', desc:'ADOBE *CREATIVE CLOUD', amt:'$54.99', cat:'Software'},
-      {date:'03/15', desc:'AMZN MKTP US*TK7H3RF', amt:'$129.40', cat:'Supplies'},
-      {date:'03/16', desc:'DELTA AIR LINES 00628', amt:'$412.00', cat:'Travel'},
-      {date:'03/16', desc:'STAPLES 0012 TAMPA FL', amt:'$67.18', cat:'Office'},
-      {date:'03/17', desc:'USPS PO 11234 4000', amt:'$9.80', cat:'Postage'},
-      {date:'03/17', desc:'ZOOM.US 888-799-9666', amt:'$15.99', cat:'Software'},
-    ];
-    const rowsEl = document.getElementById('demoRows');
-    const liveCountEl = document.getElementById('liveCount');
-    if (!rowsEl || !liveCountEl) return;
-    const maxVisible = 5;
-    let idx = 0, count = 0;
-    function addRow() {
-      const t = transactions[idx % transactions.length];
-      idx++;
-      count = Math.min(27, count + Math.floor(Math.random()*3)+1);
-      liveCountEl!.textContent = String(count);
-      const row = document.createElement('div');
-      row.className = 'row new';
-      row.innerHTML = `<span class="date">${t.date}</span><span class="desc">${t.desc}</span><span class="amt">${t.amt}</span><span class="pill flagged">analyzing…</span>`;
-      rowsEl!.insertBefore(row, rowsEl!.firstChild);
-      setTimeout(() => {
-        const p = row.querySelector('.pill') as HTMLElement;
-        if (p) { p.className = 'pill assigned'; p.textContent = t.cat; }
-      }, 900 + Math.random()*500);
-      while (rowsEl!.children.length > maxVisible) rowsEl!.removeChild(rowsEl!.lastChild!);
-    }
-    for (let i = 0; i < 3; i++) setTimeout(addRow, i*250);
-    const interval = setInterval(addRow, 2200);
+    let interval: ReturnType<typeof setInterval> | undefined;
 
     // Alladin chat
     const chatMessages = document.getElementById('chatMessages');
@@ -138,8 +106,7 @@ export default function LandingPage() {
         .hero-trust span{display:inline-flex;align-items:center;gap:8px}
         .hero-trust .tick{color:var(--orange);font-weight:800}
         .demo-stack{position:relative;perspective:1400px}
-        .demo-card{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 40px 80px -30px rgba(26,18,8,.25),0 10px 30px -10px rgba(26,18,8,.12);overflow:hidden;transform:rotateY(-6deg) rotateX(4deg) rotateZ(-1deg);transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.9,.3,1)}
-        .demo-stack:hover .demo-card{transform:rotateY(-2deg) rotateX(1deg) rotateZ(0)}
+        .demo-card{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 40px 80px -30px rgba(26,18,8,.25),0 10px 30px -10px rgba(26,18,8,.12);overflow:hidden}
         .demo-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--cream)}
         .demo-dots{display:flex;gap:6px}
         .demo-dots i{display:block;width:10px;height:10px;border-radius:50%;background:#e7d8c6}
@@ -266,14 +233,12 @@ export default function LandingPage() {
         .plans{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
         @media(max-width:1000px){.plans{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:560px){.plans{grid-template-columns:1fr}}
-        .plan{background:#fff;border:1px solid var(--border);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:14px;position:relative;transition:all .25s ease}
-        .plan:hover{transform:translateY(-3px);box-shadow:0 30px 60px -30px rgba(26,18,8,.22)}
-        .plan.hot{background:var(--coffee);color:#fff;border-color:var(--coffee)}
-        .plan.hot h4,.plan.hot .price{color:#fff}
-        .plan.hot .price b{color:var(--orange)}
-        .plan.hot .fees{color:var(--gold)}
-        .plan.hot ul li{color:rgba(255,255,255,.82)}
-        .plan.hot ul li svg{color:var(--orange)}
+        .plan{border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:14px;position:relative;transition:all .25s ease;border:1.5px solid transparent}
+        .plan:hover{transform:translateY(-3px);box-shadow:0 30px 60px -30px rgba(26,18,8,.18)}
+        .plan-mint{background:#edfaf4;border-color:#b6ead0}
+        .plan-peach{background:#fff4ed;border-color:#f5cba7}
+        .plan-lavender{background:#f3f0ff;border-color:#ccc0f5}
+        .plan-sky{background:#edf5ff;border-color:#a8cdfa}
         .plan .tag{position:absolute;top:-12px;right:18px;background:var(--orange);color:#fff;font-size:10px;letter-spacing:.18em;text-transform:uppercase;padding:5px 10px;border-radius:999px;font-weight:800}
         .plan h4{font-size:15px;margin:0;color:var(--coffee);font-weight:800;letter-spacing:.02em;text-transform:uppercase}
         .plan .price{font-size:40px;font-weight:900;color:var(--coffee);letter-spacing:-.03em;line-height:1}
@@ -283,9 +248,8 @@ export default function LandingPage() {
         .plan ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;flex:1}
         .plan li{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink);line-height:1.5}
         .plan li svg{flex-shrink:0;margin-top:2px;color:var(--orange)}
-        .plan .cta{margin-top:6px;text-align:center;padding:12px 14px;border-radius:12px;font-size:13px;font-weight:700}
-        .plan:not(.hot) .cta{background:var(--cream);color:var(--coffee);border:1px solid var(--border)}
-        .plan.hot .cta{background:var(--orange);color:#fff}
+        .plan .cta{margin-top:6px;text-align:center;padding:12px 14px;border-radius:12px;font-size:13px;font-weight:700;border:1.5px solid rgba(26,18,8,.15);background:rgba(255,255,255,.7);color:var(--coffee)}
+        .plan .cta:hover{background:#fff}
         .quote{max-width:880px;margin:0 auto;text-align:center}
         .quote .q{font-size:clamp(24px,2.8vw,36px);font-weight:500;color:var(--coffee);letter-spacing:-.01em;line-height:1.3}
         .quote .q em{font-style:normal;color:var(--orange)}
@@ -352,50 +316,37 @@ export default function LandingPage() {
           </div>
 
           <div className="demo-stack">
-            <div className="float-badge fb-1">
-              <span className="bullet"></span>
-              <div><div>Auto-categorized</div><div className="muted">27 transactions in 1.4s</div></div>
-            </div>
-            <div className="float-badge fb-2 two">
-              <span className="bullet"></span>
-              <div><div>Ready to export</div><div className="muted">Excel · CSV · QBO</div></div>
-            </div>
-            <div className="demo-card">
-              <div className="demo-head">
-                <div className="demo-dots"><i></i><i></i><i></i></div>
-                <div className="demo-url">accountantsbestfriend.com&nbsp;/dashboard/2026/march</div>
-                <div style={{width:48}}></div>
-              </div>
-              <div className="demo-body">
-                <div className="demo-kicker">Live import · march 2026</div>
-                <div className="demo-title">Chase_Biz_3912.csv <em>→</em> Organized</div>
-                <div className="demo-sub">Auto-mapped columns · IRS Schedule C assignments</div>
-                <div className="demo-rows" id="demoRows"></div>
-                <div className="demo-foot">
-                  <span className="count"><b id="liveCount">0</b> / 27 transactions categorized</span>
-                  <span className="ai"><span className="bolt">✦</span> Alladin thinking…</span>
-                </div>
-              </div>
+            <div className="demo-card" style={{padding:0,overflow:'hidden'}}>
+              <video
+                autoPlay
+                muted
+                loop
+                playsInline
+                poster="/demo-poster.jpg"
+                style={{display:'block',width:'100%',height:'auto'}}
+              >
+                <source src="/demo.mp4" type="video/mp4" />
+              </video>
             </div>
           </div>
         </div>
 
-        <div className="marquee-wrap">
-          <div className="marquee-label">Works with every bank &amp; card CSV export</div>
-          <div className="marquee">
-            <span>Chase<i></i></span><span>Bank of America<i></i></span><span>Wells Fargo<i></i></span>
-            <span>Capital One<i></i></span><span>American Express<i></i></span><span>Citi<i></i></span>
-            <span>US Bank<i></i></span><span>PNC<i></i></span><span>TD Bank<i></i></span>
-            <span>Discover<i></i></span><span>Ally<i></i></span><span>Mercury<i></i></span>
-            <span>Brex<i></i></span><span>Navy Federal<i></i></span><span>SoFi<i></i></span>
-            <span>Chase<i></i></span><span>Bank of America<i></i></span><span>Wells Fargo<i></i></span>
-            <span>Capital One<i></i></span><span>American Express<i></i></span><span>Citi<i></i></span>
-            <span>US Bank<i></i></span><span>PNC<i></i></span><span>TD Bank<i></i></span>
-            <span>Discover<i></i></span><span>Ally<i></i></span><span>Mercury<i></i></span>
-            <span>Brex<i></i></span><span>Navy Federal<i></i></span><span>SoFi<i></i></span>
-          </div>
-        </div>
       </section>
+
+      <div className="marquee-wrap" style={{marginTop:0}}>
+        <div className="marquee">
+          <span>Meals &amp; Entertainment<i></i></span><span>Travel<i></i></span><span>Office Supplies<i></i></span>
+          <span>Software &amp; Subscriptions<i></i></span><span>Advertising<i></i></span><span>Utilities<i></i></span>
+          <span>Professional Fees<i></i></span><span>Vehicle &amp; Mileage<i></i></span><span>Insurance<i></i></span>
+          <span>Payroll<i></i></span><span>Rent &amp; Lease<i></i></span><span>Equipment<i></i></span>
+          <span>Postage &amp; Shipping<i></i></span><span>Repairs<i></i></span><span>Taxes &amp; Licenses<i></i></span>
+          <span>Meals &amp; Entertainment<i></i></span><span>Travel<i></i></span><span>Office Supplies<i></i></span>
+          <span>Software &amp; Subscriptions<i></i></span><span>Advertising<i></i></span><span>Utilities<i></i></span>
+          <span>Professional Fees<i></i></span><span>Vehicle &amp; Mileage<i></i></span><span>Insurance<i></i></span>
+          <span>Payroll<i></i></span><span>Rent &amp; Lease<i></i></span><span>Equipment<i></i></span>
+          <span>Postage &amp; Shipping<i></i></span><span>Repairs<i></i></span><span>Taxes &amp; Licenses<i></i></span>
+        </div>
+      </div>
 
       <section className="band white" id="how">
         <div className="wrap">
@@ -645,7 +596,7 @@ export default function LandingPage() {
             <p className="sub">Start FREE for 30 days — no credit card required. Cancel anytime.</p>
           </div>
           <div className="plans">
-            <div className="plan">
+            <div className="plan plan-mint">
               <h4>Individual</h4>
               <div className="price"><b>$10</b><span> /mo</span></div>
               <div className="fees">Single user · Unlimited transactions</div>
@@ -657,7 +608,7 @@ export default function LandingPage() {
               </ul>
               <Link href="/login?mode=signup" className="cta">Start free</Link>
             </div>
-            <div className="plan hot">
+            <div className="plan plan-peach">
               <div className="tag">Most Popular</div>
               <h4>Business</h4>
               <div className="price"><b>$25</b><span> /mo</span></div>
@@ -670,7 +621,7 @@ export default function LandingPage() {
               </ul>
               <Link href="/login?mode=signup" className="cta">Start free</Link>
             </div>
-            <div className="plan">
+            <div className="plan plan-lavender">
               <h4>Elite</h4>
               <div className="price"><b>$100</b><span> /mo</span></div>
               <div className="fees">Up to 20 users · Dedicated manager</div>
@@ -682,7 +633,7 @@ export default function LandingPage() {
               </ul>
               <Link href="/login?mode=signup" className="cta">Start free</Link>
             </div>
-            <div className="plan">
+            <div className="plan plan-sky">
               <h4>Private Server</h4>
               <div className="price"><b>$250</b><span> /mo</span></div>
               <div className="fees">Dedicated VPS · Your own instance</div>
