@@ -273,37 +273,65 @@ function LoginForm() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-white">
-      {/* Subtle spreadsheet + calculator background */}
-      <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full" style={{ zIndex: 0 }}>
-        <defs>
-          <pattern id="grid" width="40" height="24" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 24" fill="none" stroke="#e5e7eb" strokeWidth="0.8"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grid)" />
-        {/* Column headers */}
-        {['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X'].map((col, i) => (
-          <text key={col} x={i * 40 + 14} y={16} fontSize="9" fill="#d1d5db" fontFamily="monospace" fontWeight="600">{col}</text>
-        ))}
-        {/* Row numbers */}
-        {Array.from({length: 50}, (_, i) => (
-          <text key={i} x={4} y={(i + 1) * 24 + 16} fontSize="9" fill="#d1d5db" fontFamily="monospace">{i + 1}</text>
-        ))}
-        {/* Subtle cell highlights — suggested data */}
-        {[[2,2,6],[2,3,5],[2,4,4],[2,5,3],[4,2,3],[4,3,5],[4,4,4],[4,5,2],[6,2,5],[6,3,4],[6,4,6],[6,5,3]].map(([col,row], i) => (
-          <rect key={i} x={col*40+1} y={row*24+1} width={38} height={22} fill="#f0f9ff" rx="1" opacity="0.6"/>
-        ))}
-        {/* Calculator shape — right side */}
-        <g transform="translate(78%, 12%)">
-          <rect width="90" height="130" rx="10" fill="none" stroke="#e5e7eb" strokeWidth="1.2"/>
-          <rect x="8" y="10" width="74" height="28" rx="4" fill="#f3f4f6"/>
-          {[0,1,2,3,4,5,6,7,8,9,10].map(i => (
-            <rect key={i} x={8+(i%3)*26} y={46+(Math.floor(i/3))*24} width="20" height="18" rx="3" fill="#f9fafb" stroke="#e5e7eb" strokeWidth="0.8"/>
-          ))}
-        </g>
-      </svg>
-      <div className="absolute inset-0 bg-gradient-to-br from-white via-white/95 to-blue-50/40" style={{ zIndex: 1 }} />
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-slate-50">
+      {/* Blurred icon background */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ zIndex: 0 }}>
+
+        {/* Calculator — top left */}
+        <svg style={{ position:'absolute', top:'6%', left:'4%', width:180, height:220, filter:'blur(3px)', opacity:0.18 }} viewBox="0 0 90 110" fill="none">
+          <rect width="90" height="110" rx="10" fill="#3b82f6"/>
+          <rect x="8" y="10" width="74" height="22" rx="4" fill="#93c5fd"/>
+          <rect x="8" y="40" width="20" height="16" rx="3" fill="#bfdbfe"/><rect x="34" y="40" width="20" height="16" rx="3" fill="#bfdbfe"/><rect x="60" y="40" width="22" height="16" rx="3" fill="#60a5fa"/>
+          <rect x="8" y="62" width="20" height="16" rx="3" fill="#bfdbfe"/><rect x="34" y="62" width="20" height="16" rx="3" fill="#bfdbfe"/><rect x="60" y="62" width="22" height="16" rx="3" fill="#bfdbfe"/>
+          <rect x="8" y="84" width="20" height="16" rx="3" fill="#bfdbfe"/><rect x="34" y="84" width="20" height="16" rx="3" fill="#bfdbfe"/><rect x="60" y="84" width="22" height="16" rx="3" fill="#2563eb"/>
+        </svg>
+
+        {/* Spreadsheet — top right */}
+        <svg style={{ position:'absolute', top:'4%', right:'3%', width:260, height:200, filter:'blur(3px)', opacity:0.16 }} viewBox="0 0 130 100" fill="none">
+          <rect width="130" height="100" rx="6" fill="#10b981"/>
+          <rect x="0" y="0" width="130" height="16" rx="6" fill="#059669"/>
+          {[0,1,2,3].map(c=><rect key={c} x={c*32+1} y={0} width={31} height={16} fill={c===0?'#065f46':'#047857'} rx={c===0?'6 0 0 6':'0'}/>)}
+          {[1,2,3,4,5].map(r=>[0,1,2,3].map(c=>(
+            <rect key={`${r}${c}`} x={c*32+1} y={r*16+1} width={31} height={15} fill={r%2===0?'#d1fae5':'#ecfdf5'} opacity="0.9"/>
+          )))}
+          {[1,2,3].map(c=><line key={c} x1={c*32} y1={0} x2={c*32} y2={100} stroke="#6ee7b7" strokeWidth="0.5"/>)}
+          {[1,2,3,4,5].map(r=><line key={r} x1={0} y1={r*16} x2={130} y2={r*16} stroke="#6ee7b7" strokeWidth="0.5"/>)}
+        </svg>
+
+        {/* Bar chart — bottom left */}
+        <svg style={{ position:'absolute', bottom:'8%', left:'6%', width:200, height:180, filter:'blur(3px)', opacity:0.15 }} viewBox="0 0 100 90" fill="none">
+          <rect x="5" y="50" width="14" height="35" rx="3" fill="#6366f1"/>
+          <rect x="24" y="30" width="14" height="55" rx="3" fill="#8b5cf6"/>
+          <rect x="43" y="18" width="14" height="67" rx="3" fill="#a78bfa"/>
+          <rect x="62" y="35" width="14" height="50" rx="3" fill="#6366f1"/>
+          <rect x="81" y="10" width="14" height="75" rx="3" fill="#8b5cf6"/>
+          <line x1="5" y1="87" x2="95" y2="87" stroke="#c4b5fd" strokeWidth="1.5"/>
+        </svg>
+
+        {/* Dollar / receipt — bottom right */}
+        <svg style={{ position:'absolute', bottom:'10%', right:'5%', width:160, height:200, filter:'blur(3px)', opacity:0.15 }} viewBox="0 0 80 100" fill="none">
+          <rect width="80" height="100" rx="6" fill="#f59e0b"/>
+          <rect x="8" y="12" width="64" height="6" rx="2" fill="#fde68a"/>
+          <rect x="8" y="24" width="40" height="6" rx="2" fill="#fde68a"/>
+          <rect x="8" y="36" width="55" height="6" rx="2" fill="#fde68a"/>
+          <rect x="8" y="48" width="35" height="6" rx="2" fill="#fde68a"/>
+          <rect x="8" y="64" width="64" height="1" rx="1" fill="#fbbf24"/>
+          <rect x="8" y="72" width="30" height="8" rx="2" fill="#fde68a"/>
+          <rect x="44" y="72" width="28" height="8" rx="2" fill="#fff7ed"/>
+          <text x="40" y="55" textAnchor="middle" fontSize="22" fontWeight="800" fill="#fff7ed" fontFamily="serif">$</text>
+        </svg>
+
+        {/* Second calculator — center right, large */}
+        <svg style={{ position:'absolute', top:'35%', right:'8%', width:140, height:170, filter:'blur(4px)', opacity:0.12 }} viewBox="0 0 90 110" fill="none">
+          <rect width="90" height="110" rx="10" fill="#64748b"/>
+          <rect x="8" y="10" width="74" height="22" rx="4" fill="#94a3b8"/>
+          <rect x="8" y="40" width="20" height="16" rx="3" fill="#cbd5e1"/><rect x="34" y="40" width="20" height="16" rx="3" fill="#cbd5e1"/><rect x="60" y="40" width="22" height="16" rx="3" fill="#94a3b8"/>
+          <rect x="8" y="62" width="20" height="16" rx="3" fill="#cbd5e1"/><rect x="34" y="62" width="20" height="16" rx="3" fill="#cbd5e1"/><rect x="60" y="62" width="22" height="16" rx="3" fill="#cbd5e1"/>
+          <rect x="8" y="84" width="46" height="16" rx="3" fill="#cbd5e1"/><rect x="60" y="84" width="22" height="16" rx="3" fill="#475569"/>
+        </svg>
+
+      </div>
+      <div className="absolute inset-0 bg-white/70" style={{ zIndex: 1 }} />
 
       {/* Header */}
       <header className="relative flex items-center justify-between border-b border-gray-100 bg-white/80 px-6 py-4 backdrop-blur-sm" style={{ zIndex: 2 }}>
