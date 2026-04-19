@@ -3,24 +3,31 @@
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
+  LuBadgeDollarSign,
   LuCalendar,
   LuChartLine,
   LuChartPie,
   LuCheck,
   LuCirclePlus,
   LuCircleArrowUp,
+  LuClipboardList,
+  LuFileClock,
   LuFolderOpen,
+  LuHandCoins,
   LuRefreshCw,
   LuInbox,
+  LuPackageOpen,
   LuReceipt,
-  LuSparkles,
+  LuReceiptText,
   LuTable,
   LuTrash2,
   LuTrendingUp,
+  LuWandSparkles,
 } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
 import { DEFAULT_COMPANY_NAME, decodeCompanySlug, decodeFolderSlug, encodeCompanySlug, isMonthSegment, isYearSegment } from '@/lib/company';
 import { buildCategoryMappingLookup, getCategoryMappings, type CategoryMappingLookup } from '@/lib/category-mappings';
+import { SAMPLE_COMPANY_NAME } from '@/lib/sample-data';
 import {
   getExpenses,
   getAllExpenses,
@@ -95,6 +102,121 @@ function DashboardPanel({
   );
 }
 
+function getWizardActions(companyName: string, year?: string) {
+  const encodedCompany = encodeURIComponent(companyName);
+  const encodedSampleCompany = encodeURIComponent(SAMPLE_COMPANY_NAME);
+  const yearParam = year ? `&year=${encodeURIComponent(year)}` : '';
+
+  return [
+    {
+      title: 'Expense Wizard',
+      desc: 'Operating expenses, vendor payments, and business receipts.',
+      href: `/dashboard/wizard?company=${encodedCompany}${yearParam}`,
+      Icon: LuReceiptText,
+      iconClass: 'bg-accent-primary/12 text-accent-primary ring-accent-primary/20',
+      primary: true,
+    },
+    {
+      title: 'Income Wizard',
+      desc: 'Sales, deposits, checks, ACH transfers, and payment receipts.',
+      href: `/dashboard/income-wizard?company=${encodedCompany}`,
+      Icon: LuHandCoins,
+      iconClass: 'bg-success/12 text-success ring-success/20',
+      primary: false,
+    },
+    {
+      title: 'Accounts Receivable',
+      desc: 'Customer invoices and money expected from clients.',
+      href: `/dashboard/income-wizard?company=${encodedCompany}`,
+      Icon: LuBadgeDollarSign,
+      iconClass: 'bg-blue-500/12 text-blue-500 ring-blue-500/20',
+      primary: false,
+    },
+    {
+      title: 'Accounts Payable',
+      desc: 'Vendor invoices, bills, and future payment obligations.',
+      href: `/dashboard/wizard?company=${encodedCompany}${yearParam}`,
+      Icon: LuFileClock,
+      iconClass: 'bg-amber-500/12 text-amber-600 ring-amber-500/20',
+      primary: false,
+    },
+    {
+      title: 'Sample Data',
+      desc: 'Load demo transactions and explore the dashboard immediately.',
+      href: `/dashboard/wizard?company=${encodedSampleCompany}&sample=true${yearParam}`,
+      Icon: LuPackageOpen,
+      iconClass: 'bg-fuchsia-500/12 text-fuchsia-500 ring-fuchsia-500/20',
+      primary: false,
+    },
+  ];
+}
+
+function ImportWizardSection({
+  companyName,
+  year,
+  onNavigate,
+  className = '',
+  embedded = false,
+}: {
+  companyName: string;
+  year?: string;
+  onNavigate: (_href: string) => void;
+  className?: string;
+  embedded?: boolean;
+}) {
+  const actions = getWizardActions(companyName, year);
+  const surfaceClassName = embedded ? `p-0 ${className}` : `shell-panel p-5 ${className}`;
+
+  return (
+    <section className={surfaceClassName}>
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <LuWandSparkles className="h-4 w-4 text-accent-primary" />
+            <h2 className="text-sm font-semibold text-text-primary">Import Wizards</h2>
+          </div>
+          <p className="text-sm text-text-muted">
+            Import expenses, income, receivables, payables, or sample data for {companyName}
+            {year ? ` — ${year}` : ''}. Company is preselected at commit time.
+          </p>
+        </div>
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-border-primary bg-bg-tertiary px-3 py-1 text-xs font-medium text-text-muted">
+          <LuClipboardList className="h-3.5 w-3.5" />
+          {actions.length} launchers
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {actions.map(({ title, desc, href, Icon, iconClass, primary }) => (
+          <button
+            key={title}
+            onClick={() => onNavigate(href)}
+            className={`group flex min-h-[112px] flex-col rounded-xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_26px_rgba(0,0,0,0.07)] ${
+              primary
+                ? 'border-accent-primary/35 bg-accent-primary text-bg-primary hover:bg-accent-dark'
+                : 'border-border-primary bg-bg-tertiary hover:border-accent-primary/45'
+            }`}
+          >
+            <span
+              className={`mb-3 flex h-9 w-9 items-center justify-center rounded-lg ring-1 ${
+                primary ? 'bg-bg-primary/18 text-bg-primary ring-bg-primary/20' : iconClass
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+            </span>
+            <span className={`text-sm font-semibold ${primary ? 'text-bg-primary' : 'text-text-primary group-hover:text-accent-primary'}`}>
+              {title}
+            </span>
+            <span className={`mt-1 text-xs leading-5 ${primary ? 'text-bg-primary/75' : 'text-text-muted'}`}>
+              {desc}
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function DashboardSlugPage() {
   const params = useParams();
   const router = useRouter();
@@ -155,10 +277,15 @@ export default function DashboardSlugPage() {
     if (!effectiveUserId) return;
     isRefresh ? setRefreshing(true) : setLoading(true);
     try {
-      const [companies, allExpenses] = await Promise.all([getUserFolders(effectiveUserId), getAllExpenses(effectiveUserId)]);
+      const [companies, allExpenses, income] = await Promise.all([
+        getUserFolders(effectiveUserId),
+        getAllExpenses(effectiveUserId),
+        getIncomeByCompany(effectiveUserId, companyName),
+      ]);
       const company = companies.find((item) => item.companyName === companyName);
       setYears(company?.years.map((folder) => folder.year) ?? []);
       setCompanyExpenses(allExpenses.filter((expense) => expense.companyName === companyName));
+      setCompanyIncome(income);
     } catch (err) {
       console.error('Failed to load company data:', err);
     } finally {
@@ -180,8 +307,12 @@ export default function DashboardSlugPage() {
   useEffect(() => {
     if (!effectiveUserId || (!isYearView && !isSubfolderView) || !year) return;
     setLoading(true);
-    Promise.all([getUserFolders(effectiveUserId), getAllExpenses(effectiveUserId)])
-      .then(([companies, allExpenses]) => {
+    Promise.all([
+      getUserFolders(effectiveUserId),
+      getAllExpenses(effectiveUserId),
+      getIncomeByCompany(effectiveUserId, companyName),
+    ])
+      .then(([companies, allExpenses, income]) => {
         const company = companies.find((item) => item.companyName === companyName);
         const yearFolder = company?.years.find((folder) => folder.year === year);
         setMonths(yearFolder?.months ?? []);
@@ -189,6 +320,7 @@ export default function DashboardSlugPage() {
         setYearExpenses(
           allExpenses.filter((expense) => expense.companyName === companyName && expense.year === year)
         );
+        setCompanyIncome(income);
       })
       .catch((err) => console.error('Failed to load year data:', err))
       .finally(() => setLoading(false));
@@ -198,8 +330,12 @@ export default function DashboardSlugPage() {
     if (!effectiveUserId || !isMonthView || !year || !month) return;
     setLoading(true);
     try {
-      const data = await getExpenses(effectiveUserId, companyName, year, month);
+      const [data, income] = await Promise.all([
+        getExpenses(effectiveUserId, companyName, year, month),
+        getIncomeByCompany(effectiveUserId, companyName),
+      ]);
       setExpenses(data);
+      setCompanyIncome(income);
 
       if (data.length > 0) {
         const ids = data.map((expense) => expense.id);
@@ -218,13 +354,6 @@ export default function DashboardSlugPage() {
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
-
-  useEffect(() => {
-    if (!effectiveUserId || (!isCompanyView && !isYearView && !isMonthView)) return;
-    getIncomeByCompany(effectiveUserId, companyName)
-      .then(setCompanyIncome)
-      .catch(() => {});
-  }, [companyName, effectiveUserId, isCompanyView, isMonthView, isYearView]);
 
   const handleCategoryChange = useCallback(async (expenseId: string, category: string) => {
     if (!effectiveUserId || !year || !month) return;
@@ -562,34 +691,10 @@ export default function DashboardSlugPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <section className="shell-panel p-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <div className="mb-2 flex items-center gap-2">
-                    <LuSparkles className="h-4 w-4 text-accent-primary" />
-                    <h2 className="text-sm font-semibold text-text-primary">Import Wizards</h2>
-                  </div>
-                  <p className="text-sm text-text-muted">
-                    Import expenses or income for {companyName} — company is preselected at commit time.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}`)}
-                    className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
-                  >
-                    Expense Wizard
-                  </button>
-                  <button
-                    onClick={() => router.push(`/dashboard/income-wizard?company=${encodeURIComponent(companyName)}`)}
-                    className="inline-flex items-center gap-2 rounded-xl border border-border-primary bg-bg-tertiary px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:border-accent-primary/50"
-                  >
-                    <LuCircleArrowUp className="h-4 w-4 text-success" />
-                    Income Wizard
-                  </button>
-                </div>
-              </div>
-            </section>
+            <ImportWizardSection
+              companyName={companyName}
+              onNavigate={(href) => router.push(href)}
+            />
 
             {companyIncome.length > 0 && (
               <section className="shell-panel p-5">
@@ -703,58 +808,12 @@ export default function DashboardSlugPage() {
                   <h2 className="font-display text-xl font-bold text-text-primary">Get started with {companyName}</h2>
                   <p className="mt-2 text-sm text-text-secondary">Choose how you&apos;d like to start building this company&apos;s financial picture.</p>
                 </div>
-                <div className="relative grid gap-4 sm:grid-cols-2">
-                  {[
-                    {
-                      title: 'Import Sales Data',
-                      desc: 'Bank deposits, checks, ACH transfers, and payment receipts.',
-                      icon: <LuCircleArrowUp className="h-6 w-6 text-success" />,
-                      bg: 'bg-success/10',
-                      onClick: () => router.push(`/dashboard/income-wizard?company=${encodeURIComponent(companyName)}`),
-                    },
-                    {
-                      title: 'Import Expense Data',
-                      desc: 'Operating expenses, vendor payments, and business receipts.',
-                      icon: <LuReceipt className="h-6 w-6 text-accent-primary" />,
-                      bg: 'bg-accent-primary/10',
-                      onClick: () => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}`),
-                    },
-                    {
-                      title: 'Import Accounts Receivable',
-                      desc: 'Customer invoices and outstanding receivables owed to you.',
-                      icon: <LuInbox className="h-6 w-6 text-success" />,
-                      bg: 'bg-success/10',
-                      onClick: () => router.push(`/dashboard/income-wizard?company=${encodeURIComponent(companyName)}`),
-                    },
-                    {
-                      title: 'Import Accounts Payable',
-                      desc: 'Vendor invoices and bills your business owes.',
-                      icon: <LuTrendingUp className="h-6 w-6 text-accent-primary" />,
-                      bg: 'bg-accent-primary/10',
-                      onClick: () => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}`),
-                    },
-                    {
-                      title: 'Import Sample Data',
-                      desc: 'Load a demo dataset to explore the dashboard with realistic transactions.',
-                      icon: <LuSparkles className="h-6 w-6 text-text-muted" />,
-                      bg: 'bg-bg-tertiary',
-                      onClick: () => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}&sample=true`),
-                    },
-                  ].map((card) => (
-                    <button
-                      key={card.title}
-                      onClick={card.onClick}
-                      className="group flex items-start gap-4 rounded-2xl border border-border-primary bg-bg-secondary p-5 text-left transition-all hover:-translate-y-0.5 hover:border-accent-primary/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
-                    >
-                      <div className={`mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${card.bg}`}>
-                        {card.icon}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-text-primary group-hover:text-accent-primary">{card.title}</p>
-                        <p className="mt-1 text-xs text-text-muted">{card.desc}</p>
-                      </div>
-                    </button>
-                  ))}
+                <div className="relative">
+                  <ImportWizardSection
+                    companyName={companyName}
+                    onNavigate={(href) => router.push(href)}
+                    embedded
+                  />
                 </div>
               </section>
             )}
@@ -960,34 +1019,12 @@ export default function DashboardSlugPage() {
           </section>
         )}
 
-        <section className="shell-panel mb-6 p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <LuSparkles className="h-4 w-4 text-accent-primary" />
-                <h2 className="text-sm font-semibold text-text-primary">Import Wizards</h2>
-              </div>
-              <p className="text-sm text-text-muted">
-                Import expenses or income for {companyName} — {year}. Company is preselected at commit time.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}&year=${encodeURIComponent(year)}`)}
-                className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
-              >
-                Expense Wizard
-              </button>
-              <button
-                onClick={() => router.push(`/dashboard/income-wizard?company=${encodeURIComponent(companyName)}`)}
-                className="inline-flex items-center gap-2 rounded-xl border border-border-primary bg-bg-tertiary px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:border-accent-primary/50"
-              >
-                <LuCircleArrowUp className="h-4 w-4 text-success" />
-                Income Wizard
-              </button>
-            </div>
-          </div>
-        </section>
+        <ImportWizardSection
+          companyName={companyName}
+          year={year}
+          onNavigate={(href) => router.push(href)}
+          className="mb-6"
+        />
 
         {yearIncome.length > 0 && (
           <section className="shell-panel mb-6 p-5">

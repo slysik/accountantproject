@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.4.1 — Company Refresh, Wizard Launchers & Sample Company Imports (2026-04-19)
+Company dashboards now have a refresh path that reloads folders, expenses, and income together, so returning from an import wizard updates income totals, net P&L, and empty-company onboarding state without stale data. The Import Wizards panel now includes all five launchers — Expense Wizard, Income Wizard, Accounts Receivable, Accounts Payable, and Sample Data — with distinct icons and matching launchers on both company and year views. Sample Data imports now default to the dedicated `Sample Company` folder, keeping demo transactions separate from real company ledgers.
+
 ### v2.4.0 — Income at Company/Year/Month Level & First Step Onboarding (2026-04-18)
 Income data is now visible at every level of the company workspace: Company view shows a total income panel with net P&L; Year view shows annual income totals and net; Month view shows a full income table with type and source columns. Both Expense and Income Wizards are accessible from Company and Year views with the company pre-filled. When a company has no data, a "First Step" panel appears with 5 action cards — Import Sales Data, Import Expense Data, Import Accounts Receivable, Import Accounts Payable, and Import Sample Data — each routing to the appropriate wizard. The First Step panel features a faded cowboy-and-lasso background illustration. "Import Sample Data" auto-loads the sample CSV in the Expense Wizard so you can explore the app immediately.
 
