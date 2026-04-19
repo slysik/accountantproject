@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { LuTrash2, LuSettings, LuLayoutDashboard, LuTags, LuCircleHelp, LuClipboardList } from 'react-icons/lu';
+import { LuTrash2, LuSettings, LuLayoutDashboard, LuCircleHelp, LuZap } from 'react-icons/lu';
 import FolderTree from './FolderTree';
 import { APP_VERSION } from '@/lib/version';
 import { useTheme } from '@/lib/theme';
@@ -111,28 +111,6 @@ export default function Sidebar() {
           <span>Settings</span>
         </Link>
         <Link
-          href="/settings/categories"
-          className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors ${
-            isActive('/settings/categories')
-              ? 'bg-bg-tertiary text-text-primary'
-              : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
-          }`}
-        >
-          <LuTags className="h-4.5 w-4.5 flex-shrink-0" />
-          <span>Categories</span>
-        </Link>
-        <Link
-          href="/settings/audit"
-          className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors ${
-            isActive('/settings/audit')
-              ? 'bg-bg-tertiary text-text-primary'
-              : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
-          }`}
-        >
-          <LuClipboardList className="h-4.5 w-4.5 flex-shrink-0" />
-          <span>Audit</span>
-        </Link>
-        <Link
           href="/settings/help"
           className={`flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors ${
             isActive('/settings/help')
@@ -157,6 +135,16 @@ export default function Sidebar() {
             <span className="text-sm text-text-muted">License Expiry</span>
             <span className="text-sm font-medium text-text-primary">{formattedLicenseExpiry}</span>
           </div>
+          {sub?.plan === 'trial' && (
+            <Link
+              href="/subscribe"
+              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent-primary px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: 'var(--accent-primary)' }}
+            >
+              <LuZap className="h-3.5 w-3.5" />
+              Upgrade to paid plan
+            </Link>
+          )}
         </div>
       </div>
     </aside>
