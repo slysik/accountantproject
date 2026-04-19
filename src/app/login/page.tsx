@@ -273,36 +273,57 @@ function LoginForm() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col">
-      {/* Background video */}
-      <video
-        autoPlay muted loop playsInline preload="auto"
-        className="absolute inset-0 h-full w-full object-cover"
-        style={{ zIndex: 0 }}
-      >
-        <source src="/demo.mp4" type="video/mp4" />
-      </video>
-      <div className="absolute inset-0 bg-black/55" style={{ zIndex: 1 }} />
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-white">
+      {/* Subtle spreadsheet + calculator background */}
+      <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full" style={{ zIndex: 0 }}>
+        <defs>
+          <pattern id="grid" width="40" height="24" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 24" fill="none" stroke="#e5e7eb" strokeWidth="0.8"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        {/* Column headers */}
+        {['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X'].map((col, i) => (
+          <text key={col} x={i * 40 + 14} y={16} fontSize="9" fill="#d1d5db" fontFamily="monospace" fontWeight="600">{col}</text>
+        ))}
+        {/* Row numbers */}
+        {Array.from({length: 50}, (_, i) => (
+          <text key={i} x={4} y={(i + 1) * 24 + 16} fontSize="9" fill="#d1d5db" fontFamily="monospace">{i + 1}</text>
+        ))}
+        {/* Subtle cell highlights — suggested data */}
+        {[[2,2,6],[2,3,5],[2,4,4],[2,5,3],[4,2,3],[4,3,5],[4,4,4],[4,5,2],[6,2,5],[6,3,4],[6,4,6],[6,5,3]].map(([col,row], i) => (
+          <rect key={i} x={col*40+1} y={row*24+1} width={38} height={22} fill="#f0f9ff" rx="1" opacity="0.6"/>
+        ))}
+        {/* Calculator shape — right side */}
+        <g transform="translate(78%, 12%)">
+          <rect width="90" height="130" rx="10" fill="none" stroke="#e5e7eb" strokeWidth="1.2"/>
+          <rect x="8" y="10" width="74" height="28" rx="4" fill="#f3f4f6"/>
+          {[0,1,2,3,4,5,6,7,8,9,10].map(i => (
+            <rect key={i} x={8+(i%3)*26} y={46+(Math.floor(i/3))*24} width="20" height="18" rx="3" fill="#f9fafb" stroke="#e5e7eb" strokeWidth="0.8"/>
+          ))}
+        </g>
+      </svg>
+      <div className="absolute inset-0 bg-gradient-to-br from-white via-white/95 to-blue-50/40" style={{ zIndex: 1 }} />
 
       {/* Header */}
-      <header className="relative flex items-center justify-between border-b border-white/10 bg-black/30 px-6 py-4 backdrop-blur-sm" style={{ zIndex: 2 }}>
+      <header className="relative flex items-center justify-between border-b border-gray-100 bg-white/80 px-6 py-4 backdrop-blur-sm" style={{ zIndex: 2 }}>
         <Link href="/" className="flex items-center gap-2">
           <SiteLogo className="h-14 w-14" size={56} />
-          <span className="text-base font-semibold text-white">Accountant&apos;s Best Friend</span>
+          <span className="text-base font-semibold text-text-primary">Accountant&apos;s Best Friend</span>
         </Link>
-        <nav className="flex items-center gap-4 text-sm text-white/70">
-          <Link href="/pricing" className="transition-colors hover:text-white">Pricing</Link>
-          <Link href="/contact" className="transition-colors hover:text-white">Contact</Link>
+        <nav className="flex items-center gap-4 text-sm text-text-muted">
+          <Link href="/pricing" className="transition-colors hover:text-text-primary">Pricing</Link>
+          <Link href="/contact" className="transition-colors hover:text-text-primary">Contact</Link>
         </nav>
       </header>
 
       {/* Form */}
       <div className="relative flex flex-1 items-center justify-center px-4 py-12" style={{ zIndex: 2 }}>
-      <div className="w-full max-w-[440px] rounded-2xl border border-white/15 bg-white/10 p-8 backdrop-blur-md">
+      <div className="w-full max-w-[440px] rounded-2xl border border-gray-200 bg-white p-8 shadow-xl shadow-gray-100/80">
         {/* Header */}
         <div className="mb-8 flex flex-col items-center gap-2">
           <SiteLogo className="h-14 w-14" size={56} />
-          <h1 className="text-xl font-semibold text-white">
+          <h1 className="text-xl font-semibold text-text-primary">
             Accountant&apos;s Best Friend
           </h1>
           <p className="text-sm text-text-muted">
