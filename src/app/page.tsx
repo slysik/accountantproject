@@ -88,14 +88,15 @@ export default function LandingPage() {
         .nav-links a:hover{color:var(--coffee)}
         .nav-cta{background:var(--orange);color:#fff;padding:10px 18px;border-radius:12px;font-weight:700;font-size:13px}
         .nav-cta:hover{background:var(--orange-dark)}
-        .hero-full{position:relative;width:100%;overflow:hidden}
-        .hero-video{display:block;width:100%;height:auto;max-height:85vh;object-fit:cover}
-        .hero-center{text-align:center;padding:60px 28px 70px;background:var(--cream)}
+        .hero-full{position:relative;height:100vh;min-height:600px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center}
+        .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+        .hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.62) 0%,rgba(0,0,0,.1) 55%,transparent 100%);z-index:1}
+        .hero-center{position:relative;z-index:2;text-align:center;padding:0 28px 72px;width:100%}
         @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
-        h1.hero-title{font-size:clamp(42px,6.5vw,88px);font-weight:800;line-height:1.02;letter-spacing:-.035em;margin:0 0 18px;color:var(--coffee)}
-        .hero-sub{font-size:19px;color:var(--mud);max-width:560px;margin:0 auto 32px;line-height:1.55}
+        h1.hero-title{font-size:clamp(42px,6.5vw,88px);font-weight:800;line-height:1.02;letter-spacing:-.035em;margin:0 0 18px;color:#fff}
+        .hero-sub{font-size:19px;color:rgba(255,255,255,.82);max-width:560px;margin:0 auto 32px;line-height:1.55}
         .hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-        .hero-trust{display:flex;flex-wrap:wrap;gap:18px 24px;margin-top:24px;font-size:12px;color:var(--mud-2);justify-content:center}
+        .hero-trust{display:flex;flex-wrap:wrap;gap:18px 24px;margin-top:24px;font-size:12px;color:rgba(255,255,255,.6);justify-content:center}
         .hero-trust span{display:inline-flex;align-items:center;gap:8px}
         .hero-trust .tick{color:var(--orange);font-weight:800}
         .demo-stack{position:relative;perspective:1400px}
@@ -287,6 +288,7 @@ export default function LandingPage() {
         <video className="hero-video" autoPlay muted loop playsInline poster="/demo-poster.jpg">
           <source src="/demo.mp4" type="video/mp4" />
         </video>
+        <div className="hero-overlay"></div>
         <div className="hero-center">
           <h1 className="hero-title">Bookkeeping<br/>Made Easy</h1>
           <p className="hero-sub">Upload your bank statements, let AI do the sorting, and walk into tax season with everything organized.</p>
@@ -294,7 +296,7 @@ export default function LandingPage() {
             <Link href="/login?mode=signup" className="btn btn-orange" style={{fontSize:17,padding:'16px 32px',borderRadius:16}}>Start free today
               <svg className="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
             </Link>
-            <a href="#how" className="btn btn-ghost" style={{fontSize:17,padding:'16px 32px',borderRadius:16}}>See how it works</a>
+            <a href="#how" className="btn" style={{fontSize:17,padding:'16px 32px',borderRadius:16,background:'rgba(255,255,255,.15)',color:'#fff',border:'1px solid rgba(255,255,255,.35)',backdropFilter:'blur(6px)'}}>See how it works</a>
           </div>
           <div className="hero-trust">
             <span><span className="tick">✓</span> 30-day free trial</span>
@@ -304,21 +306,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      <div className="marquee-wrap" style={{marginTop:0}}>
-        <div className="marquee">
-          <span>Meals &amp; Entertainment<i></i></span><span>Travel<i></i></span><span>Office Supplies<i></i></span>
-          <span>Software &amp; Subscriptions<i></i></span><span>Advertising<i></i></span><span>Utilities<i></i></span>
-          <span>Professional Fees<i></i></span><span>Vehicle &amp; Mileage<i></i></span><span>Insurance<i></i></span>
-          <span>Payroll<i></i></span><span>Rent &amp; Lease<i></i></span><span>Equipment<i></i></span>
-          <span>Postage &amp; Shipping<i></i></span><span>Repairs<i></i></span><span>Taxes &amp; Licenses<i></i></span>
-          <span>Meals &amp; Entertainment<i></i></span><span>Travel<i></i></span><span>Office Supplies<i></i></span>
-          <span>Software &amp; Subscriptions<i></i></span><span>Advertising<i></i></span><span>Utilities<i></i></span>
-          <span>Professional Fees<i></i></span><span>Vehicle &amp; Mileage<i></i></span><span>Insurance<i></i></span>
-          <span>Payroll<i></i></span><span>Rent &amp; Lease<i></i></span><span>Equipment<i></i></span>
-          <span>Postage &amp; Shipping<i></i></span><span>Repairs<i></i></span><span>Taxes &amp; Licenses<i></i></span>
-        </div>
-      </div>
 
       <section className="band white" id="how">
         <div className="wrap">
