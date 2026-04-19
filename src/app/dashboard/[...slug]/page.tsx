@@ -660,6 +660,8 @@ export default function DashboardSlugPage() {
     };
   }, [companyExpenses, isCompanyView]);
 
+  const companyHasFinancialData = companyExpenses.length > 0 || companyIncome.length > 0;
+
   if (isLegacyYearRoute || isLegacyMonthRoute) return null;
 
   if (isCompanyView) {
@@ -691,10 +693,12 @@ export default function DashboardSlugPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <ImportWizardSection
-              companyName={companyName}
-              onNavigate={(href) => router.push(href)}
-            />
+            {companyHasFinancialData && (
+              <ImportWizardSection
+                companyName={companyName}
+                onNavigate={(href) => router.push(href)}
+              />
+            )}
 
             {companyIncome.length > 0 && (
               <section className="shell-panel p-5">
@@ -794,7 +798,7 @@ export default function DashboardSlugPage() {
               </>
             )}
 
-            {companyExpenses.length === 0 && companyIncome.length === 0 && (
+            {!companyHasFinancialData && (
               <section className="shell-panel relative overflow-hidden p-6">
                 {/* Cowboy lasso background decoration */}
                 <div aria-hidden="true" className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 select-none text-[120px] opacity-[0.07]">
@@ -816,24 +820,6 @@ export default function DashboardSlugPage() {
                   />
                 </div>
               </section>
-            )}
-
-            {years.length > 0 && companyExpenses.length === 0 && companyIncome.length === 0 && (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                {years.map((companyYear) => (
-                  <button
-                    key={companyYear}
-                    onClick={() => router.push(`/dashboard/${encodeCompanySlug(companyName)}/${companyYear}`)}
-                    className="shell-panel p-5 text-left transition-all hover:-translate-y-0.5 hover:border-accent-primary/40"
-                  >
-                    <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-accent-primary/12 ring-1 ring-accent-primary/18">
-                      <LuFolderOpen className="h-5 w-5 text-accent-primary" />
-                    </div>
-                    <div className="font-display text-2xl font-bold text-text-primary">{companyYear}</div>
-                    <div className="mt-1 text-xs text-text-muted">Open year workspace</div>
-                  </button>
-                ))}
-              </div>
             )}
           </div>
         )}
