@@ -8,6 +8,7 @@ import {
   LuChartPie,
   LuCheck,
   LuCirclePlus,
+  LuCircleArrowUp,
   LuFolderOpen,
   LuInbox,
   LuReceipt,
@@ -29,6 +30,8 @@ import {
   softDeleteMonth,
   updateExpenseCategory,
 } from '@/lib/database';
+import { getIncomeByCompany, INCOME_TYPE_LABELS } from '@/lib/income-database';
+import type { Income } from '@/types';
 import CSVUploader from '@/components/CSVUploader';
 import CategoryBreakdown from '@/components/CategoryBreakdown';
 import ExpenseTable from '@/components/ExpenseTable';
@@ -114,6 +117,7 @@ export default function DashboardSlugPage() {
   const [manualError, setManualError] = useState<string | null>(null);
   const [categoryMappings, setCategoryMappings] = useState<CategoryMappingLookup | null>(null);
   const [manualCategoryOverridden, setManualCategoryOverridden] = useState(false);
+  const [companyIncome, setCompanyIncome] = useState<Income[]>([]);
   const [manualEntry, setManualEntry] = useState({
     date: '',
     description: '',
@@ -200,6 +204,13 @@ export default function DashboardSlugPage() {
   useEffect(() => {
     fetchExpenses();
   }, [fetchExpenses]);
+
+  useEffect(() => {
+    if (!effectiveUserId || (!isCompanyView && !isYearView && !isMonthView)) return;
+    getIncomeByCompany(effectiveUserId, companyName)
+      .then(setCompanyIncome)
+      .catch(() => {});
+  }, [companyName, effectiveUserId, isCompanyView, isMonthView, isYearView]);
 
   const handleCategoryChange = useCallback(async (expenseId: string, category: string) => {
     if (!effectiveUserId || !year || !month) return;
@@ -347,6 +358,16 @@ export default function DashboardSlugPage() {
   const missingMonths = useMemo(
     () => months.filter((item) => item.expenseCount === 0),
     [months]
+  );
+
+  const yearIncome = useMemo(
+    () => year ? companyIncome.filter((i) => i.year === year) : [],
+    [companyIncome, year]
+  );
+
+  const monthIncome = useMemo(
+    () => year && month ? companyIncome.filter((i) => i.month === `${year}-${month}`) : [],
+    [companyIncome, month, year]
   );
 
   useEffect(() => {
@@ -523,20 +544,54 @@ export default function DashboardSlugPage() {
                 <div>
                   <div className="mb-2 flex items-center gap-2">
                     <LuSparkles className="h-4 w-4 text-accent-primary" />
-                    <h2 className="text-sm font-semibold text-text-primary">Guided Import Wizard</h2>
+                    <h2 className="text-sm font-semibold text-text-primary">Import Wizards</h2>
                   </div>
                   <p className="text-sm text-text-muted">
-                    Start the guided importer from this company workspace and keep {companyName} preselected at commit time.
+                    Import expenses or income for {companyName} — company is preselected at commit time.
                   </p>
                 </div>
-                <button
-                  onClick={() => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}`)}
-                  className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
-                >
-                  Open Import Wizard
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}`)}
+                    className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
+                  >
+                    Expense Wizard
+                  </button>
+                  <button
+                    onClick={() => router.push(`/dashboard/income-wizard?company=${encodeURIComponent(companyName)}`)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-border-primary bg-bg-tertiary px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:border-accent-primary/50"
+                  >
+                    <LuCircleArrowUp className="h-4 w-4 text-success" />
+                    Income Wizard
+                  </button>
+                </div>
               </div>
             </section>
+
+            {companyIncome.length > 0 && (
+              <section className="shell-panel p-5">
+                <div className="mb-4 flex items-center gap-2">
+                  <LuCircleArrowUp className="h-4 w-4 text-success" />
+                  <h2 className="text-sm font-semibold text-text-primary">Income Overview</h2>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl border border-border-primary/70 bg-bg-secondary p-4">
+                    <p className="mb-1 text-xs uppercase tracking-[0.18em] text-text-muted">Total Income</p>
+                    <p className="text-2xl font-bold text-success">{formatCurrency(companyIncome.reduce((s, i) => s + i.amount, 0))}</p>
+                  </div>
+                  <div className="rounded-xl border border-border-primary/70 bg-bg-secondary p-4">
+                    <p className="mb-1 text-xs uppercase tracking-[0.18em] text-text-muted">Transactions</p>
+                    <p className="text-2xl font-bold text-text-primary">{companyIncome.length.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-xl border border-border-primary/70 bg-bg-secondary p-4">
+                    <p className="mb-1 text-xs uppercase tracking-[0.18em] text-text-muted">Net (Income − Expenses)</p>
+                    <p className={`text-2xl font-bold ${companyIncome.reduce((s, i) => s + i.amount, 0) - (companySummary?.total ?? 0) >= 0 ? 'text-success' : 'text-error'}`}>
+                      {formatCurrency(companyIncome.reduce((s, i) => s + i.amount, 0) - (companySummary?.total ?? 0))}
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )}
 
             {companyExpenses.length > 0 && (
               <>
@@ -611,21 +666,77 @@ export default function DashboardSlugPage() {
               </>
             )}
 
-            {companyExpenses.length === 0 && (
-              <section className="rounded-2xl border border-border-primary bg-bg-secondary px-6 py-16 text-center">
-                <div className="mx-auto max-w-sm">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-bg-tertiary">
-                    <LuFolderOpen className="h-6 w-6 text-text-muted" />
-                  </div>
-                  <h2 className="text-lg font-semibold text-text-primary">No company data yet</h2>
-                  <p className="mt-2 text-sm text-text-muted">
-                    Use the year folders below to start importing transactions and building the company dashboard.
-                  </p>
+            {companyExpenses.length === 0 && companyIncome.length === 0 && (
+              <section className="shell-panel relative overflow-hidden p-6">
+                {/* Cowboy lasso background decoration */}
+                <div aria-hidden="true" className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 select-none text-[120px] opacity-[0.07]">
+                  🤠
+                </div>
+                <div aria-hidden="true" className="pointer-events-none absolute right-28 top-1/2 -translate-y-1/2 select-none text-[80px] opacity-[0.05]" style={{rotate:'25deg'}}>
+                  🪢
+                </div>
+                <div className="relative mb-6">
+                  <p className="section-kicker mb-2">First Step</p>
+                  <h2 className="font-display text-xl font-bold text-text-primary">Get started with {companyName}</h2>
+                  <p className="mt-2 text-sm text-text-secondary">Choose how you&apos;d like to start building this company&apos;s financial picture.</p>
+                </div>
+                <div className="relative grid gap-4 sm:grid-cols-2">
+                  {[
+                    {
+                      title: 'Import Sales Data',
+                      desc: 'Bank deposits, checks, ACH transfers, and payment receipts.',
+                      icon: <LuCircleArrowUp className="h-6 w-6 text-success" />,
+                      bg: 'bg-success/10',
+                      onClick: () => router.push(`/dashboard/income-wizard?company=${encodeURIComponent(companyName)}`),
+                    },
+                    {
+                      title: 'Import Expense Data',
+                      desc: 'Operating expenses, vendor payments, and business receipts.',
+                      icon: <LuReceipt className="h-6 w-6 text-accent-primary" />,
+                      bg: 'bg-accent-primary/10',
+                      onClick: () => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}`),
+                    },
+                    {
+                      title: 'Import Accounts Receivable',
+                      desc: 'Customer invoices and outstanding receivables owed to you.',
+                      icon: <LuInbox className="h-6 w-6 text-success" />,
+                      bg: 'bg-success/10',
+                      onClick: () => router.push(`/dashboard/income-wizard?company=${encodeURIComponent(companyName)}`),
+                    },
+                    {
+                      title: 'Import Accounts Payable',
+                      desc: 'Vendor invoices and bills your business owes.',
+                      icon: <LuTrendingUp className="h-6 w-6 text-accent-primary" />,
+                      bg: 'bg-accent-primary/10',
+                      onClick: () => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}`),
+                    },
+                    {
+                      title: 'Import Sample Data',
+                      desc: 'Load a demo dataset to explore the dashboard with realistic transactions.',
+                      icon: <LuSparkles className="h-6 w-6 text-text-muted" />,
+                      bg: 'bg-bg-tertiary',
+                      onClick: () => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}&sample=true`),
+                    },
+                  ].map((card) => (
+                    <button
+                      key={card.title}
+                      onClick={card.onClick}
+                      className="group flex items-start gap-4 rounded-2xl border border-border-primary bg-bg-secondary p-5 text-left transition-all hover:-translate-y-0.5 hover:border-accent-primary/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+                    >
+                      <div className={`mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${card.bg}`}>
+                        {card.icon}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-text-primary group-hover:text-accent-primary">{card.title}</p>
+                        <p className="mt-1 text-xs text-text-muted">{card.desc}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </section>
             )}
 
-            {years.length > 0 && companyExpenses.length === 0 && (
+            {years.length > 0 && companyExpenses.length === 0 && companyIncome.length === 0 && (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {years.map((companyYear) => (
                   <button
@@ -831,20 +942,54 @@ export default function DashboardSlugPage() {
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <LuSparkles className="h-4 w-4 text-accent-primary" />
-                <h2 className="text-sm font-semibold text-text-primary">Guided Import Wizard</h2>
+                <h2 className="text-sm font-semibold text-text-primary">Import Wizards</h2>
               </div>
               <p className="text-sm text-text-muted">
-                Launch the guided importer from the {year} workspace for {companyName}. The wizard opens with this company prefilled and keeps the year context visible during commit.
+                Import expenses or income for {companyName} — {year}. Company is preselected at commit time.
               </p>
             </div>
-            <button
-              onClick={() => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}&year=${encodeURIComponent(year)}`)}
-              className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
-            >
-              Open Import Wizard
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => router.push(`/dashboard/wizard?company=${encodeURIComponent(companyName)}&year=${encodeURIComponent(year)}`)}
+                className="rounded-xl bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
+              >
+                Expense Wizard
+              </button>
+              <button
+                onClick={() => router.push(`/dashboard/income-wizard?company=${encodeURIComponent(companyName)}`)}
+                className="inline-flex items-center gap-2 rounded-xl border border-border-primary bg-bg-tertiary px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:border-accent-primary/50"
+              >
+                <LuCircleArrowUp className="h-4 w-4 text-success" />
+                Income Wizard
+              </button>
+            </div>
           </div>
         </section>
+
+        {yearIncome.length > 0 && (
+          <section className="shell-panel mb-6 p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <LuCircleArrowUp className="h-4 w-4 text-success" />
+              <h2 className="text-sm font-semibold text-text-primary">Income — {year}</h2>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-border-primary/70 bg-bg-secondary p-4">
+                <p className="mb-1 text-xs uppercase tracking-[0.18em] text-text-muted">Total Income</p>
+                <p className="text-2xl font-bold text-success">{formatCurrency(yearIncome.reduce((s, i) => s + i.amount, 0))}</p>
+              </div>
+              <div className="rounded-xl border border-border-primary/70 bg-bg-secondary p-4">
+                <p className="mb-1 text-xs uppercase tracking-[0.18em] text-text-muted">Transactions</p>
+                <p className="text-2xl font-bold text-text-primary">{yearIncome.length.toLocaleString()}</p>
+              </div>
+              <div className="rounded-xl border border-border-primary/70 bg-bg-secondary p-4">
+                <p className="mb-1 text-xs uppercase tracking-[0.18em] text-text-muted">Net (Income − Expenses)</p>
+                <p className={`text-2xl font-bold ${yearIncome.reduce((s, i) => s + i.amount, 0) - (yearSummary?.total ?? 0) >= 0 ? 'text-success' : 'text-error'}`}>
+                  {formatCurrency(yearIncome.reduce((s, i) => s + i.amount, 0) - (yearSummary?.total ?? 0))}
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
 
         {loading ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -1286,6 +1431,62 @@ export default function DashboardSlugPage() {
             </div>
           </section>
         )}
+
+        <section className="shell-panel p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <LuCircleArrowUp className="h-4 w-4 text-success" />
+              <h2 className="text-sm font-semibold text-text-primary">Income — {monthName} {year}</h2>
+            </div>
+            <button
+              onClick={() => router.push(`/dashboard/income-wizard?company=${encodeURIComponent(companyName)}`)}
+              className="inline-flex items-center gap-2 rounded-full border border-border-primary bg-bg-secondary px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-accent-primary/50 hover:text-text-primary"
+            >
+              <LuCircleArrowUp className="h-3.5 w-3.5 text-success" />
+              Import Income
+            </button>
+          </div>
+          {monthIncome.length === 0 ? (
+            <p className="text-sm text-text-muted">No income recorded for this month. Use Import Income to add records.</p>
+          ) : (
+            <>
+              <div className="mb-4 grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-border-primary/70 bg-bg-secondary p-3">
+                  <p className="mb-1 text-xs text-text-muted">Total Income</p>
+                  <p className="text-xl font-bold text-success">{formatCurrency(monthIncome.reduce((s, i) => s + i.amount, 0))}</p>
+                </div>
+                <div className="rounded-xl border border-border-primary/70 bg-bg-secondary p-3">
+                  <p className="mb-1 text-xs text-text-muted">Transactions</p>
+                  <p className="text-xl font-bold text-text-primary">{monthIncome.length}</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-border-primary">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border-primary bg-bg-tertiary">
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted">Date</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted">Description</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted">Type</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-text-muted">Source</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-semibold text-text-muted">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-primary/40">
+                    {monthIncome.map((inc, idx) => (
+                      <tr key={inc.id ?? idx}>
+                        <td className="px-4 py-2.5 font-mono text-xs text-text-muted">{inc.date}</td>
+                        <td className="px-4 py-2.5 text-text-primary">{inc.description}</td>
+                        <td className="px-4 py-2.5 text-xs text-text-secondary">{INCOME_TYPE_LABELS[inc.incomeType]}</td>
+                        <td className="px-4 py-2.5 text-xs text-text-secondary">{inc.source || <span className="text-text-muted/50">—</span>}</td>
+                        <td className="px-4 py-2.5 text-right font-semibold text-success">{formatCurrency(inc.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </section>
       </div>
     </div>
   );

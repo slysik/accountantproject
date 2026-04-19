@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.4.0 — Income at Company/Year/Month Level & First Step Onboarding (2026-04-18)
+Income data is now visible at every level of the company workspace: Company view shows a total income panel with net P&L; Year view shows annual income totals and net; Month view shows a full income table with type and source columns. Both Expense and Income Wizards are accessible from Company and Year views with the company pre-filled. When a company has no data, a "First Step" panel appears with 5 action cards — Import Sales Data, Import Expense Data, Import Accounts Receivable, Import Accounts Payable, and Import Sample Data — each routing to the appropriate wizard. The First Step panel features a faded cowboy-and-lasso background illustration. "Import Sample Data" auto-loads the sample CSV in the Expense Wizard so you can explore the app immediately.
+
 ### v2.3.9 — Income Wizard & Data Privacy Hardening (2026-04-18)
 A dedicated Income Wizard is now available from the dashboard, letting users import income CSVs (bank deposits, checks, ACH, payment processor exports) into a separate `income` table alongside expenses. The wizard auto-detects income type (check, bank deposit, ACH/wire, cash, credit/card) from transaction descriptions, prompts for a payer source on any unrecognized rows, and commits records to a chosen company in one step. Income is fully isolated by account via the same RLS pattern as expenses — only members of the same account can read or write their income records. The new `migrations/026_income.sql` must be run in Supabase before the feature activates.
 

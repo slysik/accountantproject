@@ -25,6 +25,7 @@ interface SavedPaymentAccount {
 
 interface StepUploadProps {
   onComplete: (_expenses: CategorizedExpense[]) => void;
+  autoSample?: boolean;
 }
 
 type MappingFieldKey = Exclude<keyof ImportColumnMap, 'useDebitCredit'>;
@@ -67,7 +68,7 @@ function sanitizeSuggestedMapping(mapping: ImportColumnMap): ImportColumnMap {
   };
 }
 
-export default function StepUpload({ onComplete }: StepUploadProps) {
+export default function StepUpload({ onComplete, autoSample }: StepUploadProps) {
   const { user } = useAuth();
   const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
 
@@ -99,6 +100,11 @@ export default function StepUpload({ onComplete }: StepUploadProps) {
     };
     void load();
   }, [effectiveUserId]);
+
+  useEffect(() => {
+    if (autoSample) void handleTrySample();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSample]);
 
   const mappedState = useMemo(() => {
     if (!preview || !mapping) {

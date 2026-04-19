@@ -18,9 +18,10 @@ const STEPS = [
 interface WizardContainerProps {
   initialCompanyName?: string;
   contextYear?: string;
+  autoSample?: boolean;
 }
 
-export default function WizardContainer({ initialCompanyName, contextYear }: WizardContainerProps) {
+export default function WizardContainer({ initialCompanyName, contextYear, autoSample }: WizardContainerProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [mappedExpenses, setMappedExpenses] = useState<CategorizedExpense[]>([]);
   const [reviewedExpenses, setReviewedExpenses] = useState<CategorizedExpense[]>([]);
@@ -123,7 +124,7 @@ export default function WizardContainer({ initialCompanyName, contextYear }: Wiz
       {/* Step content */}
       <div className="rounded-xl border border-border-primary bg-bg-secondary p-6">
         {currentStep === 0 && (
-          <StepUpload onComplete={handleUploadComplete} />
+          <StepUpload onComplete={handleUploadComplete} autoSample={autoSample} />
         )}
         {currentStep === 1 && (
           <StepReview
