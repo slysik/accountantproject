@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { getUserFolders } from '@/lib/database';
 import { formatCurrency } from '@/lib/expense-processor';
 import { bulkCreateIncome, INCOME_TYPE_LABELS } from '@/lib/income-database';
+import { encodeCompanySlug } from '@/lib/company';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
 import type { Income } from '@/types';
 
@@ -77,10 +78,10 @@ export default function IncomeStepCommit({ rows, initialCompanyName = '', onBack
           </p>
         </div>
         <a
-          href="/dashboard"
+          href={`/dashboard/${encodeCompanySlug(companyName)}?refreshed=1`}
           className="inline-flex items-center gap-2 rounded-full bg-accent-primary px-6 py-2.5 text-sm font-semibold text-bg-primary hover:bg-accent-dark"
         >
-          Back to Dashboard
+          View in Dashboard →
         </a>
       </div>
     );

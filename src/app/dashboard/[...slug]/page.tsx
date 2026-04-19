@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   LuCalendar,
@@ -10,6 +10,7 @@ import {
   LuCirclePlus,
   LuCircleArrowUp,
   LuFolderOpen,
+  LuRefreshCw,
   LuInbox,
   LuReceipt,
   LuSparkles,
@@ -97,6 +98,7 @@ function DashboardPanel({
 export default function DashboardSlugPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
   const slug = (params.slug as string[]) ?? [];
@@ -118,6 +120,7 @@ export default function DashboardSlugPage() {
   const [categoryMappings, setCategoryMappings] = useState<CategoryMappingLookup | null>(null);
   const [manualCategoryOverridden, setManualCategoryOverridden] = useState(false);
   const [companyIncome, setCompanyIncome] = useState<Income[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const [manualEntry, setManualEntry] = useState({
     date: '',
     description: '',
@@ -148,20 +151,31 @@ export default function DashboardSlugPage() {
     }
   }, [companySlug, isLegacyMonthRoute, isLegacyYearRoute, router, year]);
 
+  const fetchCompanyData = useCallback(async (isRefresh = false) => {
+    if (!effectiveUserId) return;
+    isRefresh ? setRefreshing(true) : setLoading(true);
+    try {
+      const [companies, allExpenses] = await Promise.all([getUserFolders(effectiveUserId), getAllExpenses(effectiveUserId)]);
+      const company = companies.find((item) => item.companyName === companyName);
+      setYears(company?.years.map((folder) => folder.year) ?? []);
+      setCompanyExpenses(allExpenses.filter((expense) => expense.companyName === companyName));
+    } catch (err) {
+      console.error('Failed to load company data:', err);
+    } finally {
+      isRefresh ? setRefreshing(false) : setLoading(false);
+    }
+  }, [companyName, effectiveUserId]);
+
   useEffect(() => {
-    if (!effectiveUserId || !isCompanyView) return;
-    setLoading(true);
-    Promise.all([getUserFolders(effectiveUserId), getAllExpenses(effectiveUserId)])
-      .then(([companies, allExpenses]) => {
-        const company = companies.find((item) => item.companyName === companyName);
-        setYears(company?.years.map((folder) => folder.year) ?? []);
-        setCompanyExpenses(
-          allExpenses.filter((expense) => expense.companyName === companyName)
-        );
-      })
-      .catch((err) => console.error('Failed to load company data:', err))
-      .finally(() => setLoading(false));
-  }, [companyName, effectiveUserId, isCompanyView]);
+    if (!isCompanyView) return;
+    void fetchCompanyData();
+  }, [fetchCompanyData, isCompanyView]);
+
+  useEffect(() => {
+    if (!isCompanyView || searchParams.get('refreshed') !== '1') return;
+    router.replace(`/dashboard/${encodeCompanySlug(companyName)}`);
+    void fetchCompanyData(true);
+  }, [companyName, fetchCompanyData, isCompanyView, router, searchParams]);
 
   useEffect(() => {
     if (!effectiveUserId || (!isYearView && !isSubfolderView) || !year) return;
@@ -524,7 +538,18 @@ export default function DashboardSlugPage() {
       <div className="mx-auto max-w-5xl">
         <section className="hero-surface mb-6">
           <div className="bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.22),_transparent_34%),linear-gradient(135deg,var(--bg-secondary),var(--bg-primary))] px-6 py-7">
-            <p className="section-kicker mb-3">Company Workspace</p>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="section-kicker">Company Workspace</p>
+              <button
+                onClick={() => void fetchCompanyData(true)}
+                disabled={refreshing}
+                title="Refresh company data"
+                className="flex items-center gap-1.5 rounded-lg border border-border-primary/60 bg-bg-primary/40 px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-primary/70 disabled:opacity-50"
+              >
+                <LuRefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing…' : 'Refresh'}
+              </button>
+            </div>
             <h1 className="font-display text-4xl font-bold text-text-primary">{companyName}</h1>
             <p className="mt-3 max-w-2xl text-sm text-text-secondary">
               Company-level dashboard with spend totals, category visibility, month-to-month movement, and quick access into each year workspace.

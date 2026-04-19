@@ -5,6 +5,7 @@ import { LuBookOpen, LuCheck, LuFileSpreadsheet, LuFileText, LuSave } from 'reac
 import { useAuth } from '@/lib/auth';
 import { createAuditEvent } from '@/lib/audit';
 import { bulkCreateExpenses, getUserFolders } from '@/lib/database';
+import { encodeCompanySlug } from '@/lib/company';
 import { aggregateByMonthAndCategory, formatCurrency, getSummary } from '@/lib/expense-processor';
 import { generateCSV, generateExcelReport, generateYearlySummaryCSV } from '@/lib/export';
 import { generateQBOFile } from '@/lib/qbo-export';
@@ -220,7 +221,7 @@ export default function StepCommit({ expenses, initialCompanyName = '', contextY
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/20">
               <LuCheck className="h-5 w-5 text-success" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-semibold text-success">
                 {savedCount} entries committed to {companyName}
               </p>
@@ -229,6 +230,14 @@ export default function StepCommit({ expenses, initialCompanyName = '', contextY
                   ? 'Some rows were skipped because matching transactions were already in the ledger.'
                   : 'All selected rows were saved and year folders were created automatically.'}
               </p>
+              {companyName && (
+                <a
+                  href={`/dashboard/${encodeCompanySlug(companyName)}?refreshed=1`}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-success px-4 py-1.5 text-xs font-semibold text-white hover:bg-success/80"
+                >
+                  View in Dashboard →
+                </a>
+              )}
             </div>
           </div>
         ) : null}
