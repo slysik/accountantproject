@@ -82,6 +82,27 @@ export interface ExportOptions {
   summary?: ExpenseSummary;
 }
 
+export type IncomeType = 'check' | 'bank_deposit' | 'cash' | 'credit' | 'other';
+
+export interface Income {
+  id?: string;
+  userId?: string;
+  accountId?: string;
+  companyName: string;
+  year: string;
+  month: string; // YYYY-MM
+  date: string;
+  description: string;
+  amount: number;
+  incomeType: IncomeType;
+  source: string; // payer / origin of funds
+  filename: string;
+  rawData: string[];
+  paymentMethod?: string;
+  notes?: string;
+  deletedAt?: Date | null;
+}
+
 export interface Receipt {
   id: string;
   expense_id: string;

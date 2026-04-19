@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.3.9 — Income Wizard & Data Privacy Hardening (2026-04-18)
+A dedicated Income Wizard is now available from the dashboard, letting users import income CSVs (bank deposits, checks, ACH, payment processor exports) into a separate `income` table alongside expenses. The wizard auto-detects income type (check, bank deposit, ACH/wire, cash, credit/card) from transaction descriptions, prompts for a payer source on any unrecognized rows, and commits records to a chosen company in one step. Income is fully isolated by account via the same RLS pattern as expenses — only members of the same account can read or write their income records. The new `migrations/026_income.sql` must be run in Supabase before the feature activates.
+
 ### v2.3.8 — Homepage Video Hero & Visual Polish (2026-04-18)
 The hero demo card on the homepage has been replaced with the full product walkthrough video (`demo.mp4`) — autoplay, muted, looping — displayed flat with rounded corners and a soft drop shadow. The 3D tilt transform and hover animation have been removed so the video sits cleanly in the layout. The scrolling marquee below the hero now showcases IRS Schedule C expense categories (Meals & Entertainment, Travel, Software & Subscriptions, etc.) instead of bank names. The four pricing plan cards (Individual, Business, Elite, Private Server) each have a distinct pastel background — soft mint, warm peach, soft lavender, and pale sky blue respectively — making them easier to distinguish at a glance. The Alladin AI chat animation was also fixed: it had stopped running after the hero demo card was removed because the `useEffect` was exiting early when the old animated rows elements were no longer in the DOM.
 
