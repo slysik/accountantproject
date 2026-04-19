@@ -331,6 +331,7 @@ function LoginForm() {
         </svg>
 
       </div>
+
       <div className="absolute inset-0 bg-white/70" style={{ zIndex: 1 }} />
 
       {/* Header */}
@@ -346,7 +347,7 @@ function LoginForm() {
       </header>
 
       {/* Form */}
-      <div className="relative flex flex-1 items-center justify-center px-4 py-12" style={{ zIndex: 2 }}>
+      <div className="relative flex flex-1 items-center justify-center px-4 py-12" style={{ zIndex: 2, position: 'relative' }}>
       <div className="w-full max-w-[440px] rounded-2xl border border-gray-200 bg-white p-8 shadow-xl shadow-gray-100/80">
         {/* Header */}
         <div className="mb-8 flex flex-col items-center gap-2">
