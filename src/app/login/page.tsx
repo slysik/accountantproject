@@ -277,7 +277,7 @@ function LoginForm() {
       {/* Header */}
       <header className="flex items-center justify-between border-b border-border-primary bg-bg-secondary px-6 py-4">
         <Link href="/" className="flex items-center gap-2">
-          <SiteLogo className="h-8 w-8" size={32} />
+          <SiteLogo className="h-14 w-14" size={56} />
           <span className="text-base font-semibold text-text-primary">Accountant&apos;s Best Friend</span>
         </Link>
         <nav className="flex items-center gap-4 text-sm text-text-muted">

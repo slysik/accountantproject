@@ -81,9 +81,8 @@ export default function LandingPage() {
         .arrow{width:14px;height:14px}
         header.nav{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);background:rgba(250,249,247,.85);border-bottom:1px solid var(--border)}
         .nav-row{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;max-width:1240px;margin:0 auto}
-        .brand{display:flex;align-items:center;gap:10px;text-decoration:none}
-        .brand-logo{display:block;height:44px;width:44px;object-fit:contain}
-        .brand-name{font-size:15px;font-weight:700;color:var(--coffee);letter-spacing:-.01em}
+        .brand{display:flex;align-items:center;gap:0;text-decoration:none}
+        .brand-logo{display:block;height:80px;width:80px;object-fit:contain}
         .nav-links{display:flex;align-items:center;gap:28px}
         .nav-links a{color:var(--mud);font-size:14px}
         .nav-links a:hover{color:var(--coffee)}
@@ -271,8 +270,7 @@ export default function LandingPage() {
       <header className="nav">
         <div className="nav-row">
           <a href="#" className="brand">
-            <Image src="/logo-light.jpeg" alt="Accountant's Best Friend" width={44} height={44} className="brand-logo" unoptimized />
-            <span className="brand-name">Accountant&apos;s Best Friend</span>
+            <Image src="/logo-light.jpeg" alt="Accountant's Best Friend" width={80} height={80} className="brand-logo" unoptimized />
           </a>
           <nav className="nav-links">
             <a href="#how">How it works</a>
@@ -637,8 +635,7 @@ export default function LandingPage() {
         <div className="foot-row">
           <div>
             <a href="#" className="brand">
-              <Image src="/logo-light.jpeg" alt="Accountant's Best Friend" width={44} height={44} className="brand-logo" unoptimized />
-              <span className="brand-name">Accountant&apos;s Best Friend</span>
+              <Image src="/logo-light.jpeg" alt="Accountant's Best Friend" width={80} height={80} className="brand-logo" unoptimized />
             </a>
             <p className="foot-tag">Personal expense categorization for self-employed professionals. CSV in, clean books out. Built in Tampa. Used at 3am on April 14.</p>
           </div>

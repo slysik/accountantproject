@@ -11,7 +11,7 @@ export default function AppFooter() {
     <footer className="mt-8 border-t border-border-primary bg-bg-secondary/70 px-4 py-6 md:px-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-2">
-          <SiteLogo className="h-6 w-6" size={24} />
+          <SiteLogo className="h-16 w-16" size={64} />
           <div>
             <p className="text-sm font-semibold text-text-primary">Accountant&apos;s Best Friend</p>
             <p className="text-xs text-text-muted">Version {APP_VERSION}</p>

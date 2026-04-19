@@ -40,7 +40,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
               Sign Out
             </button>
             <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <SiteLogo className="h-7 w-7" size={28} />
+              <SiteLogo className="h-12 w-12" size={48} />
               <span className="hidden text-sm font-semibold text-text-primary md:inline">
                 Accountant&apos;s Best Friend
               </span>

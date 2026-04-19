@@ -12,10 +12,7 @@ export default function PublicFooter() {
         {/* Top row */}
         <div className="mb-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2">
-            <SiteLogo className="h-6 w-6" size={24} />
-            <span className="text-sm font-semibold text-text-primary">
-              Accountant&apos;s Best Friend
-            </span>
+            <SiteLogo className="h-16 w-16" size={64} />
           </div>
           <nav className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs text-text-muted">
             <Link href="/pricing" className="transition-colors hover:text-text-primary">

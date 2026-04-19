@@ -65,7 +65,7 @@ export default function SubscribePage() {
       {/* Nav */}
       <header className="flex items-center justify-between border-b border-border-primary bg-bg-secondary px-6 py-4">
         <div className="flex items-center gap-2">
-          <SiteLogo className="h-8 w-8" size={32} />
+          <SiteLogo className="h-14 w-14" size={56} />
           <span className="text-base font-semibold">Accountant&apos;s Best Friend</span>
         </div>
         <button

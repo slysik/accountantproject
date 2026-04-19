@@ -10,7 +10,7 @@ interface Props {
   size?: number;
 }
 
-export default function SiteLogo({ className = 'h-10 w-10', size = 40 }: Props) {
+export default function SiteLogo({ className = 'h-14 w-14', size = 56 }: Props) {
   const { theme } = useTheme();
   return (
     <Image

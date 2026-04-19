@@ -42,28 +42,14 @@ export default function Sidebar() {
         style={{ borderColor: 'var(--border-primary)' }}
       >
         <div className="flex w-full max-w-[208px] items-center justify-center gap-3 text-left">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-xl border p-1.5"
-            style={{
-              borderColor: 'color-mix(in srgb, var(--accent-primary) 26%, var(--border-primary))',
-              backgroundColor: 'color-mix(in srgb, var(--accent-primary) 10%, var(--bg-primary))',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-            }}
-          >
-            <Image
-              src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
-              alt="Accountant's Best Friend"
-              width={800}
-              height={800}
-              className="h-7 w-7 rounded-lg object-contain opacity-95"
-              style={{
-                filter: theme === 'dark'
-                  ? 'saturate(0.9) contrast(1.02)'
-                  : 'saturate(0.82) contrast(0.96)',
-              }}
-              unoptimized
-            />
-          </div>
+          <Image
+            src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
+            alt="Accountant's Best Friend"
+            width={56}
+            height={56}
+            className="h-14 w-14 object-contain"
+            unoptimized
+          />
           <div className="min-w-0 space-y-0.5">
             <p className="truncate text-sm font-semibold leading-none text-text-primary">Accountant&apos;s Best Friend</p>
             <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-text-muted">ABF</p>

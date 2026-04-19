@@ -6,10 +6,4 @@
 -- This is set at import time when the user selects an account in the
 -- Import Wizard Step 1 account selector.
 
-ALTER TABLE expenses
-  ADD COLUMN IF NOT EXISTS payment_account_label TEXT;
-
--- Optional index for filtering expenses by account
-CREATE INDEX IF NOT EXISTS expenses_payment_account_label_idx
-  ON expenses (user_id, payment_account_label)
-  WHERE payment_account_label IS NOT NULL;
+th
