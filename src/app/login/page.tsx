@@ -278,7 +278,7 @@ function LoginForm() {
       <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ zIndex: 0 }}>
 
         {/* Calculator — top left */}
-        <svg style={{ position:'absolute', top:'6%', left:'4%', width:180, height:220, filter:'blur(3px)', opacity:0.18 }} viewBox="0 0 90 110" fill="none">
+        <svg style={{ position:'absolute', top:'6%', left:'4%', width:180, height:220, filter:'blur(2px)', opacity:0.55 }} viewBox="0 0 90 110" fill="none">
           <rect width="90" height="110" rx="10" fill="#3b82f6"/>
           <rect x="8" y="10" width="74" height="22" rx="4" fill="#93c5fd"/>
           <rect x="8" y="40" width="20" height="16" rx="3" fill="#bfdbfe"/><rect x="34" y="40" width="20" height="16" rx="3" fill="#bfdbfe"/><rect x="60" y="40" width="22" height="16" rx="3" fill="#60a5fa"/>
@@ -287,7 +287,7 @@ function LoginForm() {
         </svg>
 
         {/* Spreadsheet — top right */}
-        <svg style={{ position:'absolute', top:'4%', right:'3%', width:260, height:200, filter:'blur(3px)', opacity:0.16 }} viewBox="0 0 130 100" fill="none">
+        <svg style={{ position:'absolute', top:'4%', right:'3%', width:260, height:200, filter:'blur(2px)', opacity:0.55 }} viewBox="0 0 130 100" fill="none">
           <rect width="130" height="100" rx="6" fill="#10b981"/>
           <rect x="0" y="0" width="130" height="16" rx="6" fill="#059669"/>
           {[0,1,2,3].map(c=><rect key={c} x={c*32+1} y={0} width={31} height={16} fill={c===0?'#065f46':'#047857'} rx={c===0?'6 0 0 6':'0'}/>)}
@@ -299,7 +299,7 @@ function LoginForm() {
         </svg>
 
         {/* Bar chart — bottom left */}
-        <svg style={{ position:'absolute', bottom:'8%', left:'6%', width:200, height:180, filter:'blur(3px)', opacity:0.15 }} viewBox="0 0 100 90" fill="none">
+        <svg style={{ position:'absolute', bottom:'8%', left:'6%', width:200, height:180, filter:'blur(2px)', opacity:0.55 }} viewBox="0 0 100 90" fill="none">
           <rect x="5" y="50" width="14" height="35" rx="3" fill="#6366f1"/>
           <rect x="24" y="30" width="14" height="55" rx="3" fill="#8b5cf6"/>
           <rect x="43" y="18" width="14" height="67" rx="3" fill="#a78bfa"/>
@@ -309,7 +309,7 @@ function LoginForm() {
         </svg>
 
         {/* Dollar / receipt — bottom right */}
-        <svg style={{ position:'absolute', bottom:'10%', right:'5%', width:160, height:200, filter:'blur(3px)', opacity:0.15 }} viewBox="0 0 80 100" fill="none">
+        <svg style={{ position:'absolute', bottom:'10%', right:'5%', width:160, height:200, filter:'blur(2px)', opacity:0.55 }} viewBox="0 0 80 100" fill="none">
           <rect width="80" height="100" rx="6" fill="#f59e0b"/>
           <rect x="8" y="12" width="64" height="6" rx="2" fill="#fde68a"/>
           <rect x="8" y="24" width="40" height="6" rx="2" fill="#fde68a"/>
@@ -322,7 +322,7 @@ function LoginForm() {
         </svg>
 
         {/* Second calculator — center right, large */}
-        <svg style={{ position:'absolute', top:'35%', right:'8%', width:140, height:170, filter:'blur(4px)', opacity:0.12 }} viewBox="0 0 90 110" fill="none">
+        <svg style={{ position:'absolute', top:'35%', right:'8%', width:140, height:170, filter:'blur(2px)', opacity:0.45 }} viewBox="0 0 90 110" fill="none">
           <rect width="90" height="110" rx="10" fill="#64748b"/>
           <rect x="8" y="10" width="74" height="22" rx="4" fill="#94a3b8"/>
           <rect x="8" y="40" width="20" height="16" rx="3" fill="#cbd5e1"/><rect x="34" y="40" width="20" height="16" rx="3" fill="#cbd5e1"/><rect x="60" y="40" width="22" height="16" rx="3" fill="#94a3b8"/>
@@ -332,7 +332,7 @@ function LoginForm() {
 
       </div>
 
-      <div className="absolute inset-0 bg-white/70" style={{ zIndex: 1 }} />
+      <div className="absolute inset-0 bg-white/40" style={{ zIndex: 1 }} />
 
       {/* Header */}
       <header className="relative flex items-center justify-between border-b border-gray-100 bg-white/80 px-6 py-4 backdrop-blur-sm" style={{ zIndex: 2 }}>
