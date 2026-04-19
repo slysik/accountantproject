@@ -1,14 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { LuCheck, LuClock, LuTriangle, LuCircleAlert } from 'react-icons/lu';
 import SiteLogo from '@/components/SiteLogo';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import {
   getSubscription,
-  selectPlan,
   trialDaysRemaining,
   isTrialExpired,
   PLANS,
@@ -16,7 +14,6 @@ import {
   type Plan,
 } from '@/lib/subscription';
 
-const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? '';
 const PLAN_ORDER: Exclude<Plan, 'trial'>[] = ['individual', 'business', 'elite', 'vps'];
 
 const PLAN_COLORS: Record<Exclude<Plan, 'trial'>, { bg: string; border: string; btn: string }> = {
@@ -28,7 +25,6 @@ const PLAN_COLORS: Record<Exclude<Plan, 'trial'>, { bg: string; border: string; 
 
 export default function SubscribePage() {
   const { user, signOut } = useAuth();
-  const router = useRouter();
   const [sub, setSub] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<string | null>(null);
@@ -42,15 +38,26 @@ export default function SubscribePage() {
     });
   }, [user]);
 
-  const activatePlan = async (plan: Exclude<Plan, 'trial'>) => {
+  const checkoutWithStripe = async (plan: Exclude<Plan, 'trial'>) => {
     if (!user) return;
     setActivating(plan);
     setError('');
     try {
-      await selectPlan(user.id, plan);
-      router.push('/dashboard');
-    } catch {
-      setError('Failed to activate plan. Please contact support.');
+      const session = await supabase.auth.getSession();
+      const accessToken = session.data.session?.access_token ?? '';
+      const res = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-token': accessToken,
+        },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json() as { url?: string; error?: string };
+      if (!data.url) throw new Error(data.error ?? 'Failed to create checkout session');
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start checkout. Please try again.');
       setActivating(null);
     }
   };
@@ -65,7 +72,6 @@ export default function SubscribePage() {
 
   const expired = sub ? isTrialExpired(sub) : true;
   const daysLeft = sub ? trialDaysRemaining(sub) : 0;
-  const paypalConfigured = !!PAYPAL_CLIENT_ID;
 
   return (
     <div className="min-h-screen bg-bg-primary text-text-primary">
@@ -126,112 +132,68 @@ export default function SubscribePage() {
         )}
 
         {/* Plan cards */}
-        <PayPalScriptProvider
-          options={paypalConfigured ? { clientId: PAYPAL_CLIENT_ID, currency: 'USD' } : { clientId: 'disabled' }}
-        >
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-            {PLAN_ORDER.map((key) => {
-              const plan = PLANS[key];
-              const isPopular = key === 'business';
-              const isActivating = activating === key;
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {PLAN_ORDER.map((key) => {
+            const plan = PLANS[key];
+            const isPopular = key === 'business';
+            const isActivating = activating === key;
+            const colors = PLAN_COLORS[key];
 
-              const colors = PLAN_COLORS[key];
-              return (
-                <div
-                  key={key}
-                  className="relative flex flex-col rounded-2xl border p-7"
-                  style={{ backgroundColor: colors.bg, borderColor: colors.border }}
-                >
-                  {isPopular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ backgroundColor: colors.btn }}>
-                        Most Popular
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="mb-5">
-                    <h2 className="mb-1 text-base font-bold text-text-primary">{plan.name}</h2>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold" style={{ color: colors.btn }}>${plan.price}</span>
-                      <span className="text-xs text-text-muted">/mo</span>
-                    </div>
+            return (
+              <div
+                key={key}
+                className="relative flex flex-col rounded-2xl border p-7"
+                style={{ backgroundColor: colors.bg, borderColor: colors.border }}
+              >
+                {isPopular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ backgroundColor: colors.btn }}>
+                      Most Popular
+                    </span>
                   </div>
+                )}
 
-                  <ul className="mb-6 flex flex-col gap-2">
-                    {plan.features.slice(0, 4).map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-xs text-text-secondary">
-                        <LuCheck className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-success" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {key === 'vps' && (
-                    <div className="mb-6 rounded-xl border border-accent-primary/25 bg-accent-primary/10 px-3 py-3 text-xs text-text-secondary">
-                      Includes the full Elite capability set, but deployed as your own secured Accountant&apos;s Best Friend instance on your own server.
-                    </div>
-                  )}
-
-                  <div className="mt-auto space-y-3">
-                    {/* PayPal button */}
-                    {paypalConfigured ? (
-                      <div className={activating && activating !== key ? 'pointer-events-none opacity-50' : ''}>
-                        <PayPalButtons
-                          style={{ layout: 'vertical', color: 'gold', shape: 'rect', label: 'buynow', height: 40 }}
-                          disabled={!!activating}
-                          createOrder={async () => {
-                            const res = await fetch('/api/paypal/create-order', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ plan: key }),
-                            });
-                            const data = await res.json() as { id?: string; error?: string };
-                            if (!data.id) throw new Error(data.error ?? 'Failed to create order');
-                            return data.id;
-                          }}
-                          onApprove={async (data) => {
-                            setActivating(key);
-                            setError('');
-                            const res = await fetch('/api/paypal/capture-order', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ orderID: data.orderID }),
-                            });
-                            const result = await res.json() as { ok?: boolean; error?: string };
-                            if (!result.ok) {
-                              setError(result.error ?? 'Payment capture failed. Please contact support.');
-                              setActivating(null);
-                              return;
-                            }
-                            await activatePlan(key);
-                          }}
-                          onError={() => {
-                            setError('PayPal encountered an error. Please try again.');
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      /* Fallback: direct activation when PayPal not configured */
-                      <button
-                        onClick={() => activatePlan(key)}
-                        disabled={!!activating}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-60 hover:opacity-90"
-                        style={{ backgroundColor: colors.btn }}
-                      >
-                        {isActivating ? (
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        ) : (
-                          `Select ${plan.name}`
-                        )}
-                      </button>
-                    )}
+                <div className="mb-5">
+                  <h2 className="mb-1 text-base font-bold text-text-primary">{plan.name}</h2>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold" style={{ color: colors.btn }}>${plan.price}</span>
+                    <span className="text-xs text-text-muted">/mo</span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </PayPalScriptProvider>
+
+                <ul className="mb-6 flex flex-col gap-2">
+                  {plan.features.slice(0, 4).map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-xs text-text-secondary">
+                      <LuCheck className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-success" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                {key === 'vps' && (
+                  <div className="mb-6 rounded-xl border border-accent-primary/25 bg-accent-primary/10 px-3 py-3 text-xs text-text-secondary">
+                    Includes the full Elite capability set, but deployed as your own secured Accountant&apos;s Best Friend instance on your own server.
+                  </div>
+                )}
+
+                <div className="mt-auto">
+                  <button
+                    onClick={() => checkoutWithStripe(key)}
+                    disabled={!!activating}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-60 hover:opacity-90"
+                    style={{ backgroundColor: colors.btn }}
+                  >
+                    {isActivating ? (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : (
+                      `Subscribe — $${plan.price}/mo`
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
         <p className="mt-8 text-center text-xs text-text-muted">
           No contracts. Cancel any time.{' '}

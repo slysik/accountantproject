@@ -273,7 +273,21 @@ function LoginForm() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      {/* Header */}
+      <header className="relative flex items-center justify-between border-b border-gray-100 bg-white/80 px-6 py-4 backdrop-blur-sm" style={{ zIndex: 2 }}>
+        <Link href="/" className="flex items-center gap-2">
+          <SiteLogo className="h-14 w-14" size={56} />
+          <span className="text-base font-semibold text-text-primary">Accountant&apos;s Best Friend</span>
+        </Link>
+        <nav className="flex items-center gap-4 text-sm text-text-muted">
+          <Link href="/pricing" className="transition-colors hover:text-text-primary">Pricing</Link>
+          <Link href="/contact" className="transition-colors hover:text-text-primary">Contact</Link>
+        </nav>
+      </header>
+
+      {/* Main content area — icons confined here */}
+      <div className="relative flex flex-1 flex-col overflow-hidden">
       {/* Blurred icon background */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ zIndex: 0 }}>
 
@@ -330,24 +344,76 @@ function LoginForm() {
           <rect x="8" y="84" width="46" height="16" rx="3" fill="#cbd5e1"/><rect x="60" y="84" width="22" height="16" rx="3" fill="#475569"/>
         </svg>
 
+        {/* Dollar bill — center left */}
+        <svg style={{ position:'absolute', top:'42%', left:'3%', width:240, height:110, filter:'blur(2px)', opacity:0.5 }} viewBox="0 0 120 55" fill="none">
+          <rect width="120" height="55" rx="5" fill="#16a34a"/>
+          <rect x="3" y="3" width="114" height="49" rx="4" fill="none" stroke="#15803d" strokeWidth="1"/>
+          <rect x="8" y="8" width="24" height="39" rx="3" fill="#15803d" opacity="0.6"/>
+          <rect x="88" y="8" width="24" height="39" rx="3" fill="#15803d" opacity="0.6"/>
+          <circle cx="60" cy="27" r="14" fill="#15803d" opacity="0.5"/>
+          <circle cx="60" cy="27" r="10" fill="none" stroke="#22c55e" strokeWidth="1"/>
+          <text x="60" y="32" textAnchor="middle" fontSize="14" fontWeight="900" fill="#dcfce7" fontFamily="serif">$</text>
+          <text x="14" y="14" fontSize="6" fontWeight="700" fill="#86efac" fontFamily="monospace">100</text>
+          <text x="96" y="14" fontSize="6" fontWeight="700" fill="#86efac" fontFamily="monospace">100</text>
+          <text x="14" y="48" fontSize="6" fontWeight="700" fill="#86efac" fontFamily="monospace">100</text>
+          <text x="96" y="48" fontSize="6" fontWeight="700" fill="#86efac" fontFamily="monospace">100</text>
+        </svg>
+
+        {/* Stack of gold coins — center, slightly left */}
+        <svg style={{ position:'absolute', top:'22%', left:'28%', width:100, height:160, filter:'blur(2px)', opacity:0.5 }} viewBox="0 0 50 80" fill="none">
+          {[0,1,2,3,4].map(i=>(
+            <g key={i} transform={`translate(0,${(4-i)*12})`}>
+              <ellipse cx="25" cy="64" rx="22" ry="7" fill="#92400e"/>
+              <rect x="3" y="44" width="44" height="20" fill="#d97706"/>
+              <ellipse cx="25" cy="44" rx="22" ry="7" fill="#fbbf24"/>
+              <ellipse cx="25" cy="44" rx="16" ry="4.5" fill="#fde68a"/>
+              <text x="25" y="47" textAnchor="middle" fontSize="6" fontWeight="800" fill="#92400e" fontFamily="serif">$</text>
+            </g>
+          ))}
+        </svg>
+
+        {/* Single large coin — top center */}
+        <svg style={{ position:'absolute', top:'8%', left:'42%', width:130, height:130, filter:'blur(2px)', opacity:0.45 }} viewBox="0 0 65 65" fill="none">
+          <circle cx="32" cy="32" r="30" fill="#d97706"/>
+          <circle cx="32" cy="32" r="26" fill="#f59e0b"/>
+          <circle cx="32" cy="32" r="22" fill="none" stroke="#fbbf24" strokeWidth="1.5"/>
+          <text x="32" y="40" textAnchor="middle" fontSize="26" fontWeight="900" fill="#fff7ed" fontFamily="serif">$</text>
+        </svg>
+
+        {/* Euro coin — bottom center */}
+        <svg style={{ position:'absolute', bottom:'20%', left:'38%', width:100, height:100, filter:'blur(2px)', opacity:0.4 }} viewBox="0 0 50 50" fill="none">
+          <circle cx="25" cy="25" r="23" fill="#b45309"/>
+          <circle cx="25" cy="25" r="19" fill="#d97706"/>
+          <circle cx="25" cy="25" r="15" fill="none" stroke="#fbbf24" strokeWidth="1"/>
+          <text x="25" y="31" textAnchor="middle" fontSize="18" fontWeight="900" fill="#fff7ed" fontFamily="serif">€</text>
+        </svg>
+
+        {/* Banknote — top center-right, rotated */}
+        <svg style={{ position:'absolute', top:'28%', left:'55%', width:220, height:100, filter:'blur(2px)', opacity:0.45, transform:'rotate(-8deg)' }} viewBox="0 0 110 50" fill="none">
+          <rect width="110" height="50" rx="4" fill="#1d4ed8"/>
+          <rect x="2" y="2" width="106" height="46" rx="3" fill="none" stroke="#1e40af" strokeWidth="1"/>
+          <rect x="6" y="6" width="20" height="38" rx="2" fill="#1e40af" opacity="0.6"/>
+          <rect x="84" y="6" width="20" height="38" rx="2" fill="#1e40af" opacity="0.6"/>
+          <circle cx="55" cy="25" r="12" fill="#1e40af" opacity="0.5"/>
+          <text x="55" y="30" textAnchor="middle" fontSize="13" fontWeight="900" fill="#bfdbfe" fontFamily="serif">$</text>
+          <text x="11" y="13" fontSize="5" fontWeight="700" fill="#93c5fd" fontFamily="monospace">50</text>
+          <text x="88" y="13" fontSize="5" fontWeight="700" fill="#93c5fd" fontFamily="monospace">50</text>
+        </svg>
+
+        {/* Scattered small coins — bottom center */}
+        <svg style={{ position:'absolute', bottom:'5%', left:'30%', width:200, height:80, filter:'blur(2px)', opacity:0.45 }} viewBox="0 0 100 40" fill="none">
+          <circle cx="12" cy="20" r="10" fill="#d97706"/><circle cx="12" cy="20" r="7" fill="#f59e0b"/><text x="12" y="24" textAnchor="middle" fontSize="8" fontWeight="900" fill="#fff7ed" fontFamily="serif">¢</text>
+          <circle cx="38" cy="15" r="12" fill="#b45309"/><circle cx="38" cy="15" r="9" fill="#d97706"/><text x="38" y="19" textAnchor="middle" fontSize="10" fontWeight="900" fill="#fff7ed" fontFamily="serif">$</text>
+          <circle cx="66" cy="22" r="9" fill="#d97706"/><circle cx="66" cy="22" r="6" fill="#fbbf24"/><text x="66" y="26" textAnchor="middle" fontSize="7" fontWeight="900" fill="#92400e" fontFamily="serif">€</text>
+          <circle cx="88" cy="14" r="11" fill="#92400e"/><circle cx="88" cy="14" r="8" fill="#b45309"/><text x="88" y="18" textAnchor="middle" fontSize="9" fontWeight="900" fill="#fde68a" fontFamily="serif">£</text>
+        </svg>
+
       </div>
 
       <div className="absolute inset-0 bg-white/40" style={{ zIndex: 1 }} />
 
-      {/* Header */}
-      <header className="relative flex items-center justify-between border-b border-gray-100 bg-white/80 px-6 py-4 backdrop-blur-sm" style={{ zIndex: 2 }}>
-        <Link href="/" className="flex items-center gap-2">
-          <SiteLogo className="h-14 w-14" size={56} />
-          <span className="text-base font-semibold text-text-primary">Accountant&apos;s Best Friend</span>
-        </Link>
-        <nav className="flex items-center gap-4 text-sm text-text-muted">
-          <Link href="/pricing" className="transition-colors hover:text-text-primary">Pricing</Link>
-          <Link href="/contact" className="transition-colors hover:text-text-primary">Contact</Link>
-        </nav>
-      </header>
-
       {/* Form */}
-      <div className="relative flex flex-1 items-center justify-center px-4 py-12" style={{ zIndex: 2, position: 'relative' }}>
+      <div className="relative flex flex-1 items-center justify-center px-4 py-12" style={{ zIndex: 2 }}>
       <div className="w-full max-w-[440px] rounded-2xl border border-gray-200 bg-white p-8 shadow-xl shadow-gray-100/80">
         {/* Header */}
         <div className="mb-8 flex flex-col items-center gap-2">
@@ -634,6 +700,7 @@ function LoginForm() {
         )}
       </div>
       </div>
+      </div>{/* end main content area */}
 
       <PublicFooter />
     </div>

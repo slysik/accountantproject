@@ -79,7 +79,7 @@ export default function LandingPage() {
         .btn-ghost{border:1px solid var(--border-2);background:#fff;color:var(--ink)}
         .btn-ghost:hover{background:var(--cream-2)}
         .arrow{width:14px;height:14px}
-        header.nav{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);background:rgba(250,249,247,.85);border-bottom:1px solid var(--border)}
+        header.nav{position:sticky;top:0;z-index:40;background:var(--cream);border-bottom:1px solid var(--border)}
         .nav-row{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;max-width:1240px;margin:0 auto}
         .brand{display:flex;align-items:center;gap:0;text-decoration:none}
         .brand-logo{display:block;height:80px;width:80px;object-fit:contain}
