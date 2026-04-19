@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { LuArrowRight, LuAlertCircle } from 'react-icons/lu';
+import { LuArrowRight, LuCircleAlert } from 'react-icons/lu';
 import { formatCurrency } from '@/lib/expense-processor';
 import { INCOME_TYPE_LABELS, detectIncomeType } from '@/lib/income-database';
 import type { Income, IncomeType } from '@/types';
@@ -61,7 +61,7 @@ export default function IncomeStepReview({ rows, onComplete, onBack }: StepRevie
 
       {hasUnresolved && (
         <div className="flex items-start gap-3 rounded-xl border border-accent-primary/20 bg-accent-primary/8 px-4 py-3">
-          <LuAlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent-primary" />
+          <LuCircleAlert className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent-primary" />
           <p className="text-xs text-text-secondary">
             <span className="font-semibold text-text-primary">{unknownSource.length} row{unknownSource.length !== 1 ? 's' : ''}</span> need a source — enter who or where the income came from so your records are complete.
           </p>

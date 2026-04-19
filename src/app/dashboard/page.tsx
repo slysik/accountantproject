@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { LuChartLine, LuDatabase, LuFileText, LuSparkles, LuTrendingUp, LuWand, LuArrowUpCircle } from 'react-icons/lu';
+import { LuChartLine, LuDatabase, LuFileText, LuSparkles, LuTrendingUp, LuWand, LuCircleArrowUp } from 'react-icons/lu';
 import { useAuth } from '@/lib/auth';
 import { getCategoryName } from '@/lib/categories';
 import { getAllExpenses } from '@/lib/database';
@@ -181,7 +181,7 @@ export default function DashboardPage() {
                 className="inline-flex items-center gap-2"
                 style={{background:'transparent',color:'#1e293b',padding:'11px 20px',borderRadius:12,fontWeight:700,fontSize:14,border:'1.5px solid #e2e8f0',textDecoration:'none'}}
               >
-                <LuArrowUpCircle className="h-4 w-4" style={{color:'#16a34a'}} />
+                <LuCircleArrowUp className="h-4 w-4" style={{color:'#16a34a'}} />
                 Income Wizard
               </Link>
             </div>

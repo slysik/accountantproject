@@ -58,10 +58,12 @@ export default function IncomeStepUpload({ onComplete }: StepUploadProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSample, setIsSample] = useState(false);
+  const [filename, setFilename] = useState('income.csv');
 
   const handleFile = useCallback((file: File) => {
     setError('');
     setIsSample(false);
+    setFilename(file.name);
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
@@ -85,9 +87,10 @@ export default function IncomeStepUpload({ onComplete }: StepUploadProps) {
   const loadSample = useCallback(() => {
     setError('');
     setIsSample(true);
+    setFilename('sample_income.csv');
     const text = rewriteSampleYear(SAMPLE_CSV);
     const parsed = parseCSVPreview(text);
-    setPreview({ ...parsed, filename: 'sample_income.csv' });
+    setPreview(parsed);
     setMapping(parsed.suggestedMapping);
   }, []);
 
@@ -97,7 +100,7 @@ export default function IncomeStepUpload({ onComplete }: StepUploadProps) {
     if (!preview || !hasMapping) return;
     setLoading(true);
 
-    const expenses = mapRowsToExpenses(preview.rows, mapping, preview.filename ?? 'income.csv');
+    const expenses = mapRowsToExpenses(preview.rows, mapping, preview.headers, filename);
 
     const rows: Income[] = expenses
       .filter((e) => e.amount > 0)
@@ -194,7 +197,7 @@ export default function IncomeStepUpload({ onComplete }: StepUploadProps) {
           {/* Preview rows */}
           <div className="rounded-xl border border-border-primary bg-bg-secondary">
             <div className="border-b border-border-primary px-4 py-3">
-              <p className="text-xs font-semibold text-text-primary">Preview — {preview.filename}</p>
+              <p className="text-xs font-semibold text-text-primary">Preview — {filename}</p>
               <p className="text-xs text-text-muted">{preview.rows.length} rows detected</p>
             </div>
             <div className="overflow-x-auto">

@@ -29,7 +29,7 @@ export default function IncomeStepCommit({ rows, initialCompanyName = '', onBack
     if (!effectiveUserId) return;
     getUserFolders(effectiveUserId)
       .then((folders) => {
-        const names = [...new Set(folders.map((f) => f.companyName))].sort();
+        const names = Array.from(new Set(folders.map((f) => f.companyName))).sort();
         setExistingCompanies(names);
         if (!companyName && names.length === 1) setCompanyName(names[0]);
       })
