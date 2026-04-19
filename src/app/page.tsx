@@ -90,19 +90,17 @@ export default function LandingPage() {
         .nav-links a:hover{color:var(--coffee)}
         .nav-cta{background:var(--orange);color:#fff;padding:10px 18px;border-radius:12px;font-weight:700;font-size:13px}
         .nav-cta:hover{background:var(--orange-dark)}
-        .hero{position:relative;padding:76px 0 40px;overflow:hidden}
-        .hero-grain{position:absolute;inset:0;pointer-events:none;opacity:.5;mix-blend-mode:multiply;background:radial-gradient(900px 500px at 85% -10%,rgba(217,119,6,.12),transparent 60%),radial-gradient(1100px 600px at -10% 30%,rgba(26,18,8,.05),transparent 60%)}
-        .hero-grid{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:center}
-        @media(max-width:1020px){.hero-grid{grid-template-columns:1fr;gap:40px}}
-        .kicker{display:inline-flex;align-items:center;gap:10px;padding:7px 14px;border-radius:999px;background:var(--orange-10);border:1px solid var(--orange-20);font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--orange)}
-        .kicker .dot{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 1.6s infinite}
+        .hero-full{position:relative;height:92vh;min-height:580px;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+        .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+        .hero-overlay{position:absolute;inset:0;background:rgba(0,0,0,.48)}
+        .hero-center{position:relative;z-index:1;color:#fff;padding:0 28px;max-width:900px;margin:0 auto}
+        .hero-eyebrow{display:inline-flex;align-items:center;gap:10px;padding:7px 16px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.9);margin-bottom:28px;backdrop-filter:blur(6px)}
+        .hero-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 1.6s infinite}
         @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
-        h1.headline{font-size:clamp(44px,6.2vw,88px);font-weight:800;line-height:1.02;letter-spacing:-.035em;margin:18px 0 18px;color:var(--coffee)}
-        h1.headline .orange{color:var(--orange);display:inline-block;position:relative}
-        h1.headline .orange::after{content:"";position:absolute;left:0;right:0;bottom:.04em;height:.14em;background:var(--orange);opacity:.18;border-radius:2px}
-        .lede{font-size:19px;color:var(--mud);max-width:560px;line-height:1.55}
-        .hero-ctas{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
-        .hero-trust{display:flex;flex-wrap:wrap;gap:22px 26px;margin-top:28px;font-size:12px;color:var(--mud-2)}
+        h1.hero-title{font-size:clamp(48px,7.5vw,100px);font-weight:800;line-height:1.02;letter-spacing:-.035em;margin:0 0 20px;color:#fff}
+        .hero-sub{font-size:20px;color:rgba(255,255,255,.8);max-width:560px;margin:0 auto 36px;line-height:1.5}
+        .hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+        .hero-trust{display:flex;flex-wrap:wrap;gap:18px 24px;margin-top:28px;font-size:12px;color:rgba(255,255,255,.6);justify-content:center}
         .hero-trust span{display:inline-flex;align-items:center;gap:8px}
         .hero-trust .tick{color:var(--orange);font-weight:800}
         .demo-stack{position:relative;perspective:1400px}
@@ -291,46 +289,28 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="hero">
-        <div className="hero-grain"></div>
-        <div className="wrap hero-grid">
-          <div className="hero-copy">
-            <div className="kicker"><span className="dot"></span> CSV in · Clean books out · No spreadsheets</div>
-            <h1 className="headline">
-              Bookkeeping that<br />
-              <span className="orange">actually makes sense.</span>
-            </h1>
-            <p className="lede">Upload your bank statements, let AI do the sorting, and walk into tax season with everything organized — no spreadsheets, no manual data entry, no 3am panic.</p>
-            <div className="hero-ctas">
-              <Link href="/login?mode=signup" className="btn btn-dark">Get started free
-                <svg className="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-              </Link>
-              <a href="#how" className="btn btn-ghost">See it work ▸</a>
-            </div>
-            <div className="hero-trust">
-              <span><span className="tick">✓</span> 30-day free trial</span>
-              <span><span className="tick">✓</span> No credit card</span>
-              <span><span className="tick">✓</span> MFA &amp; RLS built in</span>
-              <span><span className="tick">✓</span> Alladin AI included</span>
-            </div>
+      <section className="hero-full">
+        <video className="hero-video" autoPlay muted loop playsInline poster="/demo-poster.jpg">
+          <source src="/demo.mp4" type="video/mp4" />
+        </video>
+        <div className="hero-overlay"></div>
+        <div className="hero-center">
+          <div className="hero-eyebrow"><span className="dot"></span> AI-powered bookkeeping</div>
+          <h1 className="hero-title">Bookkeeping<br/>Made Easy</h1>
+          <p className="hero-sub">Upload your bank statements, let AI do the sorting, and walk into tax season with everything organized.</p>
+          <div className="hero-ctas">
+            <Link href="/login?mode=signup" className="btn btn-orange" style={{fontSize:17,padding:'16px 32px',borderRadius:16}}>Start free today
+              <svg className="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </Link>
+            <a href="#how" className="btn" style={{fontSize:17,padding:'16px 32px',borderRadius:16,background:'rgba(255,255,255,.15)',color:'#fff',border:'1px solid rgba(255,255,255,.3)',backdropFilter:'blur(6px)'}}>See how it works</a>
           </div>
-
-          <div className="demo-stack">
-            <div className="demo-card" style={{padding:0,overflow:'hidden'}}>
-              <video
-                autoPlay
-                muted
-                loop
-                playsInline
-                poster="/demo-poster.jpg"
-                style={{display:'block',width:'100%',height:'auto'}}
-              >
-                <source src="/demo.mp4" type="video/mp4" />
-              </video>
-            </div>
+          <div className="hero-trust">
+            <span><span className="tick">✓</span> 30-day free trial</span>
+            <span><span className="tick">✓</span> No credit card</span>
+            <span><span className="tick">✓</span> MFA &amp; RLS built in</span>
+            <span><span className="tick">✓</span> Alladin AI included</span>
           </div>
         </div>
-
       </section>
 
       <div className="marquee-wrap" style={{marginTop:0}}>

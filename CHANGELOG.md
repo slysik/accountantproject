@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.4.2 — Full-Screen Hero Background Image (2026-04-19)
+The homepage hero has been redesigned as a full-screen background video layout inspired by IONOS — `demo.mp4` plays fullscreen, autoplay, muted, and looping behind the hero content, with a semi-transparent dark overlay for readability. The headline "Bookkeeping Made Easy" sits centered in large white type over the video. A frosted-glass "AI-powered bookkeeping" eyebrow badge, subtitle, orange CTA button, and ghost glass secondary button are centered below the headline.
+
 ### v2.4.1 — Company Refresh, Wizard Launchers & Sample Company Imports (2026-04-19)
 Company dashboards now have a refresh path that reloads folders, expenses, and income together, so returning from an import wizard updates income totals, net P&L, and empty-company onboarding state without stale data. The Import Wizards panel now includes all five launchers — Expense Wizard, Income Wizard, Accounts Receivable, Accounts Payable, and Sample Data — with distinct icons and matching launchers on both company and year views. Sample Data imports now default to the dedicated `Sample Company` folder, keeping demo transactions separate from real company ledgers.
 
