@@ -186,29 +186,27 @@ function ImportWizardSection({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="flex flex-wrap gap-2">
         {actions.map(({ title, desc, href, Icon, iconClass, primary }) => (
           <button
             key={title}
+            title={desc}
             onClick={() => onNavigate(href)}
-            className={`group flex min-h-[112px] flex-col rounded-xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_26px_rgba(0,0,0,0.07)] ${
+            className={`group inline-flex min-h-10 items-center gap-2 rounded-xl border px-3.5 py-2 text-left text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_26px_rgba(0,0,0,0.07)] ${
               primary
                 ? 'border-accent-primary/35 bg-accent-primary text-bg-primary hover:bg-accent-dark'
                 : 'border-border-primary bg-bg-tertiary hover:border-accent-primary/45'
             }`}
           >
             <span
-              className={`mb-3 flex h-9 w-9 items-center justify-center rounded-lg ring-1 ${
+              className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ring-1 ${
                 primary ? 'bg-bg-primary/18 text-bg-primary ring-bg-primary/20' : iconClass
               }`}
             >
               <Icon className="h-4 w-4" />
             </span>
-            <span className={`text-sm font-semibold ${primary ? 'text-bg-primary' : 'text-text-primary group-hover:text-accent-primary'}`}>
+            <span className={primary ? 'text-bg-primary' : 'text-text-primary group-hover:text-accent-primary'}>
               {title}
-            </span>
-            <span className={`mt-1 text-xs leading-5 ${primary ? 'text-bg-primary/75' : 'text-text-muted'}`}>
-              {desc}
             </span>
           </button>
         ))}
