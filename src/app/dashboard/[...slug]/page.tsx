@@ -535,8 +535,6 @@ export default function DashboardSlugPage() {
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
-        ) : years.length === 0 ? (
-          <p className="text-sm text-text-muted">Use the sidebar to add a year folder for this company.</p>
         ) : (
           <div className="space-y-6">
             <section className="shell-panel p-5">
