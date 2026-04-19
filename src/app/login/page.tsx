@@ -273,26 +273,36 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg-primary">
+    <div className="relative flex min-h-screen flex-col">
+      {/* Background video */}
+      <video
+        autoPlay muted loop playsInline preload="auto"
+        className="absolute inset-0 h-full w-full object-cover"
+        style={{ zIndex: 0 }}
+      >
+        <source src="/demo.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 bg-black/55" style={{ zIndex: 1 }} />
+
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border-primary bg-bg-secondary px-6 py-4">
+      <header className="relative flex items-center justify-between border-b border-white/10 bg-black/30 px-6 py-4 backdrop-blur-sm" style={{ zIndex: 2 }}>
         <Link href="/" className="flex items-center gap-2">
           <SiteLogo className="h-14 w-14" size={56} />
-          <span className="text-base font-semibold text-text-primary">Accountant&apos;s Best Friend</span>
+          <span className="text-base font-semibold text-white">Accountant&apos;s Best Friend</span>
         </Link>
-        <nav className="flex items-center gap-4 text-sm text-text-muted">
-          <Link href="/pricing" className="transition-colors hover:text-text-primary">Pricing</Link>
-          <Link href="/contact" className="transition-colors hover:text-text-primary">Contact</Link>
+        <nav className="flex items-center gap-4 text-sm text-white/70">
+          <Link href="/pricing" className="transition-colors hover:text-white">Pricing</Link>
+          <Link href="/contact" className="transition-colors hover:text-white">Contact</Link>
         </nav>
       </header>
 
       {/* Form */}
-      <div className="flex flex-1 items-center justify-center px-4 py-12">
-      <div className="w-full max-w-[440px] rounded-2xl border border-border-primary bg-bg-secondary p-8">
+      <div className="relative flex flex-1 items-center justify-center px-4 py-12" style={{ zIndex: 2 }}>
+      <div className="w-full max-w-[440px] rounded-2xl border border-white/15 bg-white/10 p-8 backdrop-blur-md">
         {/* Header */}
         <div className="mb-8 flex flex-col items-center gap-2">
           <SiteLogo className="h-14 w-14" size={56} />
-          <h1 className="text-xl font-semibold text-text-primary">
+          <h1 className="text-xl font-semibold text-white">
             Accountant&apos;s Best Friend
           </h1>
           <p className="text-sm text-text-muted">

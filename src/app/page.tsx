@@ -301,7 +301,7 @@ export default function LandingPage() {
       </div>
 
       <div className="hero-video-wrap">
-        <video className="hero-video" autoPlay muted loop playsInline poster="/demo-poster.jpg">
+        <video className="hero-video" autoPlay muted loop playsInline preload="auto" poster="/demo-poster.jpg">
           <source src="/demo.mp4" type="video/mp4" />
         </video>
       </div>
