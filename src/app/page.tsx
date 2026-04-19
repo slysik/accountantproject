@@ -1,6 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LandingPage() {
   useEffect(() => {
@@ -80,27 +81,22 @@ export default function LandingPage() {
         .arrow{width:14px;height:14px}
         header.nav{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);background:rgba(250,249,247,.85);border-bottom:1px solid var(--border)}
         .nav-row{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;max-width:1240px;margin:0 auto}
-        .brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:-.01em}
-        .brand .mark{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--coffee);color:var(--orange);font-weight:900;font-size:18px;letter-spacing:-.02em;box-shadow:inset 0 0 0 2px #2d2010}
-        .brand .mark span{display:inline-block;transform:translateY(-1px)}
-        .brand .word{font-size:15px;color:var(--coffee)}
-        .brand .word em{font-style:normal;color:var(--orange)}
+        .brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .brand-logo{display:block;height:44px;width:44px;object-fit:contain}
+        .brand-name{font-size:15px;font-weight:700;color:var(--coffee);letter-spacing:-.01em}
         .nav-links{display:flex;align-items:center;gap:28px}
         .nav-links a{color:var(--mud);font-size:14px}
         .nav-links a:hover{color:var(--coffee)}
         .nav-cta{background:var(--orange);color:#fff;padding:10px 18px;border-radius:12px;font-weight:700;font-size:13px}
         .nav-cta:hover{background:var(--orange-dark)}
-        .hero-full{position:relative;height:92vh;min-height:580px;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden}
-        .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
-        .hero-overlay{position:absolute;inset:0;background:rgba(0,0,0,.48)}
-        .hero-center{position:relative;z-index:1;color:#fff;padding:0 28px;max-width:900px;margin:0 auto}
-        .hero-eyebrow{display:inline-flex;align-items:center;gap:10px;padding:7px 16px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.9);margin-bottom:28px;backdrop-filter:blur(6px)}
-        .hero-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 1.6s infinite}
+        .hero-full{position:relative;width:100%;overflow:hidden}
+        .hero-video{display:block;width:100%;height:auto;max-height:85vh;object-fit:cover}
+        .hero-center{text-align:center;padding:60px 28px 70px;background:var(--cream)}
         @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
-        h1.hero-title{font-size:clamp(48px,7.5vw,100px);font-weight:800;line-height:1.02;letter-spacing:-.035em;margin:0 0 20px;color:#fff}
-        .hero-sub{font-size:20px;color:rgba(255,255,255,.8);max-width:560px;margin:0 auto 36px;line-height:1.5}
+        h1.hero-title{font-size:clamp(42px,6.5vw,88px);font-weight:800;line-height:1.02;letter-spacing:-.035em;margin:0 0 18px;color:var(--coffee)}
+        .hero-sub{font-size:19px;color:var(--mud);max-width:560px;margin:0 auto 32px;line-height:1.55}
         .hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-        .hero-trust{display:flex;flex-wrap:wrap;gap:18px 24px;margin-top:28px;font-size:12px;color:rgba(255,255,255,.6);justify-content:center}
+        .hero-trust{display:flex;flex-wrap:wrap;gap:18px 24px;margin-top:24px;font-size:12px;color:var(--mud-2);justify-content:center}
         .hero-trust span{display:inline-flex;align-items:center;gap:8px}
         .hero-trust .tick{color:var(--orange);font-weight:800}
         .demo-stack{position:relative;perspective:1400px}
@@ -275,8 +271,8 @@ export default function LandingPage() {
       <header className="nav">
         <div className="nav-row">
           <a href="#" className="brand">
-            <span className="mark"><span>A</span></span>
-            <span className="word">Accountant&apos;s <em>Best Friend</em></span>
+            <Image src="/logo-light.jpeg" alt="Accountant's Best Friend" width={44} height={44} className="brand-logo" unoptimized />
+            <span className="brand-name">Accountant&apos;s Best Friend</span>
           </a>
           <nav className="nav-links">
             <a href="#how">How it works</a>
@@ -293,16 +289,14 @@ export default function LandingPage() {
         <video className="hero-video" autoPlay muted loop playsInline poster="/demo-poster.jpg">
           <source src="/demo.mp4" type="video/mp4" />
         </video>
-        <div className="hero-overlay"></div>
         <div className="hero-center">
-          <div className="hero-eyebrow"><span className="dot"></span> AI-powered bookkeeping</div>
           <h1 className="hero-title">Bookkeeping<br/>Made Easy</h1>
           <p className="hero-sub">Upload your bank statements, let AI do the sorting, and walk into tax season with everything organized.</p>
           <div className="hero-ctas">
             <Link href="/login?mode=signup" className="btn btn-orange" style={{fontSize:17,padding:'16px 32px',borderRadius:16}}>Start free today
               <svg className="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
             </Link>
-            <a href="#how" className="btn" style={{fontSize:17,padding:'16px 32px',borderRadius:16,background:'rgba(255,255,255,.15)',color:'#fff',border:'1px solid rgba(255,255,255,.3)',backdropFilter:'blur(6px)'}}>See how it works</a>
+            <a href="#how" className="btn btn-ghost" style={{fontSize:17,padding:'16px 32px',borderRadius:16}}>See how it works</a>
           </div>
           <div className="hero-trust">
             <span><span className="tick">✓</span> 30-day free trial</span>
@@ -643,8 +637,8 @@ export default function LandingPage() {
         <div className="foot-row">
           <div>
             <a href="#" className="brand">
-              <span className="mark"><span>A</span></span>
-              <span className="word">Accountant&apos;s <em>Best Friend</em></span>
+              <Image src="/logo-light.jpeg" alt="Accountant's Best Friend" width={44} height={44} className="brand-logo" unoptimized />
+              <span className="brand-name">Accountant&apos;s Best Friend</span>
             </a>
             <p className="foot-tag">Personal expense categorization for self-employed professionals. CSV in, clean books out. Built in Tampa. Used at 3am on April 14.</p>
           </div>
