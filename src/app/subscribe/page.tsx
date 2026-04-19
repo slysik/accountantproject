@@ -19,6 +19,13 @@ import {
 const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? '';
 const PLAN_ORDER: Exclude<Plan, 'trial'>[] = ['individual', 'business', 'elite', 'vps'];
 
+const PLAN_COLORS: Record<Exclude<Plan, 'trial'>, { bg: string; border: string; btn: string }> = {
+  individual: { bg: '#edfaf4', border: '#b6ead0', btn: '#16a34a' },
+  business:   { bg: '#fff4ed', border: '#f5cba7', btn: '#d97706' },
+  elite:      { bg: '#f3f0ff', border: '#ccc0f5', btn: '#7c3aed' },
+  vps:        { bg: '#edf5ff', border: '#a8cdfa', btn: '#2563eb' },
+};
+
 export default function SubscribePage() {
   const { user, signOut } = useAuth();
   const router = useRouter();
@@ -128,18 +135,16 @@ export default function SubscribePage() {
               const isPopular = key === 'business';
               const isActivating = activating === key;
 
+              const colors = PLAN_COLORS[key];
               return (
                 <div
                   key={key}
-                  className={`relative flex flex-col rounded-2xl border p-7 ${
-                    isPopular
-                      ? 'border-accent-primary bg-accent-primary/5'
-                      : 'border-border-primary bg-bg-secondary'
-                  }`}
+                  className="relative flex flex-col rounded-2xl border p-7"
+                  style={{ backgroundColor: colors.bg, borderColor: colors.border }}
                 >
                   {isPopular && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="rounded-full bg-accent-primary px-3 py-1 text-xs font-semibold text-bg-primary">
+                      <span className="rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ backgroundColor: colors.btn }}>
                         Most Popular
                       </span>
                     </div>
@@ -148,7 +153,7 @@ export default function SubscribePage() {
                   <div className="mb-5">
                     <h2 className="mb-1 text-base font-bold text-text-primary">{plan.name}</h2>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-text-primary">${plan.price}</span>
+                      <span className="text-3xl font-bold" style={{ color: colors.btn }}>${plan.price}</span>
                       <span className="text-xs text-text-muted">/mo</span>
                     </div>
                   </div>
@@ -211,11 +216,8 @@ export default function SubscribePage() {
                       <button
                         onClick={() => activatePlan(key)}
                         disabled={!!activating}
-                        className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-60 ${
-                          isPopular
-                            ? 'bg-accent-primary text-bg-primary hover:bg-accent-dark'
-                            : 'border border-border-primary text-text-primary hover:bg-bg-tertiary'
-                        }`}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-60 hover:opacity-90"
+                        style={{ backgroundColor: colors.btn }}
                       >
                         {isActivating ? (
                           <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
