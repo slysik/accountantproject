@@ -48,6 +48,7 @@ import MonthlyChart from '@/components/MonthlyChart';
 import SummaryCards from '@/components/SummaryCards';
 import { SkeletonCard, SkeletonSection } from '@/components/Skeleton';
 import { useEffectiveAccountUserId } from '@/lib/useEffectiveAccountUserId';
+import { useSubscription } from '@/lib/useSubscription';
 import { categorizeExpense, getAllCategories, getCategoryName } from '@/lib/categories';
 import { suggestExpenseCategory, resolveMappedCategory } from '@/lib/expense-processor';
 import type { CategorizedExpense, MonthNode, Receipt, SubfolderNode } from '@/types';
@@ -102,12 +103,12 @@ function DashboardPanel({
   );
 }
 
-function getWizardActions(companyName: string, year?: string) {
+function getWizardActions(companyName: string, year?: string, showAccrualWizards = true) {
   const encodedCompany = encodeURIComponent(companyName);
   const encodedSampleCompany = encodeURIComponent(SAMPLE_COMPANY_NAME);
   const yearParam = year ? `&year=${encodeURIComponent(year)}` : '';
 
-  return [
+  const actions = [
     {
       title: 'Expense Wizard',
       desc: 'Operating expenses, vendor payments, and business receipts.',
@@ -124,22 +125,26 @@ function getWizardActions(companyName: string, year?: string) {
       iconClass: 'bg-success/12 text-success ring-success/20',
       primary: false,
     },
-    {
-      title: 'Accounts Receivable',
-      desc: 'Customer invoices and money expected from clients.',
-      href: `/dashboard/income-wizard?company=${encodedCompany}`,
-      Icon: LuBadgeDollarSign,
-      iconClass: 'bg-blue-500/12 text-blue-500 ring-blue-500/20',
-      primary: false,
-    },
-    {
-      title: 'Accounts Payable',
-      desc: 'Vendor invoices, bills, and future payment obligations.',
-      href: `/dashboard/wizard?company=${encodedCompany}${yearParam}`,
-      Icon: LuFileClock,
-      iconClass: 'bg-amber-500/12 text-amber-600 ring-amber-500/20',
-      primary: false,
-    },
+    ...(showAccrualWizards
+      ? [
+          {
+            title: 'Accounts Receivable',
+            desc: 'Customer invoices and money expected from clients.',
+            href: `/dashboard/income-wizard?company=${encodedCompany}`,
+            Icon: LuBadgeDollarSign,
+            iconClass: 'bg-blue-500/12 text-blue-500 ring-blue-500/20',
+            primary: false,
+          },
+          {
+            title: 'Accounts Payable',
+            desc: 'Vendor invoices, bills, and future payment obligations.',
+            href: `/dashboard/wizard?company=${encodedCompany}${yearParam}`,
+            Icon: LuFileClock,
+            iconClass: 'bg-amber-500/12 text-amber-600 ring-amber-500/20',
+            primary: false,
+          },
+        ]
+      : []),
     {
       title: 'Sample Data',
       desc: 'Load demo transactions and explore the dashboard immediately.',
@@ -149,6 +154,8 @@ function getWizardActions(companyName: string, year?: string) {
       primary: false,
     },
   ];
+
+  return actions;
 }
 
 function ImportWizardSection({
@@ -157,14 +164,16 @@ function ImportWizardSection({
   onNavigate,
   className = '',
   embedded = false,
+  showAccrualWizards = true,
 }: {
   companyName: string;
   year?: string;
   onNavigate: (_href: string) => void;
   className?: string;
   embedded?: boolean;
+  showAccrualWizards?: boolean;
 }) {
-  const actions = getWizardActions(companyName, year);
+  const actions = getWizardActions(companyName, year, showAccrualWizards);
   const surfaceClassName = embedded ? `p-0 ${className}` : `shell-panel p-5 ${className}`;
 
   return (
@@ -176,7 +185,7 @@ function ImportWizardSection({
             <h2 className="text-sm font-semibold text-text-primary">Import Wizards</h2>
           </div>
           <p className="text-sm text-text-muted">
-            Import expenses, income, receivables, payables, or sample data for {companyName}
+            Import expenses, income{showAccrualWizards ? ', receivables, payables,' : ','} or sample data for {companyName}
             {year ? ` — ${year}` : ''}. Company is preselected at commit time.
           </p>
         </div>
@@ -221,6 +230,7 @@ export default function DashboardSlugPage() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const effectiveUserId = useEffectiveAccountUserId(user?.id, user?.email);
+  const { sub } = useSubscription(user?.id, user?.email);
   const slug = (params.slug as string[]) ?? [];
 
   const [loading, setLoading] = useState(true);
@@ -255,6 +265,7 @@ export default function DashboardSlugPage() {
   const subfolderName = slug[3] === 'subfolder' && slug[4] ? decodeFolderSlug(slug[4]) : undefined;
   const rootFolderName = slug[1] === 'folder' && slug[2] ? decodeFolderSlug(slug[2]) : undefined;
   const companyName = companySlug ? decodeCompanySlug(companySlug) : DEFAULT_COMPANY_NAME;
+  const showAccrualWizards = sub?.plan !== 'individual';
   const isLegacyYearRoute = slug.length === 1 && isYearSegment(companySlug ?? '');
   const isLegacyMonthRoute = slug.length === 2 && isYearSegment(companySlug ?? '') && isMonthSegment(year ?? '');
   const isCompanyView = slug.length === 1 && !isLegacyYearRoute;
@@ -695,6 +706,7 @@ export default function DashboardSlugPage() {
               <ImportWizardSection
                 companyName={companyName}
                 onNavigate={(href) => router.push(href)}
+                showAccrualWizards={showAccrualWizards}
               />
             )}
 
@@ -815,6 +827,7 @@ export default function DashboardSlugPage() {
                     companyName={companyName}
                     onNavigate={(href) => router.push(href)}
                     embedded
+                    showAccrualWizards={showAccrualWizards}
                   />
                 </div>
               </section>
@@ -1008,6 +1021,7 @@ export default function DashboardSlugPage() {
           year={year}
           onNavigate={(href) => router.push(href)}
           className="mb-6"
+          showAccrualWizards={showAccrualWizards}
         />
 
         {yearIncome.length > 0 && (
