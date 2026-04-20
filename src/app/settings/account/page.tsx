@@ -157,9 +157,9 @@ export default function AccountSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <section className="rounded-xl border border-border-primary bg-bg-secondary p-6">
-        <h2 className="mb-1 text-sm font-semibold text-text-primary">Spend Details</h2>
+        <h2 className="mb-1 text-sm font-semibold text-text-primary">Account Details</h2>
         <p className="mb-5 text-xs text-text-muted">
-          Store your business and contact information here so your spend details stay organized in one place.
+          Store your business and contact information here so your account details stay organized in one place.
         </p>
 
         {profileSuccess && (
@@ -342,7 +342,7 @@ export default function AccountSettingsPage() {
               disabled={profileSaving}
               className="self-start rounded-lg bg-accent-primary px-5 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark disabled:opacity-50"
             >
-              {profileSaving ? 'Saving...' : 'Save Spend Details'}
+              {profileSaving ? 'Saving...' : 'Save Account Details'}
             </button>
           </form>
         )}

@@ -11,7 +11,7 @@ import SiteLogo from '@/components/SiteLogo';
 import { isMasterAdminEmail } from '@/lib/admin';
 
 const BASE_NAV = [
-  { href: '/settings/account',  icon: LuUser,        label: 'Spend Details' },
+  { href: '/settings/account',  icon: LuUser,        label: 'Account Details' },
   { href: '/settings/team',     icon: LuUsers,       label: 'Team'      },
   { href: '/settings/security', icon: LuShield,      label: 'Security'  },
   { href: '/settings/accounts', icon: LuCreditCard,  label: 'Banking Details' },

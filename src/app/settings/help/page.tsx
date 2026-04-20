@@ -16,7 +16,7 @@ import {
 const quickLinks = [
   { href: '/dashboard', label: 'Open Dashboard' },
   { href: '/dashboard/wizard', label: 'Run Import Wizard' },
-  { href: '/settings/account', label: 'Spend Details' },
+  { href: '/settings/account', label: 'Account Details' },
   { href: '/settings/team', label: 'Team Settings' },
   { href: '/settings/security', label: 'Security Settings' },
   { href: '/settings/categories', label: 'Category Mapping' },
