@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.4.6 — Sidebar Upgrade CTA Restored (2026-04-20)
+The left sidebar now shows an upgrade button for every account that can still move to a higher plan. Trial users see "Upgrade to paid plan," while paid Individual, Business, and Elite users see "Upgrade plan" directly in the plan summary area.
+
 ### v2.4.5 — Plan-Based Import Wizard Access (2026-04-20)
 Individual plan accounts now see a simplified import experience focused on Expense Wizard, Income Wizard, and Sample Data. Accounts Receivable and Accounts Payable launchers remain available for Business, Elite, and VPS accounts where accrual-style invoice and bill workflows are a better fit.
 

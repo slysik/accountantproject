@@ -31,6 +31,7 @@ export default function Sidebar() {
         year: 'numeric',
       }).format(new Date(licenseExpiry))
     : 'N/A';
+  const canUpgradePlan = sub && sub.plan !== 'vps';
 
   return (
     <aside
@@ -135,14 +136,14 @@ export default function Sidebar() {
             <span className="text-sm text-text-muted">License Expiry</span>
             <span className="text-sm font-medium text-text-primary">{formattedLicenseExpiry}</span>
           </div>
-          {sub?.plan === 'trial' && (
+          {canUpgradePlan && (
             <Link
               href="/subscribe"
               className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent-primary px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: 'var(--accent-primary)' }}
             >
               <LuZap className="h-3.5 w-3.5" />
-              Upgrade to paid plan
+              {sub.plan === 'trial' ? 'Upgrade to paid plan' : 'Upgrade plan'}
             </Link>
           )}
         </div>
