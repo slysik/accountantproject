@@ -144,9 +144,9 @@ export default function PricingPage() {
                       Run Accountant&apos;s Best Friend on your own secured server with isolated infrastructure and the highest plan capabilities.
                     </div>
                   )}
-                  {/* Buy it now — goes to subscribe (auth gated) */}
+                  {/* Buy it now — signup then straight to Stripe checkout */}
                   <Link
-                    href="/subscribe"
+                    href={`/login?mode=signup&plan=${key}`}
                     className={`mb-2 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors ${
                       highlight
                         ? 'bg-accent-primary text-bg-primary hover:bg-accent-dark'

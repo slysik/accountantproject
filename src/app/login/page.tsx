@@ -25,8 +25,14 @@ function LoginForm() {
   const inviteEnrolled = searchParams.get('enrolled') === '1';
   const passwordResetComplete = searchParams.get('reset') === '1';
 
+  const planParam = searchParams.get('plan');
   const initialMode = isInvite || searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>(initialMode);
+
+  // Store intended plan so it survives the email-confirm redirect
+  useEffect(() => {
+    if (planParam) localStorage.setItem('pendingPlan', planParam);
+  }, [planParam]);
   const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -157,7 +163,13 @@ function LoginForm() {
         setPendingConfirmationEmail('');
       } else if (mode === 'signin') {
         await signInWithEmail(email, password);
-        router.push('/mfa/setup');
+        const pendingPlan = localStorage.getItem('pendingPlan');
+        if (pendingPlan) {
+          localStorage.removeItem('pendingPlan');
+          router.push(`/subscribe?autostart=${pendingPlan}`);
+        } else {
+          router.push('/mfa/setup');
+        }
       } else {
         const result = await signUpWithEmail(email, password, {
           firstName: firstName || undefined,
@@ -273,21 +285,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
-      {/* Header */}
-      <header className="relative flex items-center justify-between border-b border-gray-100 bg-white/80 px-6 py-4 backdrop-blur-sm" style={{ zIndex: 2 }}>
-        <Link href="/" className="flex items-center gap-2">
-          <SiteLogo className="h-14 w-14" size={56} />
-          <span className="text-base font-semibold text-text-primary">Accountant&apos;s Best Friend</span>
-        </Link>
-        <nav className="flex items-center gap-4 text-sm text-text-muted">
-          <Link href="/pricing" className="transition-colors hover:text-text-primary">Pricing</Link>
-          <Link href="/contact" className="transition-colors hover:text-text-primary">Contact</Link>
-        </nav>
-      </header>
-
-      {/* Main content area — icons confined here */}
-      <div className="relative flex flex-1 flex-col overflow-hidden">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-white">
       {/* Blurred icon background */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ zIndex: 0 }}>
 
@@ -412,8 +410,20 @@ function LoginForm() {
 
       <div className="absolute inset-0 bg-white/40" style={{ zIndex: 1 }} />
 
+      {/* Header */}
+      <header className="relative flex items-center justify-between border-b border-gray-100 bg-white/80 px-6 py-4 backdrop-blur-sm" style={{ zIndex: 2 }}>
+        <Link href="/" className="flex items-center gap-2">
+          <SiteLogo className="h-14 w-14" size={56} />
+          <span className="text-base font-semibold text-text-primary">Accountant&apos;s Best Friend</span>
+        </Link>
+        <nav className="flex items-center gap-4 text-sm text-text-muted">
+          <Link href="/pricing" className="transition-colors hover:text-text-primary">Pricing</Link>
+          <Link href="/contact" className="transition-colors hover:text-text-primary">Contact</Link>
+        </nav>
+      </header>
+
       {/* Form */}
-      <div className="relative flex flex-1 items-center justify-center px-4 py-12" style={{ zIndex: 2 }}>
+      <div className="relative flex flex-1 items-center justify-center px-4 py-12" style={{ zIndex: 2, position: 'relative' }}>
       <div className="w-full max-w-[440px] rounded-2xl border border-gray-200 bg-white p-8 shadow-xl shadow-gray-100/80">
         {/* Header */}
         <div className="mb-8 flex flex-col items-center gap-2">
@@ -700,7 +710,6 @@ function LoginForm() {
         )}
       </div>
       </div>
-      </div>{/* end main content area */}
 
       <PublicFooter />
     </div>

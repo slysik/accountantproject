@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { LuCheck, LuClock, LuTriangle, LuCircleAlert } from 'react-icons/lu';
 import SiteLogo from '@/components/SiteLogo';
 import { useAuth } from '@/lib/auth';
@@ -23,20 +25,15 @@ const PLAN_COLORS: Record<Exclude<Plan, 'trial'>, { bg: string; border: string; 
   vps:        { bg: '#edf5ff', border: '#a8cdfa', btn: '#2563eb' },
 };
 
-export default function SubscribePage() {
+function SubscribePageInner() {
   const { user, signOut } = useAuth();
+  const searchParams = useSearchParams();
+  const autostart = searchParams.get('autostart') as Exclude<Plan, 'trial'> | null;
   const [sub, setSub] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<string | null>(null);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!user) return;
-    getSubscription(user.id).then((s) => {
-      setSub(s);
-      setLoading(false);
-    });
-  }, [user]);
+  const autostartFired = useRef(false);
 
   const checkoutWithStripe = async (plan: Exclude<Plan, 'trial'>) => {
     if (!user) return;
@@ -61,6 +58,23 @@ export default function SubscribePage() {
       setActivating(null);
     }
   };
+
+  useEffect(() => {
+    if (!user) return;
+    getSubscription(user.id).then((s) => {
+      setSub(s);
+      setLoading(false);
+    });
+  }, [user]);
+
+  // Auto-trigger Stripe checkout if coming from "Buy it now"
+  useEffect(() => {
+    if (loading || !autostart || autostartFired.current) return;
+    if (!PLAN_ORDER.includes(autostart)) return;
+    autostartFired.current = true;
+    void checkoutWithStripe(autostart);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, autostart]);
 
   if (loading) {
     return (
@@ -203,5 +217,13 @@ export default function SubscribePage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SubscribePage() {
+  return (
+    <Suspense>
+      <SubscribePageInner />
+    </Suspense>
   );
 }

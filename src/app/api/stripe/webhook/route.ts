@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const planExpiresAt = new Date(planStartsAt);
     planExpiresAt.setDate(planExpiresAt.getDate() + 30);
 
-    await supabase
+    const { error: updateError } = await supabase
       .from('subscriptions')
       .update({
         plan,
@@ -49,10 +49,13 @@ export async function POST(req: NextRequest) {
         plan_starts_at: planStartsAt.toISOString(),
         plan_expires_at: planExpiresAt.toISOString(),
         allowed_active_users: PLANS[plan].maxUsers,
-        stripe_session_id: session.id,
-        stripe_subscription_id: session.subscription as string | null,
       })
       .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Webhook: subscription update failed', updateError);
+      return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ received: true });
