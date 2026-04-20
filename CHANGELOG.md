@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.5.0 — Light/Dark/Auto Theme & Enlarged Logo (2026-04-20)
+Settings now includes a General section with an Appearance picker — choose Light, Auto (follows system), or Dark mode. Light is the default for all new and existing users. The selection persists across navigations, reloads, and future sessions via localStorage, cookie, and profile sync. Text contrast is preserved in both modes via semantic CSS variables. The site logo has been enlarged across the app header and sidebar for improved visibility.
+
 ### v2.4.7 — Upgrade-Only Plan Controls (2026-04-20)
 Plan controls now avoid lower-tier language and only show upgrade actions where a higher self-serve plan is available. Individual and Business accounts can upgrade from the sidebar or Account Settings; Elite and VPS accounts no longer show a self-serve upgrade CTA.
 
