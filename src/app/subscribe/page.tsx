@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import { LuCheck, LuClock, LuTriangle, LuCircleAlert } from 'react-icons/lu';
 import SiteLogo from '@/components/SiteLogo';
@@ -27,6 +27,7 @@ const PLAN_COLORS: Record<Exclude<Plan, 'trial'>, { bg: string; border: string; 
 
 function SubscribePageInner() {
   const { user, signOut } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const autostart = searchParams.get('autostart') as Exclude<Plan, 'trial'> | null;
   const [sub, setSub] = useState<Subscription | null>(null);
@@ -64,8 +65,11 @@ function SubscribePageInner() {
     getSubscription(user.id).then((s) => {
       setSub(s);
       setLoading(false);
+      if (s && s.plan !== 'trial' && s.status === 'active') {
+        router.replace('/dashboard');
+      }
     });
-  }, [user]);
+  }, [user, router]);
 
   // Auto-trigger Stripe checkout if coming from "Buy it now"
   useEffect(() => {
