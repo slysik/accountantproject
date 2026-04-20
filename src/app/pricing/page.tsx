@@ -190,8 +190,8 @@ export default function PricingPage() {
                 a: 'After 30 days you\u2019ll be prompted to choose a plan. Your data is safe — you can also export everything before deciding.',
               },
               {
-                q: 'Can I switch plans later?',
-                a: 'Yes. You can upgrade or downgrade any time from your account settings.',
+                q: 'Can I upgrade later?',
+                a: 'Yes. You can upgrade to a higher self-serve plan any time from your account settings.',
               },
               {
                 q: 'What counts as a transaction?',

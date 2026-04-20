@@ -31,7 +31,7 @@ export default function Sidebar() {
         year: 'numeric',
       }).format(new Date(licenseExpiry))
     : 'N/A';
-  const canUpgradePlan = sub && sub.plan !== 'vps';
+  const canUpgradePlan = sub && !['elite', 'vps'].includes(sub.plan);
 
   return (
     <aside

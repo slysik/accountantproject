@@ -463,7 +463,7 @@ export default function AccountSettingsPage() {
               )}
             </div>
 
-            {sub.plan !== 'vps' && (
+            {!['elite', 'vps'].includes(sub.plan) && (
               <Link
                 href="/subscribe"
                 className="flex items-center gap-2 self-start rounded-lg bg-accent-primary px-4 py-2 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
