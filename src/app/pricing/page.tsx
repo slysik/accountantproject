@@ -144,18 +144,26 @@ export default function PricingPage() {
                       Run Accountant&apos;s Best Friend on your own secured server with isolated infrastructure and the highest plan capabilities.
                     </div>
                   )}
-                  {/* Buy it now — signup then straight to Stripe checkout */}
-                  <Link
-                    href={`/login?mode=signup&plan=${key}`}
-                    className={`mb-2 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors ${
-                      highlight
-                        ? 'bg-accent-primary text-bg-primary hover:bg-accent-dark'
-                        : 'bg-accent-primary text-bg-primary hover:bg-accent-dark'
-                    }`}
-                  >
-                    <LuCreditCard className="h-4 w-4" />
-                    Buy it now
-                  </Link>
+                  {key === 'vps' ? (
+                    <Link
+                      href="/contact"
+                      className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl bg-accent-primary px-6 py-3 text-sm font-semibold text-bg-primary transition-colors hover:bg-accent-dark"
+                    >
+                      Contact us
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`/login?mode=signup&plan=${key}`}
+                      className={`mb-2 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors ${
+                        highlight
+                          ? 'bg-accent-primary text-bg-primary hover:bg-accent-dark'
+                          : 'bg-accent-primary text-bg-primary hover:bg-accent-dark'
+                      }`}
+                    >
+                      <LuCreditCard className="h-4 w-4" />
+                      Buy it now
+                    </Link>
+                  )}
                   {/* Free trial secondary option */}
                   <Link
                     href="/login?mode=signup"

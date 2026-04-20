@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.4.4 — Plan Upgrade Flow & Checkout Safety (2026-04-19)
+Paid users can now open the Subscribe page from Account Settings to see their current plan, return to the dashboard, and upgrade directly to a higher self-serve plan without being redirected away. Current and lower plans are clearly disabled so users do not accidentally repurchase or downgrade from the upgrade screen. The VPS/private-server offering now consistently routes to Contact instead of direct Stripe checkout, and Stripe checkout creation now requires an authenticated user so successful payments can always be tied back to the correct subscription.
+
 ### v2.4.3 — Stripe Payments, Direct Purchase Flow & UI Fixes (2026-04-19)
 Stripe live payments are now fully integrated. Users on the Subscribe page are redirected to Stripe's hosted checkout; on successful payment the webhook activates the correct plan in Supabase automatically. Four live price IDs cover Individual ($15/mo), Business ($25/mo), Elite ($100/mo), and VPS ($250/mo). The Individual plan price was updated from $10 to $15. A direct "Buy it now" purchase path has been added to the Pricing page — clicking a plan goes to signup, stores the intended plan, and after sign-in launches Stripe checkout immediately without requiring a trial first. The sidebar now shows an "Upgrade to paid plan" CTA for trial users. The Categories and Audit links were removed from the sidebar as they are already accessible in Settings. Login page background uses blurred SVG accounting icons (calculator, spreadsheet, chart, receipt, coins, currency) on a white background — no video. Test and live Stripe credentials are both stored in `.env.local` as clearly labeled comment blocks for easy switching.
 

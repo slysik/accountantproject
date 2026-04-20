@@ -31,6 +31,10 @@ function LoginForm() {
 
   // Store intended plan so it survives the email-confirm redirect
   useEffect(() => {
+    if (planParam === 'vps') {
+      localStorage.removeItem('pendingPlan');
+      return;
+    }
     if (planParam) localStorage.setItem('pendingPlan', planParam);
   }, [planParam]);
   const [email, setEmail] = useState(inviteEmail);

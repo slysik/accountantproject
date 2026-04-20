@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
-import { LuCheck, LuClock, LuTriangle, LuCircleAlert } from 'react-icons/lu';
+import { LuCheck, LuClock, LuTriangle, LuCircleAlert, LuArrowLeft, LuMail } from 'react-icons/lu';
 import SiteLogo from '@/components/SiteLogo';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -17,6 +17,14 @@ import {
 } from '@/lib/subscription';
 
 const PLAN_ORDER: Exclude<Plan, 'trial'>[] = ['individual', 'business', 'elite', 'vps'];
+const STRIPE_PLAN_ORDER: Exclude<Plan, 'trial' | 'vps'>[] = ['individual', 'business', 'elite'];
+
+const PLAN_RANK: Record<Exclude<Plan, 'trial'>, number> = {
+  individual: 1,
+  business: 2,
+  elite: 3,
+  vps: 4,
+};
 
 const PLAN_COLORS: Record<Exclude<Plan, 'trial'>, { bg: string; border: string; btn: string }> = {
   individual: { bg: '#edfaf4', border: '#b6ead0', btn: '#16a34a' },
@@ -65,20 +73,21 @@ function SubscribePageInner() {
     getSubscription(user.id).then((s) => {
       setSub(s);
       setLoading(false);
-      if (s && s.plan !== 'trial' && s.status === 'active') {
-        router.replace('/dashboard');
-      }
     });
-  }, [user, router]);
+  }, [user]);
 
   // Auto-trigger Stripe checkout if coming from "Buy it now"
   useEffect(() => {
     if (loading || !autostart || autostartFired.current) return;
-    if (!PLAN_ORDER.includes(autostart)) return;
+    if (autostart === 'vps') {
+      router.replace('/contact');
+      return;
+    }
+    if (!STRIPE_PLAN_ORDER.includes(autostart)) return;
     autostartFired.current = true;
     void checkoutWithStripe(autostart);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, autostart]);
+  }, [loading, autostart, router]);
 
   if (loading) {
     return (
@@ -87,6 +96,10 @@ function SubscribePageInner() {
       </div>
     );
   }
+
+  const isPaidPlan = sub && sub.plan !== 'trial' && sub.status === 'active';
+  const currentPlan = isPaidPlan ? sub.plan as Exclude<Plan, 'trial'> : null;
+  const currentRank = currentPlan ? PLAN_RANK[currentPlan] : 0;
 
   const expired = sub ? isTrialExpired(sub) : true;
   const daysLeft = sub ? trialDaysRemaining(sub) : 0;
@@ -99,17 +112,41 @@ function SubscribePageInner() {
           <SiteLogo className="h-14 w-14" size={56} />
           <span className="text-base font-semibold">Accountant&apos;s Best Friend</span>
         </div>
-        <button
-          onClick={() => signOut()}
-          className="text-sm text-text-muted transition-colors hover:text-text-primary"
-        >
-          Sign out
-        </button>
+        <div className="flex items-center gap-4">
+          {isPaidPlan && (
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center gap-1.5 text-sm text-text-muted transition-colors hover:text-text-primary"
+            >
+              <LuArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </button>
+          )}
+          <button
+            onClick={() => signOut()}
+            className="text-sm text-text-muted transition-colors hover:text-text-primary"
+          >
+            Sign out
+          </button>
+        </div>
       </header>
 
       <div className="mx-auto max-w-4xl px-6 py-16">
+
         {/* Status banner */}
-        {expired ? (
+        {isPaidPlan ? (
+          <div className="mb-10 flex items-start gap-3 rounded-xl border border-success/30 bg-success/10 px-5 py-4">
+            <LuCheck className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
+            <div>
+              <p className="font-semibold text-text-primary">
+                You&apos;re on the {PLANS[currentPlan!].name} plan
+              </p>
+              <p className="mt-1 text-sm text-text-muted">
+                Upgrade below to unlock more users and features. Changes take effect immediately after payment.
+              </p>
+            </div>
+          </div>
+        ) : expired ? (
           <div className="mb-10 flex items-start gap-3 rounded-xl border border-error/40 bg-error/10 px-5 py-4">
             <LuTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-error" />
             <div>
@@ -131,13 +168,15 @@ function SubscribePageInner() {
                 {daysLeft} day{daysLeft !== 1 ? 's' : ''} left in your free trial
               </p>
               <p className="mt-1 text-sm text-text-muted">
-                Lock in a plan now and keep your data forever. Payment is processed securely via PayPal.
+                Lock in a plan now and keep your data forever.
               </p>
             </div>
           </div>
         )}
 
-        <h1 className="mb-2 text-center text-3xl font-bold text-text-primary">Choose your plan</h1>
+        <h1 className="mb-2 text-center text-3xl font-bold text-text-primary">
+          {isPaidPlan ? 'Upgrade your plan' : 'Choose your plan'}
+        </h1>
         <p className="mb-10 text-center text-text-muted">
           All plans are month-to-month. Cancel any time.
         </p>
@@ -156,14 +195,30 @@ function SubscribePageInner() {
             const isPopular = key === 'business';
             const isActivating = activating === key;
             const colors = PLAN_COLORS[key];
+            const isCurrent = currentPlan === key;
+            const isLower = currentRank > 0 && PLAN_RANK[key] < currentRank;
+            const isVps = key === 'vps';
+            const isUpgradeable = !isLower && !isCurrent && !isVps;
+            const isDisabled = isLower || isCurrent;
 
             return (
               <div
                 key={key}
                 className="relative flex flex-col rounded-2xl border p-7"
-                style={{ backgroundColor: colors.bg, borderColor: colors.border }}
+                style={{
+                  backgroundColor: isDisabled ? '#f8f8f8' : colors.bg,
+                  borderColor: isCurrent ? colors.btn : isLower ? '#e5e7eb' : colors.border,
+                  opacity: isLower ? 0.55 : 1,
+                }}
               >
-                {isPopular && (
+                {isCurrent && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ backgroundColor: colors.btn }}>
+                      Current Plan
+                    </span>
+                  </div>
+                )}
+                {!isCurrent && isPopular && !isPaidPlan && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ backgroundColor: colors.btn }}>
                       Most Popular
@@ -174,7 +229,9 @@ function SubscribePageInner() {
                 <div className="mb-5">
                   <h2 className="mb-1 text-base font-bold text-text-primary">{plan.name}</h2>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold" style={{ color: colors.btn }}>${plan.price}</span>
+                    <span className="text-3xl font-bold" style={{ color: isDisabled ? '#9ca3af' : colors.btn }}>
+                      ${plan.price}
+                    </span>
                     <span className="text-xs text-text-muted">/mo</span>
                   </div>
                 </div>
@@ -188,25 +245,44 @@ function SubscribePageInner() {
                   ))}
                 </ul>
 
-                {key === 'vps' && (
+                {isVps && (
                   <div className="mb-6 rounded-xl border border-accent-primary/25 bg-accent-primary/10 px-3 py-3 text-xs text-text-secondary">
-                    Includes the full Elite capability set, but deployed as your own secured Accountant&apos;s Best Friend instance on your own server.
+                    Includes the full Elite capability set, deployed as your own secured instance on your own server.
                   </div>
                 )}
 
                 <div className="mt-auto">
-                  <button
-                    onClick={() => checkoutWithStripe(key)}
-                    disabled={!!activating}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-60 hover:opacity-90"
-                    style={{ backgroundColor: colors.btn }}
-                  >
-                    {isActivating ? (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    ) : (
-                      `Subscribe — $${plan.price}/mo`
-                    )}
-                  </button>
+                  {isCurrent ? (
+                    <div className="flex w-full items-center justify-center rounded-xl border border-current px-4 py-3 text-sm font-semibold" style={{ color: colors.btn, borderColor: colors.btn }}>
+                      Current Plan
+                    </div>
+                  ) : isVps ? (
+                    <a
+                      href="/contact"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                      style={{ backgroundColor: colors.btn }}
+                    >
+                      <LuMail className="h-4 w-4" />
+                      Contact us
+                    </a>
+                  ) : isUpgradeable ? (
+                    <button
+                      onClick={() => checkoutWithStripe(key)}
+                      disabled={!!activating}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-60 hover:opacity-90"
+                      style={{ backgroundColor: colors.btn }}
+                    >
+                      {isActivating ? (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        isPaidPlan ? `Upgrade — $${plan.price}/mo` : `Subscribe — $${plan.price}/mo`
+                      )}
+                    </button>
+                  ) : (
+                    <div className="flex w-full items-center justify-center rounded-xl bg-bg-tertiary px-4 py-3 text-sm font-medium text-text-muted">
+                      Not available
+                    </div>
+                  )}
                 </div>
               </div>
             );

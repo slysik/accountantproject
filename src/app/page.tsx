@@ -606,7 +606,7 @@ export default function LandingPage() {
                 <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>Isolated infrastructure</li>
                 <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>Deployed to your environment</li>
               </ul>
-              <Link href="/login?mode=signup&plan=vps" className="cta-buy">Buy it now</Link>
+              <Link href="/contact" className="cta-buy">Contact us</Link>
               <Link href="/contact" className="cta">Talk to us</Link>
             </div>
           </div>

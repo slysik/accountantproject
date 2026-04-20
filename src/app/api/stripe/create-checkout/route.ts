@@ -8,7 +8,6 @@ const PRICE_IDS: Record<string, string> = {
   individual: process.env.STRIPE_PRICE_INDIVIDUAL!,
   business:   process.env.STRIPE_PRICE_BUSINESS!,
   elite:      process.env.STRIPE_PRICE_ELITE!,
-  vps:        process.env.STRIPE_PRICE_VPS!,
 };
 
 export async function POST(req: NextRequest) {
@@ -25,16 +24,15 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-    const authHeader = req.headers.get('authorization') ?? req.headers.get('cookie') ?? '';
     const accessToken = req.headers.get('x-access-token');
 
-    let userId: string | undefined;
-    let userEmail: string | undefined;
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
 
-    if (accessToken) {
-      const { data: { user } } = await supabase.auth.getUser(accessToken);
-      userId = user?.id;
-      userEmail = user?.email ?? undefined;
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://accountantsbestfriend.com';
@@ -44,10 +42,10 @@ export async function POST(req: NextRequest) {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${siteUrl}/dashboard?payment=success`,
       cancel_url: `${siteUrl}/subscribe?payment=cancelled`,
-      customer_email: userEmail,
+      customer_email: user.email ?? undefined,
       metadata: {
         plan,
-        user_id: userId ?? '',
+        user_id: user.id,
       },
     });
 
