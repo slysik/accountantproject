@@ -243,6 +243,8 @@ export default function LandingPage() {
         .plan li svg{flex-shrink:0;margin-top:2px;color:var(--orange)}
         .plan .cta{margin-top:6px;text-align:center;padding:12px 14px;border-radius:12px;font-size:13px;font-weight:700;border:1.5px solid rgba(26,18,8,.15);background:rgba(255,255,255,.7);color:var(--coffee)}
         .plan .cta:hover{background:#fff}
+        .plan .cta-buy{margin-top:4px;text-align:center;padding:12px 14px;border-radius:12px;font-size:13px;font-weight:700;background:var(--orange);color:#fff;border:none}
+        .plan .cta-buy:hover{background:var(--orange-dark)}
         .quote{max-width:880px;margin:0 auto;text-align:center}
         .quote .q{font-size:clamp(24px,2.8vw,36px);font-weight:500;color:var(--coffee);letter-spacing:-.01em;line-height:1.3}
         .quote .q em{font-style:normal;color:var(--orange)}
@@ -556,7 +558,7 @@ export default function LandingPage() {
           <div className="plans">
             <div className="plan plan-mint">
               <h4>Individual</h4>
-              <div className="price"><b>$10</b><span> /mo</span></div>
+              <div className="price"><b>$15</b><span> /mo</span></div>
               <div className="fees">Single user · Unlimited transactions</div>
               <ul>
                 <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>CSV import &amp; export</li>
@@ -564,7 +566,8 @@ export default function LandingPage() {
                 <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>Receipt attachments</li>
                 <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>Excel &amp; QBO export</li>
               </ul>
-              <Link href="/login?mode=signup" className="cta">Start free</Link>
+              <Link href="/login?mode=signup&plan=individual" className="cta-buy">Buy it now</Link>
+              <Link href="/login?mode=signup" className="cta">Start free trial</Link>
             </div>
             <div className="plan plan-peach">
               <div className="tag">Most Popular</div>
@@ -577,7 +580,8 @@ export default function LandingPage() {
                 <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>Role-based permissions</li>
                 <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>Priority support</li>
               </ul>
-              <Link href="/login?mode=signup" className="cta">Start free</Link>
+              <Link href="/login?mode=signup&plan=business" className="cta-buy">Buy it now</Link>
+              <Link href="/login?mode=signup" className="cta">Start free trial</Link>
             </div>
             <div className="plan plan-lavender">
               <h4>Elite</h4>
@@ -589,7 +593,8 @@ export default function LandingPage() {
                 <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>Dedicated account manager</li>
                 <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>Priority support</li>
               </ul>
-              <Link href="/login?mode=signup" className="cta">Start free</Link>
+              <Link href="/login?mode=signup&plan=elite" className="cta-buy">Buy it now</Link>
+              <Link href="/login?mode=signup" className="cta">Start free trial</Link>
             </div>
             <div className="plan plan-sky">
               <h4>Private Server</h4>
@@ -601,6 +606,7 @@ export default function LandingPage() {
                 <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>Isolated infrastructure</li>
                 <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>Deployed to your environment</li>
               </ul>
+              <Link href="/login?mode=signup&plan=vps" className="cta-buy">Buy it now</Link>
               <Link href="/contact" className="cta">Talk to us</Link>
             </div>
           </div>
