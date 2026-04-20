@@ -9,7 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
-### v2.4.4 — Plan Upgrade Flow & Checkout Safety (2026-04-19)
+### v2.4.4 — Plan Upgrade Flow & Checkout Safety (2026-04-20)
 Paid users can now open the Subscribe page from Account Settings to see their current plan, return to the dashboard, and upgrade directly to a higher self-serve plan without being redirected away. Current and lower plans are clearly disabled so users do not accidentally repurchase or downgrade from the upgrade screen. The VPS/private-server offering now consistently routes to Contact instead of direct Stripe checkout, and Stripe checkout creation now requires an authenticated user so successful payments can always be tied back to the correct subscription.
 
 ### v2.4.3 — Stripe Payments, Direct Purchase Flow & UI Fixes (2026-04-19)
