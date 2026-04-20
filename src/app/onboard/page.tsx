@@ -42,7 +42,7 @@ function OnboardForm() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg-primary px-4">
       <div className="w-full max-w-md rounded-2xl border border-border-primary bg-bg-secondary p-8">
         <div className="mb-8 flex flex-col items-center gap-2">
-          <SiteLogo className="h-14 w-14" size={56} />
+          <SiteLogo className="h-32 w-32" size={128} />
           <h1 className="text-xl font-semibold text-text-primary">Welcome! Set up your account</h1>
           <p className="text-sm text-text-muted">Enter your company name to get started.</p>
         </div>

@@ -31,8 +31,8 @@ export default function V3() {
       <header className="sticky top-0 z-20 border-b border-[#e8e4df] bg-[#faf9f7]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <SiteLogo className="h-9 w-9" size={400} />
-            <span className="text-sm font-semibold text-[#1a1208]">Accountant&apos;s Best Friend</span>
+            <SiteLogo className="h-16 w-16" size={64} />
+            <span className="text-base font-semibold text-[#1a1208]">Accountant&apos;s Best Friend</span>
           </div>
           <div className="flex items-center gap-6">
             <Link href="/pricing" className="text-sm text-[#7a6a55] hover:text-[#1a1208] transition-colors">Pricing</Link>

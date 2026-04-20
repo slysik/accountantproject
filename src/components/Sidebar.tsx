@@ -39,21 +39,21 @@ export default function Sidebar() {
       style={{ borderColor: 'var(--border-primary)', backgroundColor: 'var(--bg-secondary)' }}
     >
       <div
-        className="flex h-16 flex-shrink-0 items-center justify-center border-b px-4 py-2"
+        className="flex h-[144px] flex-shrink-0 items-center justify-center border-b px-4 py-3"
         style={{ borderColor: 'var(--border-primary)' }}
       >
-        <div className="flex w-full max-w-[208px] items-center justify-center gap-3 text-left">
+        <div className="flex w-full max-w-[244px] items-center justify-start gap-3 text-left">
           <Image
             src={theme === 'dark' ? '/logo-dark.jpeg' : '/logo-light.jpeg'}
             alt="Accountant's Best Friend"
-            width={56}
-            height={56}
-            className="h-14 w-14 object-contain"
+            width={128}
+            height={128}
+            className="h-32 w-32 flex-shrink-0 rounded-xl object-contain"
             unoptimized
           />
-          <div className="min-w-0 space-y-0.5">
-            <p className="truncate text-sm font-semibold leading-none text-text-primary">Accountant&apos;s Best Friend</p>
-            <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-text-muted">ABF</p>
+          <div className="min-w-0 space-y-1">
+            <p className="text-base font-semibold leading-tight tracking-tight text-text-primary">Accountant&apos;s Best Friend</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-text-muted">ABF</p>
           </div>
         </div>
       </div>

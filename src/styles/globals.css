@@ -2,8 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Dark mode (default) ── */
+/* ── Light mode (default) ── */
 :root {
+  --bg-primary: #faf8f5;
+  --bg-secondary: #f2ede7;
+  --bg-tertiary: #e8e0d6;
+  --bg-elevated: #ffffff;
+  --border-primary: #d5c9bd;
+  --text-primary: #1a1410;
+  --text-secondary: #3d3028;
+  --text-muted: #7a6e65;
+  --accent-primary: #c4603d;
+  --accent-dark: #a84d2c;
+  --success: #16a34a;
+  --error: #dc2626;
+}
+
+/* ── Dark mode ── */
+.dark {
   --bg-primary: #0a0907;
   --bg-secondary: #131110;
   --bg-tertiary: #1d1a17;
@@ -18,7 +34,7 @@
   --error: #ef4444;
 }
 
-/* ── Light mode ── */
+/* Legacy .light class kept for backward compat — same as :root defaults */
 .light {
   --bg-primary: #faf8f5;
   --bg-secondary: #f2ede7;

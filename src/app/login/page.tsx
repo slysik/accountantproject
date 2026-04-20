@@ -417,7 +417,7 @@ function LoginForm() {
       {/* Header */}
       <header className="relative flex items-center justify-between border-b border-gray-100 bg-white/80 px-6 py-4 backdrop-blur-sm" style={{ zIndex: 2 }}>
         <Link href="/" className="flex items-center gap-2">
-          <SiteLogo className="h-14 w-14" size={56} />
+          <SiteLogo className="h-32 w-32" size={128} />
           <span className="text-base font-semibold text-text-primary">Accountant&apos;s Best Friend</span>
         </Link>
         <nav className="flex items-center gap-4 text-sm text-text-muted">
@@ -431,7 +431,7 @@ function LoginForm() {
       <div className="w-full max-w-[440px] rounded-2xl border border-gray-200 bg-white p-8 shadow-xl shadow-gray-100/80">
         {/* Header */}
         <div className="mb-8 flex flex-col items-center gap-2">
-          <SiteLogo className="h-14 w-14" size={56} />
+          <SiteLogo className="h-32 w-32" size={128} />
           <h1 className="text-xl font-semibold text-text-primary">
             Accountant&apos;s Best Friend
           </h1>

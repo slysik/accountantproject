@@ -289,8 +289,8 @@ function SetupWizard() {
     <div className="min-h-screen bg-bg-primary flex flex-col">
       {/* Header */}
       <header className="border-b border-border-primary px-6 py-4 flex items-center gap-3">
-        <SiteLogo className="h-14 w-14" size={56} />
-        <span className="text-sm font-semibold text-text-primary">Accountant&apos;s Best Friend</span>
+        <SiteLogo className="h-32 w-32" size={128} />
+        <span className="text-base font-semibold text-text-primary">Accountant&apos;s Best Friend</span>
         <span className="ml-auto text-xs text-text-muted">Setup · Step {step + 1} of {STEPS.length}</span>
       </header>
 

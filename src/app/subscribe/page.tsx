@@ -109,8 +109,8 @@ function SubscribePageInner() {
       {/* Nav */}
       <header className="flex items-center justify-between border-b border-border-primary bg-bg-secondary px-6 py-4">
         <div className="flex items-center gap-2">
-          <SiteLogo className="h-14 w-14" size={56} />
-          <span className="text-base font-semibold">Accountant&apos;s Best Friend</span>
+          <SiteLogo className="h-32 w-32" size={128} />
+          <span className="text-lg font-semibold">Accountant&apos;s Best Friend</span>
         </div>
         <div className="flex items-center gap-4">
           {isPaidPlan && (

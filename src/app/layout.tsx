@@ -80,7 +80,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light')document.documentElement.classList.add('light');}catch(e){}})();`,
+            __html: `(function(){try{var cm=document.cookie.match(/(?:^|; )theme-mode=(light|dark|auto)/);var mode=cm?cm[1]:(localStorage.getItem('theme-mode')||(localStorage.getItem('theme')||'light'));var eff=mode==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):mode;document.documentElement.classList.toggle('dark',eff==='dark');document.documentElement.classList.toggle('light',eff==='light');}catch(e){}})();`,
           }}
         />
         <script

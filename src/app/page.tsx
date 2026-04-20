@@ -81,8 +81,11 @@ export default function LandingPage() {
         .arrow{width:14px;height:14px}
         header.nav{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px);background:rgba(250,249,247,.85);border-bottom:1px solid var(--border)}
         .nav-row{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;max-width:1240px;margin:0 auto}
-        .brand{display:flex;align-items:center;gap:0;text-decoration:none}
-        .brand-logo{display:block;height:80px;width:80px;object-fit:contain}
+        .brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+        .brand-logo{display:block;height:128px;width:128px;object-fit:contain}
+        .brand .brand-wordmark{display:flex;flex-direction:column;line-height:1.05}
+        .brand .brand-wordmark .brand-name{font-weight:700;font-size:18px;color:var(--ink)}
+        .brand .brand-wordmark .brand-sub{font-size:11px;letter-spacing:.22em;color:var(--mud);text-transform:uppercase}
         .nav-links{display:flex;align-items:center;gap:28px}
         .nav-links a{color:var(--mud);font-size:14px}
         .nav-links a:hover{color:var(--coffee)}
@@ -272,7 +275,11 @@ export default function LandingPage() {
       <header className="nav">
         <div className="nav-row">
           <a href="#" className="brand">
-            <Image src="/logo-light.jpeg" alt="Accountant's Best Friend" width={80} height={80} className="brand-logo" unoptimized />
+            <Image src="/logo-light.jpeg" alt="Accountant's Best Friend" width={128} height={128} className="brand-logo" unoptimized />
+            <span className="brand-wordmark">
+              <span className="brand-name">Accountant&apos;s Best Friend</span>
+              <span className="brand-sub">ABF</span>
+            </span>
           </a>
           <nav className="nav-links">
             <a href="#how">How it works</a>
@@ -627,7 +634,11 @@ export default function LandingPage() {
         <div className="foot-row">
           <div>
             <a href="#" className="brand">
-              <Image src="/logo-light.jpeg" alt="Accountant's Best Friend" width={80} height={80} className="brand-logo" unoptimized />
+              <Image src="/logo-light.jpeg" alt="Accountant's Best Friend" width={128} height={128} className="brand-logo" unoptimized />
+              <span className="brand-wordmark">
+                <span className="brand-name">Accountant&apos;s Best Friend</span>
+                <span className="brand-sub">ABF</span>
+              </span>
             </a>
             <p className="foot-tag">Personal expense categorization for self-employed professionals. CSV in, clean books out. Built in Tampa. Used at 3am on April 14.</p>
           </div>

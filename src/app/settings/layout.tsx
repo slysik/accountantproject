@@ -6,11 +6,12 @@ import AppFooter from '@/components/AppFooter';
 import AuthGuard from '@/components/AuthGuard';
 import ExpenseChat from '@/components/ExpenseChat';
 import { useAuth } from '@/lib/auth';
-import { LuUser, LuShield, LuUsers, LuChevronLeft, LuLayoutDashboard, LuTags, LuCircleHelp, LuClipboardList, LuCreditCard } from 'react-icons/lu';
+import { LuUser, LuShield, LuUsers, LuChevronLeft, LuLayoutDashboard, LuTags, LuCircleHelp, LuClipboardList, LuCreditCard, LuSettings2 } from 'react-icons/lu';
 import SiteLogo from '@/components/SiteLogo';
 import { isMasterAdminEmail } from '@/lib/admin';
 
 const BASE_NAV = [
+  { href: '/settings/general',  icon: LuSettings2,   label: 'General'         },
   { href: '/settings/account',  icon: LuUser,        label: 'Account Details' },
   { href: '/settings/team',     icon: LuUsers,       label: 'Team'      },
   { href: '/settings/security', icon: LuShield,      label: 'Security'  },
@@ -39,9 +40,9 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             >
               Sign Out
             </button>
-            <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <SiteLogo className="h-12 w-12" size={48} />
-              <span className="hidden text-sm font-semibold text-text-primary md:inline">
+            <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <SiteLogo className="h-32 w-32" size={128} />
+              <span className="hidden text-base font-semibold text-text-primary md:inline">
                 Accountant&apos;s Best Friend
               </span>
             </Link>

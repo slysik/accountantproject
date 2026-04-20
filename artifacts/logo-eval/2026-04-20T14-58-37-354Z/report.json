@@ -1,0 +1,764 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "candidates": [
+    {
+      "id": "C1-64",
+      "size": 64,
+      "className": "h-16 w-16",
+      "title": "text-sm"
+    },
+    {
+      "id": "C2-72",
+      "size": 72,
+      "className": "h-[72px] w-[72px]",
+      "title": "text-base"
+    },
+    {
+      "id": "C3-80",
+      "size": 80,
+      "className": "h-20 w-20",
+      "title": "text-base"
+    },
+    {
+      "id": "C4-96",
+      "size": 96,
+      "className": "h-24 w-24",
+      "title": "text-lg"
+    },
+    {
+      "id": "C5-112",
+      "size": 112,
+      "className": "h-28 w-28",
+      "title": "text-lg"
+    }
+  ],
+  "results": [
+    {
+      "candidate": "C1-64",
+      "route": "home",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C1-64",
+      "route": "login",
+      "viewport": "desktop",
+      "titleHeight": 24,
+      "overflowPx": 208,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C1-64",
+      "route": "onboard",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C1-64",
+      "route": "pricing",
+      "viewport": "desktop",
+      "titleHeight": 28,
+      "overflowPx": 950,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C1-64",
+      "route": "setup",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C1-64",
+      "route": "subscribe",
+      "viewport": "desktop",
+      "titleHeight": null,
+      "overflowPx": 0,
+      "legibility": 0,
+      "overflowPenalty": 0,
+      "score": 0.2
+    },
+    {
+      "candidate": "C1-64",
+      "route": "preview_v3",
+      "viewport": "desktop",
+      "titleHeight": 24,
+      "overflowPx": 1177,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C1-64",
+      "route": "home",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C1-64",
+      "route": "login",
+      "viewport": "mobile",
+      "titleHeight": 48,
+      "overflowPx": 406,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C1-64",
+      "route": "onboard",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C1-64",
+      "route": "pricing",
+      "viewport": "mobile",
+      "titleHeight": 56,
+      "overflowPx": 3378,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C1-64",
+      "route": "setup",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C1-64",
+      "route": "subscribe",
+      "viewport": "mobile",
+      "titleHeight": null,
+      "overflowPx": 0,
+      "legibility": 0,
+      "overflowPenalty": 0,
+      "score": 0.2
+    },
+    {
+      "candidate": "C1-64",
+      "route": "preview_v3",
+      "viewport": "mobile",
+      "titleHeight": 48,
+      "overflowPx": 1451,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C2-72",
+      "route": "home",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C2-72",
+      "route": "login",
+      "viewport": "desktop",
+      "titleHeight": 24,
+      "overflowPx": 208,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C2-72",
+      "route": "onboard",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C2-72",
+      "route": "pricing",
+      "viewport": "desktop",
+      "titleHeight": 28,
+      "overflowPx": 950,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C2-72",
+      "route": "setup",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C2-72",
+      "route": "subscribe",
+      "viewport": "desktop",
+      "titleHeight": null,
+      "overflowPx": 0,
+      "legibility": 0,
+      "overflowPenalty": 0,
+      "score": 0.2
+    },
+    {
+      "candidate": "C2-72",
+      "route": "preview_v3",
+      "viewport": "desktop",
+      "titleHeight": 24,
+      "overflowPx": 1177,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C2-72",
+      "route": "home",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C2-72",
+      "route": "login",
+      "viewport": "mobile",
+      "titleHeight": 48,
+      "overflowPx": 406,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C2-72",
+      "route": "onboard",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C2-72",
+      "route": "pricing",
+      "viewport": "mobile",
+      "titleHeight": 56,
+      "overflowPx": 3378,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C2-72",
+      "route": "setup",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C2-72",
+      "route": "subscribe",
+      "viewport": "mobile",
+      "titleHeight": null,
+      "overflowPx": 0,
+      "legibility": 0,
+      "overflowPenalty": 0,
+      "score": 0.2
+    },
+    {
+      "candidate": "C2-72",
+      "route": "preview_v3",
+      "viewport": "mobile",
+      "titleHeight": 48,
+      "overflowPx": 1451,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C3-80",
+      "route": "home",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C3-80",
+      "route": "login",
+      "viewport": "desktop",
+      "titleHeight": 24,
+      "overflowPx": 208,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C3-80",
+      "route": "onboard",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C3-80",
+      "route": "pricing",
+      "viewport": "desktop",
+      "titleHeight": 28,
+      "overflowPx": 950,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C3-80",
+      "route": "setup",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C3-80",
+      "route": "subscribe",
+      "viewport": "desktop",
+      "titleHeight": null,
+      "overflowPx": 0,
+      "legibility": 0,
+      "overflowPenalty": 0,
+      "score": 0.2
+    },
+    {
+      "candidate": "C3-80",
+      "route": "preview_v3",
+      "viewport": "desktop",
+      "titleHeight": 24,
+      "overflowPx": 1177,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C3-80",
+      "route": "home",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C3-80",
+      "route": "login",
+      "viewport": "mobile",
+      "titleHeight": 48,
+      "overflowPx": 406,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C3-80",
+      "route": "onboard",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C3-80",
+      "route": "pricing",
+      "viewport": "mobile",
+      "titleHeight": 56,
+      "overflowPx": 3378,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C3-80",
+      "route": "setup",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C3-80",
+      "route": "subscribe",
+      "viewport": "mobile",
+      "titleHeight": null,
+      "overflowPx": 0,
+      "legibility": 0,
+      "overflowPenalty": 0,
+      "score": 0.2
+    },
+    {
+      "candidate": "C3-80",
+      "route": "preview_v3",
+      "viewport": "mobile",
+      "titleHeight": 48,
+      "overflowPx": 1451,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C4-96",
+      "route": "home",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C4-96",
+      "route": "login",
+      "viewport": "desktop",
+      "titleHeight": 24,
+      "overflowPx": 208,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C4-96",
+      "route": "onboard",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C4-96",
+      "route": "pricing",
+      "viewport": "desktop",
+      "titleHeight": 28,
+      "overflowPx": 950,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C4-96",
+      "route": "setup",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C4-96",
+      "route": "subscribe",
+      "viewport": "desktop",
+      "titleHeight": null,
+      "overflowPx": 0,
+      "legibility": 0,
+      "overflowPenalty": 0,
+      "score": 0.2
+    },
+    {
+      "candidate": "C4-96",
+      "route": "preview_v3",
+      "viewport": "desktop",
+      "titleHeight": 24,
+      "overflowPx": 1177,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C4-96",
+      "route": "home",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C4-96",
+      "route": "login",
+      "viewport": "mobile",
+      "titleHeight": 48,
+      "overflowPx": 406,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C4-96",
+      "route": "onboard",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C4-96",
+      "route": "pricing",
+      "viewport": "mobile",
+      "titleHeight": 56,
+      "overflowPx": 3378,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C4-96",
+      "route": "setup",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C4-96",
+      "route": "subscribe",
+      "viewport": "mobile",
+      "titleHeight": null,
+      "overflowPx": 0,
+      "legibility": 0,
+      "overflowPenalty": 0,
+      "score": 0.2
+    },
+    {
+      "candidate": "C4-96",
+      "route": "preview_v3",
+      "viewport": "mobile",
+      "titleHeight": 48,
+      "overflowPx": 1451,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C5-112",
+      "route": "home",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C5-112",
+      "route": "login",
+      "viewport": "desktop",
+      "titleHeight": 24,
+      "overflowPx": 208,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C5-112",
+      "route": "onboard",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C5-112",
+      "route": "pricing",
+      "viewport": "desktop",
+      "titleHeight": 28,
+      "overflowPx": 950,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C5-112",
+      "route": "setup",
+      "viewport": "desktop",
+      "titleHeight": 30.4375,
+      "overflowPx": 6948,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C5-112",
+      "route": "subscribe",
+      "viewport": "desktop",
+      "titleHeight": null,
+      "overflowPx": 0,
+      "legibility": 0,
+      "overflowPenalty": 0,
+      "score": 0.2
+    },
+    {
+      "candidate": "C5-112",
+      "route": "preview_v3",
+      "viewport": "desktop",
+      "titleHeight": 24,
+      "overflowPx": 1177,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C5-112",
+      "route": "home",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C5-112",
+      "route": "login",
+      "viewport": "mobile",
+      "titleHeight": 48,
+      "overflowPx": 406,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    },
+    {
+      "candidate": "C5-112",
+      "route": "onboard",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C5-112",
+      "route": "pricing",
+      "viewport": "mobile",
+      "titleHeight": 56,
+      "overflowPx": 3378,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C5-112",
+      "route": "setup",
+      "viewport": "mobile",
+      "titleHeight": 49.328125,
+      "overflowPx": 11324,
+      "legibility": 1,
+      "overflowPenalty": 0.25,
+      "score": 0.95
+    },
+    {
+      "candidate": "C5-112",
+      "route": "subscribe",
+      "viewport": "mobile",
+      "titleHeight": null,
+      "overflowPx": 0,
+      "legibility": 0,
+      "overflowPenalty": 0,
+      "score": 0.2
+    },
+    {
+      "candidate": "C5-112",
+      "route": "preview_v3",
+      "viewport": "mobile",
+      "titleHeight": 48,
+      "overflowPx": 1451,
+      "legibility": 1,
+      "overflowPenalty": 0,
+      "score": 1
+    }
+  ],
+  "ranked": [
+    {
+      "id": "C1-64",
+      "mean": 0.861,
+      "n": 14
+    },
+    {
+      "id": "C2-72",
+      "mean": 0.861,
+      "n": 14
+    },
+    {
+      "id": "C3-80",
+      "mean": 0.861,
+      "n": 14
+    },
+    {
+      "id": "C4-96",
+      "mean": 0.861,
+      "n": 14
+    },
+    {
+      "id": "C5-112",
+      "mean": 0.861,
+      "n": 14
+    }
+  ]
+}
