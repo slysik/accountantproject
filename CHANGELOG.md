@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Quick summary of what's new in each release, written for users.
 
+### v2.5.1 — Safari Landing Video Fix (2026-04-21)
+The landing hero video now plays correctly in Safari on macOS and iOS. The source `demo.mp4` was encoded with `yuvj420p` (JPEG full-range YUV), which WebKit refuses to decode, so only the poster image was showing. The asset has been re-encoded to standard `yuv420p` with studio color range, H.264 Main profile, and `+faststart` for progressive playback. No code or markup changes — the fix is asset-only.
+
 ### v2.5.0 — Light/Dark/Auto Theme & Enlarged Logo (2026-04-20)
 Settings now includes a General section with an Appearance picker — choose Light, Auto (follows system), or Dark mode. Light is the default for all new and existing users. The selection persists across navigations, reloads, and future sessions via localStorage, cookie, and profile sync. Text contrast is preserved in both modes via semantic CSS variables. The site logo has been enlarged across the app header and sidebar for improved visibility.
 
